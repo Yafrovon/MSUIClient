@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Formats;
 using MSUIClient.Net;
 using MSUIClient.World;
@@ -104,7 +104,10 @@ internal static class WeatherClinicalChecks
         Check(glue.Contains("_weatherSoundKit = weather.SoundId;", StringComparison.Ordinal) &&
               glue.Contains("_soundscape.WeatherAmbienceKit = _weatherSoundKit;",
                   StringComparison.Ordinal) &&
-              glue.Contains("_soundscapeIndoors = true;", StringComparison.Ordinal),
+              glue.Contains("_soundscapeIndoors = indoorsNow;", StringComparison.Ordinal) &&
+              // Both commit sites take the dwelled value; a hardcoded verdict is the
+              // regression this guards, and banning it catches either site.
+              !glue.Contains("_soundscapeIndoors = true;", StringComparison.Ordinal),
             "weather sound retention or WMO indoor verdict drift");
         Check(glue.Contains("_weatherVisual.Apply(weather.WeatherType, weather.Grade, " +
                            "weather.Instant, NowSeconds());", StringComparison.Ordinal) &&
@@ -133,7 +136,7 @@ internal static class WeatherClinicalChecks
 
     private static void CheckActualWeatherTextures(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         string[] paths =

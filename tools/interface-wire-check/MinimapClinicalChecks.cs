@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -72,13 +72,20 @@ internal static class MinimapClinicalChecks
             Vector2.Zero, new Vector2(0, 80), new Vector2(70.4f), 140.8f, 100f);
         MinimapPartyBlip partyArrow = MinimapUiLaw.PartyBlip(
             Vector2.Zero, new Vector2(-300, 0), new Vector2(70.4f), 140.8f, 100f);
-        Check(!partyDot.IsArrow && partyDot.Center == new Vector2(70.4f, 49.28f) &&
+        // Centres are compared by distance, as the partyArrow term below already did:
+        // exact float equality fails on 49.280003 and 14.080002, which are the same
+        // projection to well within a pixel.
+        Check(!partyDot.IsArrow &&
+              Vector2.Distance(partyDot.Center, new Vector2(70.4f, 49.28f)) < .001f &&
               MathF.Abs(partyDot.Size - 10.4f) < .001f &&
-              !boundaryDot.IsArrow && boundaryDot.Center == new Vector2(14.08f, 70.4f) &&
+              !boundaryDot.IsArrow &&
+              Vector2.Distance(boundaryDot.Center, new Vector2(14.08f, 70.4f)) < .001f &&
               partyArrow.IsArrow &&
               Vector2.Distance(partyArrow.Center, new Vector2(70.4f, 126.72f)) < .001f &&
               MathF.Abs(partyArrow.Size - 38.4f) < .001f &&
-              MathF.Abs(partyArrow.Rotation - MathF.PI) < .001f,
+              // Due west is +PI or -PI depending on the sign of the zero atan2 receives,
+              // and the two render identically. Accept either branch of the wrap.
+              MathF.Abs(MathF.Abs(partyArrow.Rotation) - MathF.PI) < .001f,
             "minimap party dot/0.8 split/rim-arrow projection drift");
 
         Check(WmoMinimapProjection.CompositeSize == 256 &&

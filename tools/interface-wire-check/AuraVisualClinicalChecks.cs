@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Formats;
 using MSUIClient.World.Units;
@@ -95,7 +95,7 @@ internal static class AuraVisualClinicalChecks
 
     private static void CheckActualDataIfPresent(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         CreatureDisplayInfoTable displays = CreatureDisplayInfoTable.Parse(

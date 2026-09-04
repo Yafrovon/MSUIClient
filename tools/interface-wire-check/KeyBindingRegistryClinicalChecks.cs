@@ -23,8 +23,14 @@ internal static class KeyBindingRegistryClinicalChecks
                 "Miscellaneous", "Camera", "MultiActionBar", "Raid Targeting",
             ]),
             "Key Bindings visible category order drifted from current Benilla");
-        Check(categories.Skip(9).SequenceEqual(["RTS Controls", "CRPG Controls"]),
-            "the MSUI CRPG/RTS categories are missing, renamed, or no longer last");
+        // 6991171 moved the dev/debug tools off hardcoded keys and onto the Key Bindings menu,
+        // unbound by default, which appends two more MSUI-only categories after the CRPG/RTS
+        // pair. They still sit after Benilla's nine, so the shipped ladder a player scrolls is
+        // unchanged until they reach commands only this client has.
+        Check(categories.Skip(9).SequenceEqual(
+                  ["RTS Controls", "CRPG Controls", "Developer", "Debug"]),
+            "the MSUI-only categories (CRPG/RTS/Developer/Debug) are missing, renamed, " +
+            "reordered, or no longer last");
         Check(rows.Select(row => row.Binding).Distinct().Count() == rows.Length,
             "Key Bindings registry exposes one command in more than one visible category");
         Check(rows.Contains(("Movement", "Sheath")) &&

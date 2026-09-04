@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Net;
@@ -65,7 +65,7 @@ internal static class ViewSubjectClinicalChecks
               host.Contains("_farSightAwaitingFreeViewClear = ownership.AwaitClear",
                   StringComparison.Ordinal) &&
               host.Contains("_entities.TryGet(anchor", StringComparison.Ordinal) &&
-              program.Contains("_window.Camera.Target = _controller.Position;\n        UpdateViewSubject();",
+              program.Contains(": _controller.Position;\n        UpdateViewSubject();",
                   StringComparison.Ordinal) &&
               sound.Contains("SpatialAudioLaw.CharacterListener(_controller.Position)",
                   StringComparison.Ordinal),
