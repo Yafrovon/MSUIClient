@@ -148,7 +148,7 @@ internal static class QuestMarkerClinicalChecks
 
     private static void CheckActualAssetsIfPresent()
     {
-        string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
 
         string[] paths =

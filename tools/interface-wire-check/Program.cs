@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -1746,7 +1746,7 @@ if (args.Contains("--possess-law-only", StringComparer.Ordinal))
 
 if (args.Contains("--rts-ability-target-only", StringComparer.Ordinal))
 {
-    string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+    string data = ClientDataRoot.Path;
     using var mpq = new MpqMount(data);
     SpellCatalog spells = SpellCatalog.Load(mpq) ??
         throw new InvalidDataException("Spell DBC unavailable");
@@ -2393,7 +2393,7 @@ Check(WmoMinimapProjection.AxisGrid(20.6f) == (1, 32f) &&
 Check((ushort)Op.CMSG_ZONEUPDATE == 500, "CMSG_ZONEUPDATE opcode");
 Check(WorldSession.BuildZoneUpdateBody(12).SequenceEqual(Convert.FromHexString("0C000000")),
       "zone update body");
-string clientData = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+string clientData = ClientDataRoot.Path;
 using var spellbookMpq = new MpqMount(clientData);
 Check(spellbookMpq.ReadFile(@"Interface\Buttons\UI-Debuff-Overlays.blp") is not null &&
       spellbookMpq.ReadFile(@"Interface\Icons\INV_Misc_QuestionMark.blp") is not null &&
