@@ -348,8 +348,12 @@ static void CheckKeyBindingsFrameFitsItsArt()
     float rowsEnd = KeyBindingsUiLaw.Rows.Y + KeyBindingsUiLaw.VisibleRows * KeyBindingsUiLaw.RowPitch;
     if (rowsEnd > KeyBindingsUiLaw.Defaults.Y)
         bad.Add($"rows end {rowsEnd} overlaps the button row at {KeyBindingsUiLaw.Defaults.Y}");
-    if (KeyBindingsUiLaw.ScrollHeight > KeyBindingsUiLaw.Rows.Height + 0.01f)
-        bad.Add("scroll bar is taller than the row band it scrolls");
+    // The bar fills the art's carved scroll slot, which spans the frame interior (53..443),
+    // not the row band (104..449): 0234019 "keybindings scroll bar fix" anchored it at
+    // interiorTop while the rows start lower. Fits() above already keeps the bar inside the
+    // artwork, so this rule guards the interior height rather than the shorter row band.
+    if (KeyBindingsUiLaw.ScrollHeight > lastOpaqueY - interiorTop + 0.01f)
+        bad.Add("scroll bar is taller than the frame interior it sits in");
 
     Check(bad.Count == 0, "Key Bindings frame does not fit its own artwork: " + string.Join(" | ", bad));
 
