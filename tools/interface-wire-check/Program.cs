@@ -202,6 +202,9 @@ static void CheckGameMenuLayout()
             "\"FontScale\":1.35}," +
             "\"MenuLayout\":{}},\"Presets\":[]}");
         SettingsStore migrated = SettingsStore.Load(root, migrationPath);
+        // Pinned to the highest migration step in GameSettings.Migrate, deliberately: adding a
+        // step must force someone to confirm the older chrome/text sizes still survive the
+        // whole chain. v13 rebaselines non-custom water detail and does not touch MenuLayout.
         Check(migrated.Settings.Version == 13 &&
               MathF.Abs(migrated.Settings.MenuLayout.Scale - 1.125f) < .0001f &&
               MathF.Abs(migrated.Settings.MenuLayout.TextScale - 1.35f) < .0001f,
