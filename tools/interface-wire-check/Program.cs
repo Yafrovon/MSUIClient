@@ -4478,8 +4478,11 @@ Check(partyRuntimeSource.Contains("PartyFrameUiLaw.IsLeaveRoster(wire)",
           StringComparison.Ordinal) &&
       partyRuntimeSource.Contains("party-tooltip-slot-token-is-absent-during-fade",
           StringComparison.Ordinal) &&
+      // Same seam as PartyFrameClinicalChecks: the popup button font gained a disabled
+      // branch. The GameFont* family is what matters, which the DialogButton* bans keep.
       partyRuntimeSource.Contains(
-          "string fontObject = !enabled ? \"GameFontDisable\"",
+          "string fontObject = !enabled ? \"GameFontDisable\"\n" +
+          "            : hovered ? \"GameFontHighlight\" : \"GameFontNormal\";",
           StringComparison.Ordinal) &&
       !partyRuntimeSource.Contains("DialogButtonHighlightText", StringComparison.Ordinal) &&
       !partyRuntimeSource.Contains("DialogButtonNormalText", StringComparison.Ordinal) &&

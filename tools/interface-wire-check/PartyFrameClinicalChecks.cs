@@ -1,4 +1,4 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,6 +18,16 @@ internal static class PartyFrameClinicalChecks
             "649441e1335c0d23e0e15ad71ff2fb7543d11dbe92958443cdb90aad25974da1";
         string zipPath = Path.Combine(root, "parity", "snapshots", "current",
             "benilla.source.zip");
+        // parity/snapshots is gitignored, so most checkouts simply do not have this reference
+        // archive and the frozen-source comparison cannot run. Skip rather than fail - but SAY
+        // SO. A silent skip is indistinguishable from a pass, which is precisely how this
+        // harness went unnoticed while it was red.
+        if (!File.Exists(zipPath))
+        {
+            Console.WriteLine("[skip] PartyFrame frozen Benilla source parity: no " +
+                "parity/snapshots/current/benilla.source.zip in this checkout");
+            return;
+        }
         using ZipArchive archive = ZipFile.OpenRead(zipPath);
         (string PartyHash, string PartyText) = ReadFrozenEntry(archive, partyPath);
         (string UiPanelsHash, string UiPanelsText) = ReadFrozenEntry(archive, uiPanelsPath);
@@ -473,7 +483,8 @@ internal static class PartyFrameClinicalChecks
               runtime.Contains("ImGuiWindowFlags.Tooltip", StringComparison.Ordinal) &&
               runtime.Contains("TooltipRightOffset(\n            multiBarLeftVisible",
                   StringComparison.Ordinal) &&
-              runtime.Contains("petOrStanceVisible: PetActionBarVisible", StringComparison.Ordinal) &&
+              runtime.Contains("petOrStanceVisible: PetOrStanceActionBarVisible",
+                  StringComparison.Ordinal) &&
               runtime.Contains("min=0;max={memberHealth.Maximum};value={memberHealth.Value}",
                   StringComparison.Ordinal) &&
               runtime.Contains("min=0;max={view.MaxPower};value={Math.Min(view.Power, view.MaxPower)}",
@@ -492,7 +503,10 @@ internal static class PartyFrameClinicalChecks
                   StringComparison.Ordinal) &&
               runtime.Contains("party-tooltip-slot-token-is-absent-during-fade",
                   StringComparison.Ordinal) &&
-              runtime.Contains("string fontObject = hovered ? \"GameFontHighlight\" : \"GameFontNormal\";",
+              // The popup button font gained a disabled branch; the GameFont* family
+              // is still what matters, which the DialogButton* bans below enforce.
+              runtime.Contains("string fontObject = !enabled ? \"GameFontDisable\"\n" +
+                  "            : hovered ? \"GameFontHighlight\" : \"GameFontNormal\";",
                   StringComparison.Ordinal) &&
               !runtime.Contains("DialogButtonHighlightText", StringComparison.Ordinal) &&
               !runtime.Contains("DialogButtonNormalText", StringComparison.Ordinal) &&
@@ -648,7 +662,10 @@ internal static class PartyFrameClinicalChecks
               escapeDriver.Contains("StaticPopupCoordinatorLaw.Escape(_staticPopupSlots)",
                   StringComparison.Ordinal) &&
               escapeDriver.Contains("ExecuteStaticPopupPlan(plan);", StringComparison.Ordinal) &&
-              settings.Contains("PartyFrameUiLaw.IsPartyInviteVisible(_staticPopupSlots)",
+              // The Escape precedence no longer singles out PARTY_INVITE: it asks the
+              // coordinator whether ANY slot is visible, which is what the layer needs as
+              // more popup types are integrated.
+              settings.Contains("StaticPopupCoordinatorLaw.AnyVisible(_staticPopupSlots)",
                   StringComparison.Ordinal) &&
               settings.Contains("TryDismissStaticPopupOnEscape()", StringComparison.Ordinal),
             "PARTY_INVITE direct-hide/shared-Escape/settings precedence seam drift");
@@ -677,7 +694,17 @@ internal static class PartyFrameClinicalChecks
         Check(readClock >= 0 && commitClock > readClock && advance > commitClock &&
               lifecycle.Contains("StaticPopupCoordinatorLaw.SlotCount", StringComparison.Ordinal) &&
               lifecycle.Contains("now >= previous", StringComparison.Ordinal) &&
-              !lifecycle.Contains("HideByType", StringComparison.Ordinal),
+              // HideByType used to be banned outright here, when the lifecycle was purely
+              // the Advance pump. It now also dismisses a stale DELETE_ITEM confirmation
+              // once the carried item is gone, which does not weaken the pump because it
+              // runs after it. Assert that ordering instead of banning the call: the pump
+              // must still be reached unconditionally on every lifecycle tick.
+              lifecycle.IndexOf("StaticPopupCoordinatorLaw.Advance(",
+                  StringComparison.Ordinal) >= 0 &&
+              (lifecycle.IndexOf("HideByType", StringComparison.Ordinal) < 0 ||
+               lifecycle.IndexOf("HideByType", StringComparison.Ordinal) >
+                   lifecycle.IndexOf("StaticPopupCoordinatorLaw.Advance(",
+                       StringComparison.Ordinal)),
             "PARTY_INVITE always-pumped monotonic two-slot Advance drift");
 
         int inviteDrawStart = runtime.IndexOf("private void DrawPartyInvite()",
@@ -705,17 +732,24 @@ internal static class PartyFrameClinicalChecks
               !runtime.Contains("_partyInviter", StringComparison.Ordinal) &&
               !runtime.Contains("_partyInviteDeadline", StringComparison.Ordinal),
             "PARTY_INVITE pure definition/query or legacy parallel-state removal drift");
-        Check(Count(runtime, "StaticPopupCoordinatorLaw.Show(") == 1 &&
-              Count(runtime, "StaticPopupCoordinatorLaw.HideByType(") == 1 &&
+        // Every coordinator call site in this file, named so a third one is a real signal:
+        //   Show        x2  the SMSG invite path and ShowPartyTestInvite - BOTH pass
+        //                   PartyInvitePopupDefinition, so no second production type is
+        //                   shown here; the second is the /partytest fixture.
+        //   HideByType  x2  the PARTY_INVITE direct hide, and the DELETE_ITEM stale
+        //                   dismiss in the lifecycle (the item left the cursor).
+        //   Escape/Advance x1, Click x2 - unchanged.
+        Check(Count(runtime, "StaticPopupCoordinatorLaw.Show(") == 2 &&
+              Count(runtime, "StaticPopupCoordinatorLaw.HideByType(") == 2 &&
               Count(runtime, "StaticPopupCoordinatorLaw.Escape(") == 1 &&
               Count(runtime, "StaticPopupCoordinatorLaw.Advance(") == 1 &&
-              Count(runtime, "StaticPopupCoordinatorLaw.Click(") == 2 &&
-              runtime.Contains("PARTY_INVITE is the only production entry integrated",
-                  StringComparison.Ordinal) &&
-              runtime.Contains("slot-two presentation remains an explicit later integration",
-                  StringComparison.Ordinal) &&
-              runtime.Contains("callback-reentry branches remain an explicit later boundary",
-                  StringComparison.Ordinal),
+              // Three prose pins stood here, asserting that particular comments existed in
+              // the runtime. Two were deleted in 98aab83 with the behaviour untouched. That
+              // is the mirror of banning a word: the check breaks when documentation is
+              // reworded, and a reworder can satisfy it without changing anything real.
+              // The Count() terms above are the actual guard - admitting a second production
+              // popup type means another Show(/HideByType(/Escape(/Advance( call site.
+              Count(runtime, "StaticPopupCoordinatorLaw.Click(") == 2,
             "bounded coordinator slice admitted another production type or deferred renderer");
         int parseRoster = runtime.IndexOf("PartyFramePacketLaw.ParseRoster(body)",
             StringComparison.Ordinal);
@@ -730,7 +764,8 @@ internal static class PartyFrameClinicalChecks
               net.Contains("ApplyPartyMemberStats(body, fullSnapshot: false)", StringComparison.Ordinal) &&
               net.Contains("ApplyPartyMemberStats(body, fullSnapshot: true)", StringComparison.Ordinal),
             "party atomic roster/FULL-vs-delta dispatch drift");
-        Check(runtime.Contains("_unitPopupInspectBinding = InspectBinding.Party(hoveredIndex)",
+        // The binding is handed to OpenUnitPopup now instead of being assigned to a field.
+        Check(runtime.Contains("InspectBinding.Party(hoveredIndex));",
                   StringComparison.Ordinal) &&
               runtime.Contains("action == PartyPointerAction.Target", StringComparison.Ordinal) &&
               // Through the painterly art path, which falls back to
