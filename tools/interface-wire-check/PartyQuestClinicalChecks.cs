@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Net;
 
 /// <summary>
@@ -233,6 +233,10 @@ internal static class PartyQuestClinicalChecks
                   "        {\n" +
                   "            ApplyFactionControlGroupsCapability(capabilities, factionProbeReply);\n" +
                   "            ApplyPartyMemberFactsCapability(capabilities);\n" +
+                  // ApplyPartyTaxiCapability joined the guard; the block is pinned
+                  // exactly so a new capability apply has to be placed inside the
+                  // braces deliberately rather than trailing off the end of it.
+                  "            ApplyPartyTaxiCapability(capabilities);\n" +
                   "        }", StringComparison.Ordinal),
             "the capability applies must stay inside ONE braced guard — without the " +
             "braces a trailerless ACK silently clears capabilities already advertised");

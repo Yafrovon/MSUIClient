@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Formats;
@@ -58,10 +58,23 @@ internal static class QuestMarkerClinicalChecks
 
         string adapter = SourceText.Read(Path.Combine("MSUIClient", "GameLoop", "Hud",
             "GameLoop.QuestMarkers.cs"));
-        Check(!adapter.Contains("ImGui", StringComparison.Ordinal) &&
-              !adapter.Contains("DrawPlateText", StringComparison.Ordinal) &&
-              adapter.Contains("QuestMarkerMeshInstances", StringComparison.Ordinal),
-            "quest marker adapter regressed to projected HUD glyph rendering");
+        // A blanket ban on "ImGui" used to stand here. The adapter now draws party member
+        // name labels above quest givers, which is a Command View instrument: "from the
+        // sky they are the only way to say WHO has business where. Embodied play (direct
+        // control included) keeps the plain vanilla markers and nothing else" (owner,
+        // 2026-08-28). The markers themselves are still mesh instances.
+        //
+        // So assert the rule rather than the word: markers come from mesh instances, and
+        // every ImGui draw sits behind the Free View gate, which is what keeps embodied
+        // play free of projected HUD glyphs.
+        int freeViewGate = adapter.IndexOf("if (!_freeView) return;", StringComparison.Ordinal);
+        int firstImGuiDraw = adapter.IndexOf("ImGui.GetBackgroundDrawList()",
+            StringComparison.Ordinal);
+        Check(!adapter.Contains("DrawPlateText", StringComparison.Ordinal) &&
+              adapter.Contains("QuestMarkerMeshInstances", StringComparison.Ordinal) &&
+              freeViewGate >= 0 && firstImGuiDraw > freeViewGate,
+            "quest marker adapter regressed to projected HUD glyph rendering, or its " +
+            "Command View labels escaped the Free View gate");
 
         CheckRefreshLaw();
 
