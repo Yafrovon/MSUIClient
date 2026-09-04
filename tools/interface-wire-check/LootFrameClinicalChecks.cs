@@ -85,7 +85,10 @@ internal static class LootFrameClinicalChecks
               LootLatchLaw.ShouldKneel(0x10, LootLatchLaw.TargetKind.GameObject, 3, 0) &&
               LootLatchLaw.ShouldKneel(0x10, LootLatchLaw.TargetKind.GameObject, 17, 0) &&
               LootLatchLaw.ShouldKneel(0x10, LootLatchLaw.TargetKind.Unit, 0, 1) &&
-              LootLatchLaw.ShouldKneel(0x10, LootLatchLaw.TargetKind.Item, 0, 0) &&
+              // A bag item (clam / lockbox) is a menu action with no world loot emote, so it
+              // must NOT kneel, unlike a corpse or a ground object. This assertion previously
+              // demanded the opposite.
+              !LootLatchLaw.ShouldKneel(0x10, LootLatchLaw.TargetKind.Item, 0, 0) &&
               !LootLatchLaw.ShouldKneel(0, LootLatchLaw.TargetKind.Unit, 0, 0) &&
               LootLatchLaw.ClearFor(0x10, 0x10) == 0 &&
               LootLatchLaw.ClearFor(0x10, 0x20) == 0x10,
