@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Formats;
@@ -89,7 +89,7 @@ internal static class ElevatorTransportClinicalChecks
 
     private static void CheckActualCatalog()
     {
-        string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         TransportAnimationCatalog catalog = TransportAnimationCatalog.Load(mpq) ??

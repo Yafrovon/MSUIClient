@@ -136,7 +136,7 @@ internal static class WeatherClinicalChecks
 
     private static void CheckActualWeatherTextures(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         string[] paths =

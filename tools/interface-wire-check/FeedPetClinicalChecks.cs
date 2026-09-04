@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -50,7 +50,7 @@ internal static class FeedPetClinicalChecks
               targetSource.Contains("TryFeedCarriedItemToPet(pickedPet)", StringComparison.Ordinal),
             "PetFrame/world drop seams or success-only cursor clear drift");
 
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (Directory.Exists(data))
         {
             using var mpq = new MpqMount(data);

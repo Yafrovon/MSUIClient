@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
 using MSUIClient;
 using MSUIClient.Formats;
@@ -256,7 +256,7 @@ internal static class SpatialAudioClinicalChecks
     /// </summary>
     private static void CheckMp3DecodeAgainstShippedMusic(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         const string track = @"Sound\Music\GlueScreenMusic\wow_main_theme.mp3";
