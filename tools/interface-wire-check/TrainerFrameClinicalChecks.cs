@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -58,8 +58,12 @@ internal static class TrainerFrameClinicalChecks
                   new DropdownCapsuleUiLaw.LogicalRect(212, 64, 146, 32) &&
               TrainerFrameUiLaw.FilterDropDown.Button ==
                   new DropdownCapsuleUiLaw.LogicalRect(106, 1, 24, 24) &&
+              // DetailIcon moved from (27,294) to (26,291) to centre the 37px icon in its
+              // 64px DetailIconRing at (13,278): (64-37)/2 = 13, so 13+13 = 26 and
+              // 278+13 = 291. Bounds follow: (100,200) + (26,291)*2 = (152,782), plus
+              // (37,37)*2 = (226,856).
               TrainerFrameUiLaw.DetailTooltipOwnerBounds(new Vector2(100, 200), 2) ==
-                  (new Vector2(154, 788), new Vector2(228, 862)),
+                  (new Vector2(152, 782), new Vector2(226, 856)),
             "trainer identity/window geometry drift");
 
         var available = new TrainerFrameUiLaw.ServiceNode(0, 26, "Arms", "Heroic Strike", 0, 1);
