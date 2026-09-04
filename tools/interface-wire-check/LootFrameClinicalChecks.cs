@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine.UI;
 
 internal static class LootFrameClinicalChecks
@@ -103,7 +103,7 @@ internal static class LootFrameClinicalChecks
               runtime.Contains("LootLatchLaw.AdmitResponse(", StringComparison.Ordinal) &&
               runtime.Contains("LootLatchLaw.ClearFor(_lootPendingGuid, source)",
                   StringComparison.Ordinal) &&
-              runtime.Contains("_character.LootKneel = LootLatchLaw.ShouldKneel(",
+              runtime.Contains("bool kneeling = LootLatchLaw.ShouldKneel(",
                   StringComparison.Ordinal) &&
               !runtime.Contains("TriggerOneShot(50)", StringComparison.Ordinal) &&
               casting.Contains("_lootPendingGuid = lootTarget", StringComparison.Ordinal) &&

@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Net;

@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Formats;
 using MSUIClient.Net;
 using MSUIClient.World;
@@ -104,7 +104,7 @@ internal static class WeatherClinicalChecks
         Check(glue.Contains("_weatherSoundKit = weather.SoundId;", StringComparison.Ordinal) &&
               glue.Contains("_soundscape.WeatherAmbienceKit = _weatherSoundKit;",
                   StringComparison.Ordinal) &&
-              glue.Contains("_soundscapeIndoors = true;", StringComparison.Ordinal),
+              glue.Contains("_soundscapeIndoors = indoorsNow;", StringComparison.Ordinal),
             "weather sound retention or WMO indoor verdict drift");
         Check(glue.Contains("_weatherVisual.Apply(weather.WeatherType, weather.Grade, " +
                            "weather.Instant, NowSeconds());", StringComparison.Ordinal) &&

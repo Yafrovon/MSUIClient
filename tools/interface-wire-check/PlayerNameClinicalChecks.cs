@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Net;
 
 internal static class PlayerNameClinicalChecks
@@ -35,7 +35,7 @@ internal static class PlayerNameClinicalChecks
               dispatch.Contains("_playerTraits[response.Guid] = response.Traits", StringComparison.Ordinal) &&
               targeting.Contains("Dictionary<ulong, PlayerTraits> _playerTraits", StringComparison.Ordinal) &&
               targeting.Contains("_playerTraits.Clear()", StringComparison.Ordinal) &&
-              quest.Contains("_playerTraits.TryGetValue(_net.PlayerGuid", StringComparison.Ordinal) &&
+              quest.Contains("_playerTraits.TryGetValue(subjectGuid", StringComparison.Ordinal) &&
               chat.Contains("_playerTraits.TryGetValue(guid", StringComparison.Ordinal),
             "player-name trait cache/macro fallback wiring drift");
     }

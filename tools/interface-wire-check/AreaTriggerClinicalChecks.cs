@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Net;
 
@@ -32,7 +32,7 @@ internal static class AreaTriggerClinicalChecks
             "GameLoop.Net.cs"));
         Check(runtime.Contains("AreaTriggerLaw.Step", StringComparison.Ordinal) &&
               runtime.Contains("_net?.AreaTrigger((uint)reportId)", StringComparison.Ordinal) &&
-              runtime.Contains("_controller is null || _areaTriggers is null", StringComparison.Ordinal) &&
+              runtime.Contains("_areaTriggers is null || !TryGetInteractionBodyPose(out WorldBodyPose sessionBody)", StringComparison.Ordinal) &&
               handler.Contains("AreaTriggerPackets.ParseMessage", StringComparison.Ordinal) &&
               handler.Contains("ShowUiError(text)", StringComparison.Ordinal),
             "area-trigger production wiring drift");

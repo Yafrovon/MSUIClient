@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Net;
 
 internal static class MountSpecialClinicalChecks
@@ -24,7 +24,7 @@ internal static class MountSpecialClinicalChecks
               input.Contains("!translating && _controller.Grounded", StringComparison.Ordinal) &&
               input.Contains("_creatures?.TriggerMountFlourish(LocalPlayerGuid)", StringComparison.Ordinal) &&
               dispatch.Contains("case Op.SMSG_MOUNTSPECIAL_ANIM:", StringComparison.Ordinal) &&
-              dispatch.Contains("if (rider != LocalPlayerGuid)", StringComparison.Ordinal) &&
+              dispatch.Contains("if (rider != LocalPlayerGuid || ControlledBodyIsStreamed)", StringComparison.Ordinal) &&
               mount.Contains("BaseAnimationTrack, 94, true", StringComparison.Ordinal),
             "mounted key gate, local animation, empty send, or observer receive is unwired");
     }
