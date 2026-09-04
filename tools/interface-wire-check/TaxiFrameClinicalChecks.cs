@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Net;
@@ -106,7 +106,7 @@ internal static class TaxiFrameClinicalChecks
                   StringComparison.Ordinal) &&
               runtime.Contains("ActivateTaxiExpress", StringComparison.Ordinal) &&
               runtime.Contains("TryBetween", StringComparison.Ordinal) &&
-              runtime.Contains("!TryGetSessionBodyPose(out WorldBodyPose sessionBody)",
+              runtime.Contains("!TryGetInteractionBodyPose(out WorldBodyPose sessionBody)",
                   StringComparison.Ordinal) &&
               runtime.Contains("Vector3.DistanceSquared(sessionBody.Position, unit.Position)",
                   StringComparison.Ordinal) &&

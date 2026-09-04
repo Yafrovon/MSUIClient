@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Net;
 
@@ -50,7 +50,7 @@ internal static class ForceSpeedClinicalChecks
         Check(dispatch.Contains("case Op.SMSG_FORCE_TURN_RATE_CHANGE", StringComparison.Ordinal) &&
               dispatch.Contains("ApplyForceSpeedChange(net, (Op)opcode, body)",
                   StringComparison.Ordinal) &&
-              apply.Contains("SnapshotForAck", StringComparison.Ordinal) &&
+              apply.Contains("TrySnapshotMovementAck(", StringComparison.Ordinal) &&
               apply.Contains("SyncControlledSpeeds", StringComparison.Ordinal) &&
               controller.Contains("EffectiveRunBackSpeed", StringComparison.Ordinal),
             "force-speed receive/apply/ack wiring drift");

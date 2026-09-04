@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Net;
 
 internal static class ServerSoundClinicalChecks
@@ -52,7 +52,7 @@ internal static class ServerSoundClinicalChecks
         Check(soundscape.Contains("_musicKit == kit && _musicVoice != 0 && _mixer.IsLive(_musicVoice)",
                   StringComparison.Ordinal) &&
               soundscape.Contains("_musicFadeStartedAt = now;", StringComparison.Ordinal) &&
-              soundscape.Contains("StartMusicKit(kit, \"server push\");", StringComparison.Ordinal),
+              soundscape.Contains("StartMusicKit(kit, \"server push\", now);", StringComparison.Ordinal),
             "server music repeat guard or shared-slot transition drift");
     }
 

@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine.UI;
 
 internal static class ChatTabClinicalChecks
@@ -28,7 +28,7 @@ internal static class ChatTabClinicalChecks
             "GameLoop.Chat.cs"));
         string combat = SourceText.Read(Path.Combine(root, "MSUIClient", "GameLoop", "Combat",
             "GameLoop.CombatFeedback.cs"));
-        Check(chat.Contains("ChatFrameLaw.VisibleInTab(type, _chatSelectedTab)",
+        Check(chat.Contains("ChatFrameLaw.VisibleInTab(type, tab)",
                   StringComparison.Ordinal) &&
               chat.Contains("private void PostCombatXpGain(CombatXpGain xp)",
                   StringComparison.Ordinal) &&
