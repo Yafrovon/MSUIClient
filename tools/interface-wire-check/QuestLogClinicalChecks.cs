@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Net;
@@ -388,7 +388,11 @@ internal static class QuestLogClinicalChecks
                   StringComparison.Ordinal) &&
               runtime.Contains("_questWatchTitleHits.Add(hit);", StringComparison.Ordinal) &&
               !runtime.Contains("##quest-watch-title-", StringComparison.Ordinal) &&
-              runtime.Contains("_questWatchCollapsed.Remove(line.QuestId)",
+              // The collapse toggle now hit-tests _questWatchTitleHits, so the id comes
+              // from hit rather than line. Assert the whole remove-else-add toggle
+              // rather than the bare call, since the toggle is the behaviour that matters.
+              runtime.Contains("if (!_questWatchCollapsed.Remove(hit.QuestId))\n" +
+                  "                _questWatchCollapsed.Add(hit.QuestId);",
                   StringComparison.Ordinal) &&
               runtime.Contains("if (!collapsed && lines.Count < QuestFrameUiLaw.MaxQuestWatchLines)",
                   StringComparison.Ordinal) &&
