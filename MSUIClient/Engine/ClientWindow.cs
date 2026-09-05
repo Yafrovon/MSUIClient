@@ -560,6 +560,10 @@ public sealed class ClientWindow : IDisposable
     /// <summary>Multiplier on camera.mouseSensitivity, so a too-slow look is one drag away from fixed.</summary>
     public float MouseSensitivity { get; set; } = 1f;
 
+    /// <summary>Same role as <see cref="MouseSensitivity"/> but for the right-click-held drag
+    /// (which also turns the character) instead of the left-click-held orbit-only look.</summary>
+    public float LookAroundSensitivity { get; set; } = 1f;
+
     /// <summary>
     /// Path to a TTF for the whole UI, or null for ImGui's own bitmap font. Set
     /// by Program.Main BEFORE Run(): ImGui rasterises its glyph atlas when the
@@ -883,10 +887,13 @@ public sealed class ClientWindow : IDisposable
                 LastMouseDelta = delta;
                 MouseLookEvents++;
 
-                float sensitivity = _config.Camera.MouseSensitivity * MouseSensitivity;
+                // Right-click-held look also turns the character and gets its own
+                // sensitivity; left-click-held orbit-only look keeps the general one.
+                // Pitch shares whichever is active - looking up and down is a camera
+                // thing either way, but it's still part of the same drag mode's feel.
+                float sensitivity = _config.Camera.MouseSensitivity *
+                    (_lookTurnsCharacter ? LookAroundSensitivity : MouseSensitivity);
 
-                // The one line that separates the two drag modes. Pitch is
-                // shared - looking up and down is a camera thing either way.
                 if (_lookTurnsCharacter) _pendingYaw -= delta.X * sensitivity;
                 else _pendingOrbitYaw -= delta.X * sensitivity;
 

@@ -2096,6 +2096,12 @@ public sealed partial class GameLoop
                 Slider("msens", "Mouse sensitivity", () => s.Controls.MouseSensitivity,
                     v => { s.Controls.MouseSensitivity = v; _window.MouseSensitivity = v; },
                     0.1f, 10f, "x{0:F2}");
+                Slider("looksens", "Look around sensitivity", () => s.Controls.LookAroundSensitivity,
+                    v => { s.Controls.LookAroundSensitivity = v; _window.LookAroundSensitivity = v; },
+                    0.1f, 2f, "x{0:F2}",
+                    "How fast the camera pans while holding right-click to look around and\n" +
+                    "turn your character. Separate from Mouse sensitivity, which covers the\n" +
+                    "left-click orbit-only look.");
                 Check("Invert vertical look", () => s.Controls.InvertPitch,
                     v => { s.Controls.InvertPitch = v; _config.Camera.InvertPitch = v; });
                 Check("Raw cursor", () => s.Controls.RawCursor,
@@ -3195,6 +3201,7 @@ public sealed partial class GameLoop
             _atmosphere.TimeOfDayHours = s.Lighting.TimeOfDay;
 
         _window.MouseSensitivity = s.Controls.MouseSensitivity;
+        _window.LookAroundSensitivity = s.Controls.LookAroundSensitivity;
         _window.RawCursor = s.Controls.RawCursor;
         _config.Camera.InvertPitch = s.Controls.InvertPitch;
         _config.Camera.Collision = s.Controls.CameraCollision;
@@ -3458,6 +3465,7 @@ public sealed partial class GameLoop
         }
 
         s.Controls.MouseSensitivity = _window.MouseSensitivity;
+        s.Controls.LookAroundSensitivity = _window.LookAroundSensitivity;
         s.Controls.RawCursor = _window.RawCursor;
         s.Controls.InvertPitch = _config.Camera.InvertPitch;
         s.Controls.CameraCollision = _config.Camera.Collision;

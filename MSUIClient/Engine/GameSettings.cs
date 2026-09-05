@@ -936,6 +936,9 @@ public sealed class GameSettings
     public sealed class ControlSettings
     {
         public float MouseSensitivity { get; set; } = 1f;   // multiplier on config.Camera.MouseSensitivity
+        /// <summary>Separate multiplier for the right-click-held drag (which also turns the
+        /// character), independent of the left-click-held orbit-only look above.</summary>
+        public float LookAroundSensitivity { get; set; } = 1f;
         public bool InvertPitch { get; set; }
         public bool RawCursor { get; set; } = true;
         /// <summary>
