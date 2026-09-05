@@ -9,6 +9,10 @@ namespace MSUIClient.Engine.UI;
 public static class TargetCycleLaw
 {
     public const float Range = 41f;
+    /// <summary>Range for auto-acquiring a target on an Attack press with nothing selected -
+    /// deliberately tighter than the Tab-cycle range above, since this fires without the
+    /// player choosing a direction to look in first.</summary>
+    public const float AttackAcquireRange = Range * 0.5f;
     public const float FrustumPullSides = .10f;
     public const float FrustumPullTop = .10f;
     public const float FrustumPullBottom = .10f;

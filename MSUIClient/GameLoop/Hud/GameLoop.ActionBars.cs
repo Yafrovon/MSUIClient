@@ -198,6 +198,9 @@ public sealed partial class GameLoop
         switch (slot.Kind)
         {
             case ActionSlot.Spell when slot.ActionId == 6603:
+                // 1.12: pressing Attack with nothing selected picks the nearest valid enemy
+                // within a sensible range, rather than silently doing nothing.
+                if (_selectionGuid == 0) AutoAcquireAttackTarget();
                 if (_selectionGuid != 0) CommitSelection(_selectionGuid, beginAttack: true);
                 break;
             case ActionSlot.Spell:
@@ -214,6 +217,30 @@ public sealed partial class GameLoop
                 ExecuteMacro(slot.ActionId);
                 break;
         }
+    }
+
+    /// <summary>Nearest valid enemy within <see cref="TargetCycleLaw.AttackAcquireRange"/>, or a
+    /// no-op if none qualifies. Deliberately simpler than <see cref="CycleEnemyTarget"/>: this is
+    /// a one-shot pick, not a cycle, so it skips that method's screen-off-center weighting and
+    /// recent-history bookkeeping and just takes the closest eligible unit by distance.</summary>
+    private void AutoAcquireAttackTarget()
+    {
+        if (!TryGetControlledBodyPose(out WorldBodyPose body)) return;
+        ulong nearest = 0;
+        float nearestDistance = float.PositiveInfinity;
+        foreach (WorldEntity unit in _entities.Units)
+        {
+            if (unit.Guid == ControlledGuid || unit.Fields.ReadsDead || !CanAttack(unit)) continue;
+            if (unit.IsCreature &&
+                _creatureQueryRecords.TryGetValue(unit.Entry, out CreatureQueryInfo? query) &&
+                query?.CreatureType == 8)
+                continue;
+            float distance = Vector3.Distance(unit.Position, body.Position);
+            if (distance > TargetCycleLaw.AttackAcquireRange || distance >= nearestDistance) continue;
+            nearestDistance = distance;
+            nearest = unit.Guid;
+        }
+        if (nearest != 0) CommitSelection(nearest, beginAttack: false);
     }
 
     private void TryCast(uint spellId, ulong explicitTarget = 0)
