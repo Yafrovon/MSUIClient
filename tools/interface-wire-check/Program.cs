@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -202,6 +202,9 @@ static void CheckGameMenuLayout()
             "\"FontScale\":1.35}," +
             "\"MenuLayout\":{}},\"Presets\":[]}");
         SettingsStore migrated = SettingsStore.Load(root, migrationPath);
+        // Pinned to the highest migration step in GameSettings.Migrate, deliberately: adding a
+        // step must force someone to confirm the older chrome/text sizes still survive the
+        // whole chain.
         Check(migrated.Settings.Version == 13 &&
               MathF.Abs(migrated.Settings.MenuLayout.Scale - 1.125f) < .0001f &&
               MathF.Abs(migrated.Settings.MenuLayout.TextScale - 1.35f) < .0001f,
@@ -385,8 +388,12 @@ static void CheckKeyBindingsFrameFitsItsArt()
     float rowsEnd = KeyBindingsUiLaw.Rows.Y + KeyBindingsUiLaw.VisibleRows * KeyBindingsUiLaw.RowPitch;
     if (rowsEnd > KeyBindingsUiLaw.Defaults.Y)
         bad.Add($"rows end {rowsEnd} overlaps the button row at {KeyBindingsUiLaw.Defaults.Y}");
-    if (KeyBindingsUiLaw.ScrollHeight > KeyBindingsUiLaw.Rows.Height + 0.01f)
-        bad.Add("scroll bar is taller than the row band it scrolls");
+    // The bar fills the art's carved scroll slot, which spans the frame interior (53..443),
+    // not the row band (104..449): 0234019 "keybindings scroll bar fix" anchored it at
+    // interiorTop while the rows start lower. Fits() above already keeps the bar inside the
+    // artwork, so this rule guards the interior height rather than the shorter row band.
+    if (KeyBindingsUiLaw.ScrollHeight > lastOpaqueY - interiorTop + 0.01f)
+        bad.Add("scroll bar is taller than the frame interior it sits in");
 
     Check(bad.Count == 0, "Key Bindings frame does not fit its own artwork: " + string.Join(" | ", bad));
 
@@ -1785,7 +1792,7 @@ if (args.Contains("--possess-law-only", StringComparer.Ordinal))
 
 if (args.Contains("--rts-ability-target-only", StringComparer.Ordinal))
 {
-    string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+    string data = ClientDataRoot.Path;
     using var mpq = new MpqMount(data);
     SpellCatalog spells = SpellCatalog.Load(mpq) ??
         throw new InvalidDataException("Spell DBC unavailable");
@@ -2432,7 +2439,7 @@ Check(WmoMinimapProjection.AxisGrid(20.6f) == (1, 32f) &&
 Check((ushort)Op.CMSG_ZONEUPDATE == 500, "CMSG_ZONEUPDATE opcode");
 Check(WorldSession.BuildZoneUpdateBody(12).SequenceEqual(Convert.FromHexString("0C000000")),
       "zone update body");
-string clientData = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+string clientData = ClientDataRoot.Path;
 using var spellbookMpq = new MpqMount(clientData);
 Check(spellbookMpq.ReadFile(@"Interface\Buttons\UI-Debuff-Overlays.blp") is not null &&
       spellbookMpq.ReadFile(@"Interface\Icons\INV_Misc_QuestionMark.blp") is not null &&
@@ -4459,8 +4466,11 @@ Check(partyRuntimeSource.Contains("PartyFrameUiLaw.IsLeaveRoster(wire)",
           StringComparison.Ordinal) &&
       partyRuntimeSource.Contains("party-tooltip-slot-token-is-absent-during-fade",
           StringComparison.Ordinal) &&
+      // Same seam as PartyFrameClinicalChecks: the popup button font gained a disabled
+      // branch. The GameFont* family is what matters, which the DialogButton* bans keep.
       partyRuntimeSource.Contains(
-          "string fontObject = hovered ? \"GameFontHighlight\" : \"GameFontNormal\";",
+          "string fontObject = !enabled ? \"GameFontDisable\"\n" +
+          "            : hovered ? \"GameFontHighlight\" : \"GameFontNormal\";",
           StringComparison.Ordinal) &&
       !partyRuntimeSource.Contains("DialogButtonHighlightText", StringComparison.Ordinal) &&
       !partyRuntimeSource.Contains("DialogButtonNormalText", StringComparison.Ordinal) &&

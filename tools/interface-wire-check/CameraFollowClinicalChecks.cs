@@ -150,6 +150,9 @@ internal static class CameraFollowClinicalChecks
             File.WriteAllText(path,
                 "{\"Settings\":{\"Version\":9,\"Controls\":{}},\"Presets\":[]}");
             SettingsStore migrated = SettingsStore.Load(root, path);
+            // Pinned to the highest migration step. The point of loading a v9 file is to
+            // prove the v10 camera seeding still survives the whole chain, so a new step
+            // should force that to be re-confirmed rather than pass by >=.
             Check(migrated.Settings.Version == 13 &&
                   migrated.Settings.Controls.CameraFollowStyle == CameraFollowStyle.Smart &&
                   migrated.Settings.Controls.CameraFollowTrackingStyle == CameraFollowStyle.Smart &&

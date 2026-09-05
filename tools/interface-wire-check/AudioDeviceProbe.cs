@@ -19,7 +19,7 @@ internal static class AudioDeviceProbe
     public static void Run()
     {
         string root = ClientConfig.FindRepoRoot();
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data))
         {
             Console.WriteLine("[probe] no GameData/Data - nothing to measure");

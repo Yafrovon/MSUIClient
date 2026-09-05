@@ -31,8 +31,15 @@ internal static class BinderClinicalChecks
         pointWriter.WriteF32(62.1f);
         pointWriter.WriteF32(56f);
         pointWriter.WriteU32(0);
+        // SMSG_BINDPOINTUPDATE carries a trailing AreaTable id after mapId (vmangos
+        // BindpointUpdate::AppendBodyTo). It was missing from the packet record, so
+        // RequireConsumed threw "4 trailing byte(s)" on every login and the bind point was
+        // never stored (reported 2026-09-01). The record gained AreaId; this fixture never
+        // did, so it fed a 16-byte body to a 20-byte parse.
+        pointWriter.WriteU32(1519);
         BindPointPacket point = BinderPackets.ParseBindPoint(pointWriter.ToArray());
-        Check(point.Position == new Vector3(-9464.5f, 62.1f, 56f) && point.MapId == 0,
+        Check(point.Position == new Vector3(-9464.5f, 62.1f, 56f) && point.MapId == 0 &&
+              point.AreaId == 1519,
             "bind-point body drift");
 
         Check(BinderConfirmUiLaw.Prompt("Stormwind City") ==
