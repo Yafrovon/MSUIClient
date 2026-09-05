@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 
@@ -67,7 +67,7 @@ internal static class TradeFrameClinicalChecks
             "GameLoop.Trade.cs"));
         Check(runtime.Contains("UiPanelFrameLogicalOrigin(UiPanelOwnershipRegistry[3])",
                   StringComparison.Ordinal) &&
-              runtime.Contains("_tradePartnerGuid = wire.Partner", StringComparison.Ordinal) &&
+              runtime.Contains("AnswerTradeRequest(wire.Partner);", StringComparison.Ordinal) &&
               runtime.Contains("_net?.BeginTrade();", StringComparison.Ordinal) &&
               runtime.Contains("DrawUnitPortraitImage", StringComparison.Ordinal) &&
               runtime.Contains("DrawTradeAcceptHighlight", StringComparison.Ordinal) &&

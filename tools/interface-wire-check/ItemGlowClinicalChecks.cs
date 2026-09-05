@@ -281,7 +281,7 @@ internal static class ItemGlowClinicalChecks
 
     private static void CheckActualDataIfPresent(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         ItemVisualCatalog visuals = ItemVisualCatalog.Load(data) ??
             throw new InvalidDataException("ItemVisuals chain unavailable");

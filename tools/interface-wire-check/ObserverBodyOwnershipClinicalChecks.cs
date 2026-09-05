@@ -171,8 +171,8 @@ internal static class ObserverBodyOwnershipClinicalChecks
 
         Check(targeting.Contains("bool canAuthor = CanAuthorControlledGameplay;", Ordinal) &&
               targeting.Contains(
-                  "if (changed && canAuthor) StopPetAttackForOldTargetChange", Ordinal) &&
-              targeting.Contains("if (canAuthor) _net?.SetSelection(guid);", Ordinal) &&
+                  "if (changed && canAuthorSelection) StopPetAttackForOldTargetChange", Ordinal) &&
+              targeting.Contains("if (canAuthorSelection) _net?.SetSelection(guid);", Ordinal) &&
               targeting.Contains("if (canAuthor && _net is not null && guid != 0", Ordinal) &&
               targeting.Contains("if (!CanAuthorControlledGameplay || _net is null", Ordinal),
             "plain Free View selection must remain local and wire-silent");

@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Formats;
 using MSUIClient.Net;
 using MSUIClient.World.Units;
@@ -151,7 +151,7 @@ internal static class GameObjectAnimationClinicalChecks
 
     private static void CheckActualCrate(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         byte[] bytes = mpq.ReadFile(@"World\Goober\G_Crate01.m2") ??

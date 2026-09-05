@@ -327,9 +327,9 @@ internal static class HudLayoutClinicalChecks
 
         // The client's own settings file version carries the step.
         string settingsSource = Source("MSUIClient/Engine/GameSettings.cs");
-        Check(settingsSource.Contains("public int Version { get; set; } = 12;", StringComparison.Ordinal) &&
+        Check(settingsSource.Contains("public int Version { get; set; } = 13;", StringComparison.Ordinal) &&
               settingsSource.Contains("HudLayoutLaw.Migrate11To12(s.HudLayout)", StringComparison.Ordinal),
-            "GameSettings must be Version 12 with the HudLayout migration step");
+            "GameSettings must be Version 13 with the HudLayout migration step");
     }
 
     // ── source ratchet ───────────────────────────────────────────────────────────────────
