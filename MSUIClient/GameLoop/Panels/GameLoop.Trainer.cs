@@ -312,6 +312,12 @@ public sealed partial class GameLoop
             _trainerFilterOpen = !_trainerFilterOpen;
             PlayUiSound(DropdownCapsuleUiLaw.ToggleSound, TrainerFrameUiLaw.SoundCategory);
         }
+        // Claim the dropdown's rows BEFORE the spell list below is submitted. ImGui resolves
+        // overlapping widgets by first-submission-wins each frame, not by visual draw order -
+        // without this, the list (submitted first, further down) would keep winning every
+        // click aimed at the dropdown even though the dropdown is drawn on top of it.
+        // DrawTrainerFilterMenu still runs later, after the list, so it still paints on top.
+        if (_trainerFilterOpen) HandleTrainerFilterMenuInput(origin, scale);
 
         int maximum=Math.Max(0,tree.Count-TrainerFrameUiLaw.VisibleRows);
         _trainerScroll=Math.Clamp(_trainerScroll,0,maximum);
@@ -471,6 +477,37 @@ public sealed partial class GameLoop
                 () => DrawSpellTooltip(preparedTrainerTooltip.Snapshot));
     }
 
+    private readonly bool[] _trainerFilterRowHovered = new bool[3];
+
+    // Input only, run before the spell list below so this claims the row hover/click first -
+    // see the call site's comment. Order here (Available, Unavailable, Already Known) must
+    // match DrawTrainerFilterMenu's row order below.
+    private void HandleTrainerFilterMenuInput(Vector2 origin, float scale)
+    {
+        for (int i = 0; i < _trainerFilterRowHovered.Length; i++)
+        {
+            DropdownCapsuleUiLaw.LogicalRect logicalRow = DropdownCapsuleUiLaw.Row(
+                TrainerFrameUiLaw.FilterDropDown, i);
+            Vector2 min = origin + logicalRow.Min * scale;
+            ImGui.SetCursorScreenPos(min);
+            bool clicked = ImGui.InvisibleButton($"##trainer-filter-{i}",
+                logicalRow.Size * scale);
+            _trainerFilterRowHovered[i] = ImGui.IsItemHovered();
+            if (clicked)
+            {
+                if (i == 0) _trainerFilterAvailable = !_trainerFilterAvailable;
+                else if (i == 1) _trainerFilterUnavailable = !_trainerFilterUnavailable;
+                else _trainerFilterUsed = !_trainerFilterUsed;
+                _trainerScroll = 0;
+                PlayUiSound(DropdownCapsuleUiLaw.RowSound,
+                    TrainerFrameUiLaw.SoundCategory);
+            }
+        }
+    }
+
+    // Visuals only - no InvisibleButton/SetCursorScreenPos here. Runs after the spell list so
+    // it paints on top; HandleTrainerFilterMenuInput already handled input for this frame and
+    // recorded per-row hover in _trainerFilterRowHovered.
     private void DrawTrainerFilterMenu(ImDrawListPtr draw, Vector2 origin, float scale)
     {
         (string Label, bool Value, uint Color)[] rows =
@@ -488,10 +525,7 @@ public sealed partial class GameLoop
             DropdownCapsuleUiLaw.LogicalRect logicalRow = DropdownCapsuleUiLaw.Row(
                 TrainerFrameUiLaw.FilterDropDown, i);
             Vector2 min = origin + logicalRow.Min * scale;
-            ImGui.SetCursorScreenPos(min);
-            bool clicked = ImGui.InvisibleButton($"##trainer-filter-{i}",
-                logicalRow.Size * scale);
-            if (rows[i].Value || ImGui.IsItemHovered())
+            if (rows[i].Value || _trainerFilterRowHovered[i])
             {
                 uint highlight = _gameplayArt?.AdditiveHandle(
                     DropdownCapsuleUiLaw.RowHighlight) ?? 0;
@@ -510,15 +544,6 @@ public sealed partial class GameLoop
             }
             GameText.Draw(draw, DropdownCapsuleUiLaw.SelectionFont, rows[i].Label,
                 min + DropdownCapsuleUiLaw.RowTextOffset * scale, scale, rows[i].Color);
-            if (clicked)
-            {
-                if (i == 0) _trainerFilterAvailable = !_trainerFilterAvailable;
-                else if (i == 1) _trainerFilterUnavailable = !_trainerFilterUnavailable;
-                else _trainerFilterUsed = !_trainerFilterUsed;
-                _trainerScroll = 0;
-                PlayUiSound(DropdownCapsuleUiLaw.RowSound,
-                    TrainerFrameUiLaw.SoundCategory);
-            }
         }
     }
 
