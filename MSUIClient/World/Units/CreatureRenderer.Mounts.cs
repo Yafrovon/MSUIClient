@@ -163,7 +163,8 @@ public sealed partial class CreatureRenderer
     /// </summary>
     public bool TryDrawSelfMount(Camera camera, ulong guid, int mountDisplayId,
         Vector3 position, float orientation, float travelSpeed, float walkSpeed, bool flying,
-        float bodyAlpha, Vector3 bodyTint, bool freezeAnimation, out Matrix4x4 seat)
+        bool grounded, float fallTimeMs, float bodyAlpha, Vector3 bodyTint, bool freezeAnimation,
+        out Matrix4x4 seat)
     {
         seat = Matrix4x4.Identity;
         if (mountDisplayId <= 0 || !Ok || !Enabled || _shader is null)
@@ -178,7 +179,7 @@ public sealed partial class CreatureRenderer
 
         BeginUnitShader(camera);
         bool drew = TryDrawMount(camera, guid, mountDisplayId, position, orientation,
-            travelSpeed, walkSpeed, flying, dt, true, false,
+            travelSpeed, walkSpeed, flying, grounded, fallTimeMs, dt, true, false,
             bodyAlpha, bodyTint, freezeAnimation, out MountDraw drawn);
         _gl.BindVertexArray(0);
         _gl.DepthMask(true);
@@ -215,9 +216,9 @@ public sealed partial class CreatureRenderer
     /// (<see cref="BeginUnitShader"/>) and leaves it bound, so the rider can draw straight after.
     /// </summary>
     private bool TryDrawMount(Camera camera, ulong guid, int mountDisplayId, Vector3 position,
-        float orientation, float travelSpeed, float walkSpeed, bool flying, float dt,
-        bool emitAnimationEvents, bool highlight, float bodyAlpha, Vector3 bodyTint,
-        bool freezeAnimation, out MountDraw drawn)
+        float orientation, float travelSpeed, float walkSpeed, bool flying, bool grounded,
+        float fallTimeMs, float dt, bool emitAnimationEvents, bool highlight, float bodyAlpha,
+        Vector3 bodyTint, bool freezeAnimation, out MountDraw drawn)
     {
         drawn = default;
         if (_shader is null || _resolver is null || mountDisplayId <= 0) return false;
@@ -304,7 +305,7 @@ public sealed partial class CreatureRenderer
                 {
                     _mountFlourishTime.Remove(guid);
                     clip = SelectMountClip(model.Animator, mountDisplayId,
-                        travelSpeed, walkSpeed, flying, out rate);
+                        travelSpeed, walkSpeed, flying, grounded, fallTimeMs, out rate);
                     if (!freezeAnimation)
                         at += dt * rate * MathF.Max(0.05f, tune.AnimationRate);
                 }
@@ -313,7 +314,7 @@ public sealed partial class CreatureRenderer
             {
                 _mountFlourishTime.Remove(guid);
                 clip = SelectMountClip(model.Animator, mountDisplayId,
-                    travelSpeed, walkSpeed, flying, out rate);
+                    travelSpeed, walkSpeed, flying, grounded, fallTimeMs, out rate);
                 if (!freezeAnimation)
                     at += dt * rate * MathF.Max(0.05f, tune.AnimationRate);
             }
@@ -449,7 +450,8 @@ public sealed partial class CreatureRenderer
     /// mounts use Stand / Walk / Run with the authored stride rate.
     /// </summary>
     private static M2Animator.Clip? SelectMountClip(M2Animator animator, int mountDisplayId,
-        float travelSpeed, float walkSpeed, bool flying, out float rate)
+        float travelSpeed, float walkSpeed, bool flying, bool grounded, float fallTimeMs,
+        out float rate)
     {
         rate = 1f;
         string unit = $"mount:{mountDisplayId}";
@@ -461,6 +463,20 @@ public sealed partial class CreatureRenderer
             if (travelSpeed > MovingEpsilon && flight is not null && flight.MoveSpeed > 0.01f)
                 rate = Math.Clamp(travelSpeed / flight.MoveSpeed, 0.25f, 3f);
             return flight;
+        }
+
+        // Airborne (jumping/falling): a short launch pose (37, JumpStart) for its own authored
+        // duration, then the sustained hang pose (38, Jump) for the rest of the arc - the
+        // on-foot character does the same two-phase thing, just with its own richer clip-time
+        // bookkeeping. Looping stays on throughout (unlike the on-foot version) so this can
+        // read fallTimeMs directly without separately tracking a held end-of-clip time; Jump
+        // clips are pose-only (zero MoveSpeed), so looping never causes a visible foot-slide.
+        if (!grounded)
+        {
+            M2Animator.Clip? jumpStart = animator.Resolve(unit, BaseAnimationTrack, 37, true);
+            if (jumpStart is not null && fallTimeMs < jumpStart.DurationSeconds * 1000f)
+                return jumpStart;
+            return animator.Resolve(unit, BaseAnimationTrack, 38, true, 40, 0);
         }
 
         if (travelSpeed <= MovingEpsilon)

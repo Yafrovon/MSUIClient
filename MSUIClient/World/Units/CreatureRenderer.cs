@@ -555,6 +555,11 @@ public sealed partial class CreatureRenderer : IDisposable
                     e.Spline?.AverageSpeed ?? 0f,
                     e.Speeds is { Length: > 0 } speeds ? speeds[0] : 0f,
                     e.Flying || e.Spline?.Flying == true,
+                    (e.MoveFlags & (uint)MovementFlags.Falling) == 0,
+                    // No tracked fall-time for a remote unit (only the local controller keeps
+                    // one) - a large sentinel just skips straight past the brief launch pose to
+                    // the sustained hang/fall pose, which is the harmless side to default to.
+                    float.MaxValue,
                     dt, animationEventsElected, highlighted,
                     e.AuraVisual.Alpha * respawnAlpha, e.AuraVisual.Tint,
                     animationFrozen, out mount);

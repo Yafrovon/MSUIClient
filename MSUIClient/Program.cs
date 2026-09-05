@@ -3157,10 +3157,21 @@ public sealed partial class GameLoop : IDisposable
         AuraVisualState? aura = _entities.TryGet(RenderSelfGuid, out WorldEntity auraUnit)
             ? auraUnit.AuraVisual : null;
         bool tacticalMountFrozen = TacticalFreezePoseLaw.IsFrozen(ControlledGuid);
+
+        // A mount has no strafe gait, so it must instead turn to face wherever it is actually
+        // travelling - the same reason a diagonal walk leans a foot character rather than
+        // sliding it sideways with a forward-facing gait. Falls back to plain facing when
+        // nearly stationary (a near-zero velocity carries no meaningful direction) or under a
+        // server-driven ride spline, whose travel direction isn't available as a vector here.
+        const float minTravelSpeedForHeading = 0.3f;
+        float heading = _serverRideSpline is null && controller.PlanarSpeed > minTravelSpeedForHeading
+            ? MathF.Atan2(controller.HorizontalVelocity.Y, controller.HorizontalVelocity.X)
+            : controller.Yaw;
+
         if (creatures.TryDrawSelfMount(_window.Camera, guid, display, controller.Position,
-                controller.Yaw, travelSpeed, walkSpeed, flying, aura?.Alpha ?? 1f,
-                aura?.Tint ?? Vector3.One, aura?.Frozen == true || tacticalMountFrozen,
-                out Matrix4x4 seat))
+                heading, travelSpeed, walkSpeed, flying, controller.Grounded, controller.FallTimeMs,
+                aura?.Alpha ?? 1f, aura?.Tint ?? Vector3.One,
+                aura?.Frozen == true || tacticalMountFrozen, out Matrix4x4 seat))
             _character.MountSeat = seat;
     }
 

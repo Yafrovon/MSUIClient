@@ -414,7 +414,14 @@ public sealed class PlayerRenderer : IDisposable
             return swim;
         }
 
-        if (moving)
+        // Strafe-only translation (holding a mouse button and A/D, or Q/E) does not reliably
+        // clear MovingEpsilon on the interpolated spline the way forward movement does, so
+        // "moving" alone used to miss it and fall through to the Stand/engaged-ready branch
+        // below - visible as the mount rearing up while actually sliding sideways. The flags
+        // are set correctly regardless (LocalMovementSender), so trust those here too.
+        bool strafing = (flags &
+            (uint)(MovementFlags.StrafeLeft | MovementFlags.StrafeRight)) != 0;
+        if (moving || strafing)
         {
             if ((flags & (uint)MovementFlags.Backward) != 0)
             {
