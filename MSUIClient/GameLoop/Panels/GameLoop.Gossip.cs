@@ -124,7 +124,7 @@ public sealed partial class GameLoop
         // identity explicitly names another vendor profession. Never expose the bind menu for
         // that mismatch; enter the vendor service directly.
         if (_entities.TryGet(menu.SourceGuid, out WorldEntity routedSource) &&
-            !IsInnkeeper(routedSource) && (routedSource.NpcFlags & NpcVendor) != 0)
+            HasStaleInnkeeperBit(routedSource) && (routedSource.NpcFlags & NpcVendor) != 0)
         {
             EmitInterface("gossip", "menu", "REROUTED_VENDOR", menu.SourceGuid,
                 $"textId={menu.TextId};npcFlags=0x{routedSource.NpcFlags:X8}");
@@ -243,6 +243,12 @@ public sealed partial class GameLoop
                (identity.Subname?.Contains("Innkeeper", StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
+    // True only for the narrow stale-data case: the innkeeper bit is actually set, but the
+    // creature-query identity contradicts it. Must not match a legitimate multi-role NPC
+    // (e.g. quest-giver + vendor) that simply never had the innkeeper bit in the first place.
+    private bool HasStaleInnkeeperBit(WorldEntity npc) =>
+        (npc.NpcFlags & NpcInnkeeper) != 0 && !IsInnkeeper(npc);
+
     private void EmitInterface(string family, string step, string outcome, ulong guid, string detail)
     {
         var verdict = new InterfaceVerdict(NowSeconds(), family, step, outcome, guid, detail);
@@ -256,7 +262,7 @@ public sealed partial class GameLoop
         // The creature query can complete after SMSG_GOSSIP_MESSAGE. Re-check here so a late
         // profession identity still closes a wrongly offered bind menu exactly once.
         if (_entities.TryGet(_gossipMenu.SourceGuid, out WorldEntity identifiedSource) &&
-            !IsInnkeeper(identifiedSource) && (identifiedSource.NpcFlags & NpcVendor) != 0)
+            HasStaleInnkeeperBit(identifiedSource) && (identifiedSource.NpcFlags & NpcVendor) != 0)
         {
             ulong vendorGuid = _gossipMenu.SourceGuid;
             ResetGossip();
