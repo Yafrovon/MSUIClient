@@ -351,14 +351,18 @@ public sealed partial class CharacterRenderer : IDisposable
     private float _combatReactionTime;
     private bool _combatReactionMasked;
     private M2Animator.Clip? _spellHold;
-    // Upper-body action mask (seated eat/drink/emote). While the server holds us in a ground
-    // stand-state, _combatAction is layered onto the SpineLow subtree over the seated base
-    // (Render) instead of hijacking the whole body - the Benilla committed_lower rule, see
-    // ChooseClip's SeatedMaskState guard. It runs on its own clock because _clipTime then belongs
-    // to the seated pose; _actionOverlayArmedRef restarts that clock when a fresh action is armed.
+    // Upper-body action mask (seated eat/drink/emote, and any one-shot armed while the lower
+    // body is committed - moving, swimming, mounted). _combatAction is layered onto the SpineLow
+    // subtree over the locomotion or seated base (Render) instead of hijacking the whole body -
+    // the Benilla committed_lower rule, see CharacterPoseLaw.CommittedLower. It runs on its own
+    // clock because _clipTime then belongs to the base pose; _actionOverlayArmedRef restarts that
+    // clock when a fresh action is armed, and is also where the route is chosen for the play.
     private float _actionOverlayTime;
     private M2Animator.Clip? _actionOverlayArmedRef;
     private M2Animator.Clip? _torsoOverlayForRender;
+    // The route for the CURRENT play, decided once when the action is armed and never
+    // re-evaluated - see CharacterPoseLaw.CommittedLower on why per-frame routing pops the legs.
+    private bool _combatActionMasked;
     private M2Animator.Clip? _rightSheathOverlay;
     private M2Animator.Clip? _leftSheathOverlay;
     private float _sheathOverlayTime;
@@ -434,6 +438,8 @@ public sealed partial class CharacterRenderer : IDisposable
     /// <summary>Edge-detect for the _combatAction movement-break rule in Update -
     /// see the comment there for why this has to be a change, not a level check.</summary>
     private bool _wasMovingLastFrame;
+    // Edge-detect for leaving a ground stand-state, which ends a seated consume - see Update.
+    private bool _wasSeatedLastFrame;
 
     // ── landing ──────────────────────────────────────────────────────────────
     private M2Animator.Clip? _landClip;
@@ -2720,51 +2726,93 @@ public sealed partial class CharacterRenderer : IDisposable
             !_combatAction.Looping && _clipTime >= _combatAction.DurationSeconds)
             _combatAction = null;
 
-        // A movement-flag CHANGE is ALSO an end condition, not just the clip's own
-        // duration - confirmed against the Benilla trace (driver.rs:847-877: "when
-        // oneshot_finished(id) OR a movement-flag change, drv.mode = Mode::Gait").
-        // CHANGE, not "currently moving" - the first cut of this (2026-08-16,
-        // earlier this same session) used a continuous `state.Moving` check, which
-        // nulls _combatAction on literally the frame after it's armed whenever the
-        // player is already moving when the action triggers (the ordinary case:
-        // waving while walking, swinging mid-chase) - the one-shot would never be
-        // drawn even once. Edge-triggering on the false->true transition fixes
-        // that: an action armed while stationary still gets cut short the instant
-        // movement starts (Cam confirmed this from real 1.12 play), but one armed
-        // while already moving plays out its full duration, same as before this
-        // whole timing fix - which is a deliberate compromise, not the real
-        // behaviour (the real client masks it to the upper body and keeps playing
-        // regardless of when it started - tabled, see ChooseClip's "KNOWN WRONG"
-        // comment) but is honest about not being able to fake masking here.
-        // CastHold (_spellHold) is deliberately NOT touched - that one is a live
-        // server-cast pose, released by the real cast-cancel path
-        // (ReleaseSpellVisual/CancelSpellVisual), not a local movement heuristic.
-        if (_combatAction is not null && state.Moving != _wasMovingLastFrame)
-            _combatAction = null;
-        _wasMovingLastFrame = state.Moving;
-
-        // Upper-body action mask clock (seated eat/drink/emote). When ChooseClip
-        // masks _combatAction to the torso over a seated base (SeatedMaskState),
-        // _clip is the seated pose and _clipTime belongs to it - so the action
-        // advances on its OWN clock here and ends on its own duration. The
-        // whole-body expiry above only fires while the action IS _clip (standing).
-        // A freshly armed action (identity change) restarts the mask clock.
+        // Route the play ONCE, as it is armed. Benilla calls route_oneshot on the live state
+        // when the request is armed (driver.rs:563-670) and never reconsiders it. Re-deciding
+        // every frame would swap the base out from under a half-played clip the moment you
+        // stopped running - the legs would pop from the gait onto the action's own leg keys
+        // partway through. A freshly armed action (identity change) also restarts the mask
+        // clock, because _clipTime belongs to the base pose while masked.
         if (!ReferenceEquals(_combatAction, _actionOverlayArmedRef))
         {
             _actionOverlayArmedRef = _combatAction;
             _actionOverlayTime = 0f;
+            _combatActionMasked = _combatAction is not null && CommittedLowerState(state);
         }
-        bool seatedMask = _combatAction is not null && SeatedMaskState(state);
-        if (seatedMask)
+
+        // ...with ONE clause re-checked every frame: the stand-state.
+        //
+        // Movement is local input, known the instant an action is armed. StandState is the
+        // SERVER's field (UNIT_FIELD_BYTES_1) and lands on its own schedule - for a drink it
+        // arrives a beat AFTER the eat emote it belongs to. Latching the route across that gap
+        // is what left a drinking character standing, eating full-body, for seconds before it
+        // finally sat (reported 2026-09-04; food happened to win the race, drink lost it).
+        //
+        // Upgrading full-body -> masked is safe in the way the reverse is not. It moves the
+        // action OFF the base and lets the seated pose show through underneath; a masked ->
+        // full-body downgrade mid-clip would drag the legs onto the action's own keys, which
+        // is the pop the arm-time latch exists to prevent. So the route only ever tightens.
+        if (_combatAction is not null && !_combatActionMasked && SeatedNow(state))
         {
-            _actionOverlayTime += dt;   // ChooseClip hands _combatAction back at rate 1
+            // Carry the elapsed full-body time onto the overlay clock so the bite continues
+            // from where it got to rather than snapping back to frame 0 as the character sits.
+            if (ReferenceEquals(_clip, _combatAction)) _actionOverlayTime = _clipTime;
+            _combatActionMasked = true;
+        }
+
+        // LEAVING the seat ends a seated consume outright. Standing or moving drops the
+        // Eating/Drinking aura server-side and stops the emote ticks, so the bite already in
+        // flight must not keep chewing on the torso over a standing idle for the rest of its
+        // duration. Only the seated -> not-seated EDGE does this: a cast masked by MOTION has
+        // nothing to do with the stand-state and is deliberately left alone, which is why this
+        // cannot just be folded into the movement-flag rule below.
+        if (_combatAction is not null && _combatActionMasked &&
+            _wasSeatedLastFrame && !SeatedNow(state))
+        {
+            _combatAction = null;
+            _combatActionMasked = false;
+        }
+        _wasSeatedLastFrame = SeatedNow(state);
+
+        // A movement-flag CHANGE ends a FULL-BODY play, not just the clip's own
+        // duration - confirmed against the Benilla trace (driver.rs:847-877: "when
+        // oneshot_finished(id) OR a movement-flag change, drv.mode = Mode::Gait").
+        // CHANGE, not "currently moving" - the first cut of this (2026-08-16) used a
+        // continuous `state.Moving` check, which nulls _combatAction on literally the
+        // frame after it's armed whenever the player is already moving when the action
+        // triggers, so the one-shot would never be drawn even once.
+        //
+        // ONLY the full-body route. A masked play is not Mode::Swing at all - it is an
+        // overlay node running beside the base machine, so the movement flags that return
+        // the base to Mode::Gait have nothing to end there. It runs its own clock to
+        // completion. That is what stops a cast started while running from being cut, and
+        // it is why the old edge-trigger compromise (documented here until 2026-09-04) is
+        // gone rather than merely narrowed: with masking wired, there is nothing left to
+        // compromise about. CastHold (_spellHold) is deliberately NOT touched - that one is
+        // a live server-cast pose, released by the real cast-cancel path
+        // (ReleaseSpellVisual/CancelSpellVisual), not a local movement heuristic.
+        if (_combatAction is not null && !_combatActionMasked &&
+            state.Moving != _wasMovingLastFrame)
+        {
+            _combatAction = null;
+            _combatActionMasked = false;
+        }
+        _wasMovingLastFrame = state.Moving;
+
+        // Upper-body action mask clock. While masked, _clip is the base pose - the gait when
+        // moving, the seated pose when sat - and _clipTime belongs to it, so the action
+        // advances on its OWN clock here and ends on its own duration. The whole-body expiry
+        // above only fires while the action IS _clip.
+        bool masked = _combatAction is not null && _combatActionMasked;
+        if (masked)
+        {
+            _actionOverlayTime += dt;   // ChooseClip hands the base clip back at rate 1
             if (!_combatAction!.Looping && _actionOverlayTime >= _combatAction.DurationSeconds)
             {
-                _combatAction = null;   // one-shot done: upper body falls back to the seated pose
-                seatedMask = false;
+                _combatAction = null;   // one-shot done: upper body falls back to the base pose
+                masked = false;
             }
         }
-        _torsoOverlayForRender = seatedMask ? _combatAction : null;
+        _torsoOverlayForRender = masked ? _combatAction : null;
 
         var next = ChooseClip(state, out float rate);
 
@@ -3321,16 +3369,43 @@ public sealed partial class CharacterRenderer : IDisposable
     }
 
     /// <summary>
-    /// The server holds us in a ground stand-state (sit/sleep/kneel) and we are not moving - a
-    /// Benilla committed_lower state where a one-shot (an eat/drink/emote SMSG_EMOTE) masks to the
-    /// SpineLow subtree over the held seated pose instead of replacing the whole body. Sit is the
-    /// case food and drink hit (server sets UNIT_FIELD_BYTES_1 StandState=Sit for both; verified
-    /// on the wire). Chair-sit stand-states aren't rendered as seated poses here (see ChooseClip)
-    /// so they are deliberately excluded.
+    /// The server is holding us in a ground stand-state right now. Split out of
+    /// <see cref="CommittedLowerState"/> because this is the one clause of the route that is
+    /// re-evaluated per frame rather than latched at arm time - see Update.
     /// </summary>
-    private static bool SeatedMaskState(in UnitState state) =>
-        !state.Moving &&
-        (UnitStandState)state.StandState is UnitStandState.Sit or UnitStandState.Sleep or UnitStandState.Kneel;
+    private static bool SeatedNow(in UnitState state) =>
+        (UnitStandState)state.StandState is
+            UnitStandState.Sit or UnitStandState.Sleep or UnitStandState.Kneel;
+
+    /// <summary>
+    /// The full Benilla committed_lower test for the local player - CharacterPoseLaw.CommittedLower
+    /// fed from this frame's UnitState. Decides whether a one-shot masks to the SpineLow subtree or
+    /// replaces the whole body, and is evaluated once per play (see the arm-time capture in Update).
+    ///
+    /// Two clauses of the reference rule are deliberately passed as false, and both are narrower
+    /// than the moving case this exists to fix:
+    ///
+    /// TURNING - Benilla's ROUTE_COMMITTED_MOVE includes the turn keys. UnitState carries only
+    /// <c>Steering</c>, which is "turn keys OR mouse-look"; masking on mouse-look would make
+    /// virtually every cast masked, since a player mouse-looks near-continuously. Wiring this needs
+    /// the turn bits on UnitState in their own right. Until then a stationary turning cast stays
+    /// full-body, which is what it already did.
+    ///
+    /// COMBAT-WHILE-FALLING - the reference gates this on is_combat(animation id), and _combatAction
+    /// is a resolved Clip that no longer carries the id it came from. Airborne casts stay full-body.
+    /// </summary>
+    private bool CommittedLowerState(in UnitState state) =>
+        CharacterPoseLaw.CommittedLower(
+            moving: state.Moving,
+            turning: false,
+            swimming: state.Swimming,
+            // Sit is the case food and drink hit - the server sets UNIT_FIELD_BYTES_1
+            // StandState=Sit for both, verified on the wire. Chair-sit stand-states are not
+            // rendered as seated poses here (see ChooseClip), so they stay excluded.
+            seated: SeatedNow(state),
+            mounted: Mounted,
+            combatAnimation: false,
+            falling: !state.Grounded);
 
     private M2Animator.Clip? ChooseClip(in UnitState state, out float rate)
     {
@@ -3344,30 +3419,25 @@ public sealed partial class CharacterRenderer : IDisposable
             return _animator.Resolve("player", BaseAnimationTrack,
                 CreatureRenderer.RiderAnimationId, true, 0);
 
-        // KNOWN WRONG, not yet fixed (2026-08-16): this is full-body always, so
-        // an emote/cast while moving currently freezes the legs and floats the
-        // whole body across the ground. Cam confirmed from real 1.12 play (and
-        // it matches the Benilla reference trace, driver.rs:631-644/1137-1178,
-        // which was misread here earlier - it documents the opposite of what
-        // used to be claimed in this comment): the genuine client instead plays
-        // these as a MASKED overlay on the SpineLow subtree at ~8:1 weight
-        // ("ONESHOT_OVERLAY_WEIGHT") while the base gait keeps running
-        // untouched underneath - legs keep striding, torso plays the one-shot.
-        // Full-body replacement is still correct when standing still (Benilla's
-        // route_oneshot: masked only if committed_lower - moving/turning/
-        // swimming/seated - else full-body). The five stand-state commands
-        // (/sit /kneel /stand /dance /sleep) are the one exception and should
-        // outright refuse with "You cannot do this while moving!" instead of
-        // masking - see SubmitStandStateChange's gate in GameLoop.Chat.cs.
-        // M2Animator already resolves a SpineLow TorsoBone (ResolveTorsoBone)
-        // for the existing torso-yaw twist, which is most of the subtree-walk
-        // this needs. The SEATED half of that rule is now wired: while the server
-        // holds us in a ground stand-state, don't hand _combatAction back as the
-        // whole body - fall through to the seated pose below, and Render layers
-        // _combatAction onto the SpineLow subtree over it (the committed_lower
-        // mask, sit/sleep/kneel case). Moving/turning/swimming masking is still
-        // the tabled work above; those still play full-body here.
-        if (_combatAction is not null && !SeatedMaskState(state)) return _combatAction;
+        // Benilla's route_oneshot (select.rs:813-825), both halves now wired (2026-09-04; the
+        // seated half landed 2026-08-25). A one-shot is handed back as the WHOLE BODY only when
+        // the lower body is free - standing still. While it is committed, fall through to the
+        // locomotion or seated pose below and let Render layer _combatAction onto the SpineLow
+        // subtree instead, at ~8:1 (CharacterPoseLaw.OneshotOverlayWeight) over the base that
+        // keeps running underneath: legs keep striding, torso plays the one-shot. Cam confirmed
+        // that shape from real 1.12 play, and it is what the reference trace documents
+        // (driver.rs:631-644/1137-1178).
+        //
+        // The route is decided at ARM time and read from _combatActionMasked here, not
+        // recomputed - ChooseClip runs every frame and a mid-play change of answer would pop the
+        // legs. CharacterPoseLaw.CommittedLower carries the two clauses still passed as false
+        // (turn keys, combat-while-falling) and why.
+        //
+        // The five stand-state commands (/sit /kneel /stand /dance /sleep) are the one exception
+        // and are never masked: they refuse outright with "You cannot do this while moving."
+        // - see SubmitStandStateChange's gate in GameLoop.Chat.cs, which is what keeps them from
+        // reaching this path at all while moving.
+        if (_combatAction is not null && !_combatActionMasked) return _combatAction;
         if (_spellHold is not null) return _spellHold;
 
         if (state.Swimming)
@@ -3784,7 +3854,8 @@ public sealed partial class CharacterRenderer : IDisposable
                                    _torsoOverlayForRender, _actionOverlayTime,
                                    _globalTime, _skin,
                                    _combatReaction, _combatReactionTime,
-                                   CombatReactionWeight(), _combatReactionMasked);
+                                   CombatReactionWeight(), _combatReactionMasked,
+                                   CharacterPoseLaw.OneshotOverlayWeight);
             }
             M2Animator.Pack(_skin, Math.Min(bones, M2Animator.MaxBones), _packed);
         }

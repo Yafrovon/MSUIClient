@@ -1063,6 +1063,17 @@ public sealed partial class GameLoop
         bool blocked = spell is { } info
             ? store.IsOnCooldown(useSpell.SpellId, tpl.Entry, info, now)
             : store.IsOnCooldown(useSpell.SpellId, tpl.Entry, useSpell.Category, now);
+        // Same trace as SendItemUse's gate (GameLoop.Inventory.cs, path=useitem). This is the
+        // one item-use gate that is genuinely separate: bag clicks, action-bar presses and
+        // hotkeys all share SendItemUse, while the shelf has its own copy AND runs against a
+        // per-unit store (ActionsFor) rather than the own-player one - so a block here and a
+        // block there are not necessarily the same records.
+        Console.WriteLine($"[verdict:item-cooldown] time={NowSeconds():F3} path=shelf " +
+            $"unit=0x{unit:X16} entry={tpl.Entry} spell={useSpell.SpellId} " +
+            $"name={spell?.Name ?? "?"} category={useSpell.Category} " +
+            $"itemCooldownMs={useSpell.CooldownMs} itemCategoryCooldownMs={useSpell.CategoryCooldownMs} " +
+            $"dbcRecoveryMs={spell?.RecoveryMs ?? 0} dbcCategoryRecoveryMs={spell?.CategoryRecoveryMs ?? 0} " +
+            $"blocked={blocked}");
         if (blocked)
         {
             ShowSpellError(useSpell.SpellId, "LOCAL_ITEM_COOLDOWN", "Item is not ready yet.", "LOCAL_GATE");

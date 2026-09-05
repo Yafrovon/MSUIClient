@@ -998,6 +998,19 @@ public sealed partial class GameLoop
         bool blocked = spell is { } info
             ? _actions.IsOnCooldown(useSpell.SpellId, template.Entry, info, now)
             : _actions.IsOnCooldown(useSpell.SpellId, template.Entry, useSpell.Category, now);
+        // Which side authored the recovery this gate is about to enforce. item* are the SERVER's
+        // item_template columns (spellcooldown / spellcategorycooldown, -1 meaning "use the
+        // spell's own"); dbc* are the Spell.dbc fallbacks the client substitutes for a -1. The
+        // gate below never reaches the wire, so without this line a local block is
+        // indistinguishable from the server refusing the use.
+        // path=useitem, NOT "bag": SendItemUse is the shared CMSG_USE_ITEM tail and serves a bag
+        // click AND an action-bar press or hotkey (UseItemAction routes here). Only the command
+        // shelf has a gate of its own, and it reports path=shelf.
+        Console.WriteLine($"[verdict:item-cooldown] time={NowSeconds():F3} path=useitem entry={template.Entry} " +
+            $"spell={useSpell.SpellId} name={spell?.Name ?? "?"} category={useSpell.Category} " +
+            $"itemCooldownMs={useSpell.CooldownMs} itemCategoryCooldownMs={useSpell.CategoryCooldownMs} " +
+            $"dbcRecoveryMs={spell?.RecoveryMs ?? 0} dbcCategoryRecoveryMs={spell?.CategoryRecoveryMs ?? 0} " +
+            $"blocked={blocked}");
         if (useSpell.SpellId != 0 && blocked)
         {
             ShowSpellError(useSpell.SpellId, "LOCAL_ITEM_COOLDOWN", "Item is not ready yet.",

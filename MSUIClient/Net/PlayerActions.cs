@@ -143,6 +143,23 @@ public sealed class PlayerActions
     public void StartSpellCooldown(uint spell, in SpellInfo info, uint rangedAttackTimeMs,
         double nowSeconds)
     {
+        // An ITEM-triggered cast is already governed by the item's own recovery, authored by the
+        // server in item_template (spellcooldown / spellcategorycooldown) and recorded by
+        // StartItemUseCooldown when the use went out. Spell.dbc's own numbers are only the
+        // fallback for the -1 "use the spell's" case, so re-applying them here would let the DBC
+        // overrule an item that deliberately says otherwise - and because AddRecord APPENDS
+        // rather than replaces, the longer of the two then governs.
+        //
+        // Food and drink are the case that exposed this. Spell.dbc gives Food (category 11) and
+        // Drink (category 59) a CategoryRecoveryTime of 60000, while the server's item_template
+        // authors 1000. Both nodes were being kept, so a drink could not be repeated for a
+        // minute (reported 2026-09-04) even though the server would have allowed it a second
+        // later - the local gate never asked, it just refused.
+        // Prune first: the suppression must key off a LIVE item node, never one that has already
+        // run out, or an item used once would silence this spell's own cooldown for good.
+        Prune(nowSeconds);
+        if (_cooldowns.Any(record => record.SpellId == spell && record.ItemEntry != 0)) return;
+
         ulong categoryMs = (ulong)info.CategoryRecoveryMs +
             (info.RangedSpeedCooldown ? rangedAttackTimeMs : 0u);
         AddRecord(spell, itemEntry: 0, info.Category, info.CategoryWildcard, info.RecoveryMs,

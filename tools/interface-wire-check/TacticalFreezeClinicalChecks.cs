@@ -572,7 +572,7 @@ internal static class TacticalFreezeClinicalChecks
                   StringComparison.Ordinal) &&
               renderer.Contains("float freezeStartedAt = EnsureTacticalFreezeStartedAt(e.Guid);",
                   StringComparison.Ordinal) &&
-              renderer.Contains("if (!animationFrozen && remoteMovementChanged)",
+              renderer.Contains("if (!animationFrozen && remoteMovementChanged && !remoteMasked)",
                   StringComparison.Ordinal) &&
               renderer.Contains("ReconcileTacticalFreezeThaws", StringComparison.Ordinal),
             "current-pose latch, freeze-start global evaluation, or thaw-time rebasing is missing");

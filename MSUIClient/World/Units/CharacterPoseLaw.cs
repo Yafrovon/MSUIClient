@@ -37,4 +37,39 @@ public static class CharacterPoseLaw
 
         return MathF.CopySign(MathF.Min(wanted, magnitude), deltaYaw);
     }
+
+    /// <summary>
+    /// ONESHOT_OVERLAY_WEIGHT as a lerp factor. Benilla arms the masked one-shot node with
+    /// <c>set_weight(8.0)</c> (driver.rs:53) and deliberately does NOT mask the base out of the
+    /// SpineLow subtree, so the two blend at ~8:1 rather than the overlay replacing the gait
+    /// outright - the running torso bleeds through by the remaining ninth, which is what keeps
+    /// a cast-while-running from looking pasted on. 8/(8+1).
+    /// </summary>
+    public const float OneshotOverlayWeight = 8f / 9f;
+
+    /// <summary>
+    /// Benilla's <c>route_oneshot</c> committed_lower test (select.rs:813-825). A one-shot
+    /// emote/swing/cast plays as a masked upper-body overlay while the lower body is committed,
+    /// and replaces the whole body otherwise. Full-body when standing still is CORRECT and is
+    /// what the else-branch preserves; this predicate only decides which route a play takes.
+    ///
+    /// Decided ONCE per play, at arm time, never re-evaluated per frame. Benilla routes on the
+    /// live state when the request is armed (driver.rs:563-670) and never reconsiders: a
+    /// full-body play is ended by a movement-flag change, a masked play runs its own clock to
+    /// completion. Re-deciding every frame instead would pop the legs mid-clip the moment you
+    /// stopped running - the base would switch from the gait to the action's own leg keys
+    /// partway through.
+    ///
+    /// <paramref name="turning"/> is Benilla's turn-key half of ROUTE_COMMITTED_MOVE (0x20003f =
+    /// dir bits + turn keys + swim). This client has no turn-keys-only signal on UnitState -
+    /// its <c>Steering</c> conflates the turn keys with mouse-look, and masking on mouse-look
+    /// would swallow full-body casting almost entirely, since a player is mouse-looking nearly
+    /// all the time. Callers pass false until UnitState carries the turn bits on their own;
+    /// a stationary turning cast stays full-body until then.
+    /// </summary>
+    public static bool CommittedLower(bool moving, bool turning, bool swimming, bool seated,
+        bool mounted, bool combatAnimation, bool falling)
+        // Mounted FORCES the mask in Benilla (driver.rs:617-622) - the steed owns the legs.
+        => mounted || moving || turning || swimming || seated ||
+           (combatAnimation && falling);
 }

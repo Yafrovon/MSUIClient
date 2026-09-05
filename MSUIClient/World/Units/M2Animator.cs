@@ -740,8 +740,11 @@ public sealed class M2Animator
     /// (SpineLow) instead of a shoulder: it replaces the keyed channels of the whole upper-body
     /// subtree - spine, arms, head - over the base pose, leaving the legs on the base clip. This
     /// is the Benilla <c>route_oneshot</c> "committed_lower" mask: while the lower body is
-    /// committed (seated today; moving/turning later), an emote/swing/cast plays on the torso
-    /// only rather than replacing the whole body. Applied BEFORE the arm overlays so an explicit
+    /// committed (seated, moving, swimming or mounted - see CharacterPoseLaw.CommittedLower,
+    /// where turn keys are still the one clause left out), an emote/swing/cast plays on the
+    /// torso only rather than replacing the whole body. <paramref name="torsoOverlayWeight"/>
+    /// selects replace (1) or Benilla's 8:1 blend over the still-running base gait. Applied
+    /// BEFORE the arm overlays so an explicit
     /// per-hand sheath one-shot still wins on its own arm bones if the two ever coincide.
     ///
     /// <paramref name="reactionOverlay"/> is the wound-flinch secondary slot. Unlike the
@@ -758,7 +761,8 @@ public sealed class M2Animator
                          Clip? torsoOverlay, float torsoOverlayTime,
                          float globalTimeSeconds, Matrix4x4[] skin,
                          Clip? reactionOverlay = null, float reactionOverlayTime = 0f,
-                         float reactionWeight = 0f, bool reactionMasked = true)
+                         float reactionWeight = 0f, bool reactionMasked = true,
+                         float torsoOverlayWeight = 1f)
     {
         if (skin.Length < _boneCount)
             throw new ArgumentException($"skin array holds {skin.Length}, need {_boneCount}", nameof(skin));
@@ -773,6 +777,13 @@ public sealed class M2Animator
         float leftTime = ClipTime(leftOverlay, leftOverlayTime);
         float torsoTime = ClipTime(torsoOverlay, torsoOverlayTime);
         bool torsoMasking = torsoOverlay is not null && TorsoBone >= 0 && TorsoBone < _boneCount;
+        // Weight 1 replaces the subtree's keyed channels outright; anything below blends the
+        // overlay over the base that is still running underneath. Benilla's masked route arms
+        // at ONESHOT_OVERLAY_WEIGHT (8:1, CharacterPoseLaw.OneshotOverlayWeight) precisely
+        // because the base is NOT masked out of the subtree - see the summary above.
+        float torsoWeight = Math.Clamp(torsoOverlayWeight, 0f, 1f);
+        if (float.IsNaN(torsoWeight)) torsoWeight = 1f;
+        bool torsoBlending = torsoMasking && torsoWeight < 0.999f;
         float reactionTime = ClipTime(reactionOverlay, reactionOverlayTime);
         float reactionBlend = Math.Clamp(reactionWeight, 0f, 1f);
         if (float.IsNaN(reactionBlend)) reactionBlend = 0f;
@@ -823,8 +834,14 @@ public sealed class M2Animator
             // Upper-body mask first, so a per-hand sheath overlay below still wins
             // on its own arm bones if the two are ever active together.
             if (torsoMasking && IsDescendant(i, TorsoBone))
-                ApplyOverlayChannels(torsoOverlay!, torsoTime, i,
-                    ref translation, ref rotation, ref scale);
+            {
+                if (torsoBlending)
+                    BlendOverlayChannels(torsoOverlay!, torsoTime, torsoWeight, i,
+                        ref translation, ref rotation, ref scale);
+                else
+                    ApplyOverlayChannels(torsoOverlay!, torsoTime, i,
+                        ref translation, ref rotation, ref scale);
+            }
             if (reactionActive && (!reactionMasking || IsDescendant(i, TorsoBone)))
                 BlendOverlayChannels(reactionOverlay!, reactionTime, reactionBlend, i,
                     ref translation, ref rotation, ref scale);
