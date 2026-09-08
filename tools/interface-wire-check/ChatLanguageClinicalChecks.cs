@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
 using MSUIClient.Net;
@@ -57,7 +57,7 @@ internal static class ChatLanguageClinicalChecks
 
     private static void CheckShippedData()
     {
-        string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+        string data = ClientDataRoot.Path;
         using var mpq = new MpqMount(data);
         ChatLanguageCatalog words = ChatLanguageCatalog.Load(mpq) ??
             throw new InvalidDataException("LanguageWords.dbc did not load");

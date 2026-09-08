@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Formats;
 using MSUIClient.World.Units;
@@ -48,7 +48,7 @@ internal static class CarriedLightClinicalChecks
 
     private static void CheckActualTorch(string root)
     {
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         byte[] bytes = mpq.ReadFile(@"Item\ObjectComponents\Weapon\Club_1H_Torch_A_01.m2") ??

@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Net;
@@ -106,7 +106,11 @@ internal static class TaxiFrameClinicalChecks
                   StringComparison.Ordinal) &&
               runtime.Contains("ActivateTaxiExpress", StringComparison.Ordinal) &&
               runtime.Contains("TryBetween", StringComparison.Ordinal) &&
-              runtime.Contains("!TryGetSessionBodyPose(out WorldBodyPose sessionBody)",
+              // POSSESS_LAW 2.1 lists taxi. Three gates in this file use the interaction
+              // pose and none legitimately uses the session pose, so ban the forbidden
+              // call outright - a positive match alone would miss one gate regressing.
+              !runtime.Contains("TryGetSessionBodyPose", StringComparison.Ordinal) &&
+              runtime.Contains("!TryGetInteractionBodyPose(out WorldBodyPose sessionBody)",
                   StringComparison.Ordinal) &&
               runtime.Contains("Vector3.DistanceSquared(sessionBody.Position, unit.Position)",
                   StringComparison.Ordinal) &&

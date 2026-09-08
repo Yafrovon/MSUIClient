@@ -1,4 +1,4 @@
-using MSUIClient;
+﻿using MSUIClient;
 using MSUIClient.Engine;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -202,6 +202,9 @@ static void CheckGameMenuLayout()
             "\"FontScale\":1.35}," +
             "\"MenuLayout\":{}},\"Presets\":[]}");
         SettingsStore migrated = SettingsStore.Load(root, migrationPath);
+        // Pinned to the highest migration step in GameSettings.Migrate, deliberately: adding a
+        // step must force someone to confirm the older chrome/text sizes still survive the
+        // whole chain. v13 rebaselines non-custom water detail and does not touch MenuLayout.
         Check(migrated.Settings.Version == 13 &&
               MathF.Abs(migrated.Settings.MenuLayout.Scale - 1.125f) < .0001f &&
               MathF.Abs(migrated.Settings.MenuLayout.TextScale - 1.35f) < .0001f,
@@ -1797,7 +1800,7 @@ if (args.Contains("--possess-law-only", StringComparer.Ordinal))
 
 if (args.Contains("--rts-ability-target-only", StringComparer.Ordinal))
 {
-    string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+    string data = ClientDataRoot.Path;
     using var mpq = new MpqMount(data);
     SpellCatalog spells = SpellCatalog.Load(mpq) ??
         throw new InvalidDataException("Spell DBC unavailable");
@@ -2444,7 +2447,7 @@ Check(WmoMinimapProjection.AxisGrid(20.6f) == (1, 32f) &&
 Check((ushort)Op.CMSG_ZONEUPDATE == 500, "CMSG_ZONEUPDATE opcode");
 Check(WorldSession.BuildZoneUpdateBody(12).SequenceEqual(Convert.FromHexString("0C000000")),
       "zone update body");
-string clientData = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+string clientData = ClientDataRoot.Path;
 using var spellbookMpq = new MpqMount(clientData);
 Check(spellbookMpq.ReadFile(@"Interface\Buttons\UI-Debuff-Overlays.blp") is not null &&
       spellbookMpq.ReadFile(@"Interface\Icons\INV_Misc_QuestionMark.blp") is not null &&
@@ -4475,8 +4478,11 @@ Check(partyRuntimeSource.Contains("PartyFrameUiLaw.IsLeaveRoster(wire)",
           StringComparison.Ordinal) &&
       partyRuntimeSource.Contains("party-tooltip-slot-token-is-absent-during-fade",
           StringComparison.Ordinal) &&
+      // Same seam as PartyFrameClinicalChecks: the popup button font gained a disabled
+      // branch. The GameFont* family is what matters, which the DialogButton* bans keep.
       partyRuntimeSource.Contains(
-          "string fontObject = !enabled ? \"GameFontDisable\"",
+          "string fontObject = !enabled ? \"GameFontDisable\"\n" +
+          "            : hovered ? \"GameFontHighlight\" : \"GameFontNormal\";",
           StringComparison.Ordinal) &&
       !partyRuntimeSource.Contains("DialogButtonHighlightText", StringComparison.Ordinal) &&
       !partyRuntimeSource.Contains("DialogButtonNormalText", StringComparison.Ordinal) &&

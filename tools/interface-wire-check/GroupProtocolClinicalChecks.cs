@@ -397,22 +397,41 @@ internal static class GroupProtocolClinicalChecks
         string renderer = SourceText.Read(Path.Combine(root, "MSUIClient", "World", "Units",
             "SpellEffectMeshRenderer.cs"));
         string program = SourceText.Read(Path.Combine(root, "MSUIClient", "Program.cs"));
+        string confirms = SourceText.Read(Path.Combine(root, "MSUIClient", "GameLoop", "Panels",
+            "GameLoop.Confirms.cs"));
+        // MSG_MINIMAP_PING and MSG_RAID_READY_CHECK are still dispatched from Net.cs, but their
+        // handlers - and the PartyFramePacketLaw parses inside them - moved to
+        // GameLoop.Confirms.cs. Assert both halves rather than expecting the parse in Net.cs:
+        // the dispatch here, the parse there. Asserting only one half would let the other rot.
         foreach (string route in new[]
                  {
                      "ApplyPartyDecline(body);", "ApplyPartyUninvited(body);",
                      "ApplyPartyLeaderChanged(body);", "ApplyPartyDestroyed(body);",
                      "ApplyPartyCommandResult(body);", "ApplyPartyRaidTargetUpdate(body);",
+                     "ApplyMinimapPing(body);", "ApplyReadyCheck(body);",
+                 })
+            Check(net.Contains(route, StringComparison.Ordinal), $"missing runtime route: {route}");
+        foreach (string parse in new[]
+                 {
                      "PartyFramePacketLaw.ParseMinimapPing(body)",
                      "PartyFramePacketLaw.ParseReadyCheck(body)",
                  })
-            Check(net.Contains(route, StringComparison.Ordinal), $"missing runtime route: {route}");
+            Check(confirms.Contains(parse, StringComparison.Ordinal),
+                $"missing confirms parse: {parse}");
         Check(runtime.Contains("GroupUiLaw.RosterLines(_partyGroupType, previous, wire)",
                   StringComparison.Ordinal) &&
               runtime.Contains("_partyLootThreshold = wire.LootThreshold;",
                   StringComparison.Ordinal) &&
               runtime.Contains("GroupUiLaw.ApplyRaidTargetList(_partyRaidTargets, wire.Entries);",
                   StringComparison.Ordinal) &&
-              !runtime.Contains("partytest", StringComparison.OrdinalIgnoreCase),
+              // This was a bare ban on the word "partytest", which now fires on the comment
+              // documenting the provenance flag - banning a word instead of asserting the
+              // behaviour. The /partytest fixture legitimately lives in this file (it clears
+              // the fixture GUIDs and builds the roster). What must actually hold is that a
+              // real roster clears the sandbox first, so synthetic rows never outrank the wire.
+              runtime.Contains("PartyFramePacketLaw.ParseRoster(body);\n" +
+                  "        if (_partyTestSandbox) ClearPartyTestNames();\n" +
+                  "        _partyTestSandbox = false;", StringComparison.Ordinal),
             "group state/composer integration or synthetic-preserve law drift");
         Check(raidMarks.Contains("IReadOnlyList<WorldBillboardDraw> RaidMarkerBillboards()",
                   StringComparison.Ordinal) &&

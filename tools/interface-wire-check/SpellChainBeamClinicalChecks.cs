@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Formats;
 using MSUIClient.Net;
@@ -55,7 +55,7 @@ internal static class SpellChainBeamClinicalChecks
     private static void CheckActualDataAndLifecycle()
     {
         string root = ClientConfig.FindRepoRoot();
-        string data = Path.Combine(root, "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (!Directory.Exists(data)) return;
         using var mpq = new MpqMount(data);
         SpellCatalog spells = SpellCatalog.Load(mpq) ??

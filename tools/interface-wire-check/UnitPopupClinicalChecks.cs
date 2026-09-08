@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using MSUIClient;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
@@ -197,7 +197,7 @@ internal static class UnitPopupClinicalChecks
               keyed == new GameObjectLockOutcome(GameObjectLockOutcomeKind.OpenByKey, 13704) &&
               skilled == new GameObjectLockOutcome(GameObjectLockOutcomeKind.OpenBySpell, 1804),
             "complete ordered Lock.dbc key/skill/action usability resolver drift");
-        string data = Path.Combine(ClientConfig.FindRepoRoot(), "GameData", "Data");
+        string data = ClientDataRoot.Path;
         if (Directory.Exists(data))
         {
             using var mpq = new MpqMount(data);
