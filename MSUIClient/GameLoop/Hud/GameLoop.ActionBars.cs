@@ -305,6 +305,9 @@ public sealed partial class GameLoop
             return;
         }
         double now = MovementInfo.ClientUptimeMs() / 1000.0;
+        // Ahead of every cooldown/range/power refusal below: the swing starts even when the
+        // ability itself cannot go out (AttackAbilitySwingLaw).
+        StartSwingForAttackAbility(spell, explicitTarget);
         if (spell.AutoRepeat && _autoRepeatSpell == spellId)
         {
             _net.CancelAutoRepeat();
@@ -445,6 +448,43 @@ public sealed partial class GameLoop
             return;
         }
         CommitCastSend(spell, spellId, target, ground: null, targetVerdict.Reason);
+    }
+
+    /// <summary>
+    /// Pressing an attack ability is also pressing Attack (<see cref="AttackAbilitySwingLaw"/>):
+    /// a melee ability starts the melee swing on its enemy, a hunter's shot starts Auto Shot.
+    /// Target: the hovercast/explicit unit, else the selection, else the nearest enemy (the same
+    /// pick as the Attack button). A melee swing replaces a running Auto Shot or wand, so the
+    /// weapons come out of the ranged pose with it (UpdateSheathInput's combat draw).
+    /// </summary>
+    private void StartSwingForAttackAbility(in SpellInfo spell, ulong explicitTarget)
+    {
+        if (Settings.AddOns?.AbilitiesStartAttack == false) return;
+        AbilitySwing swing = AttackAbilitySwingLaw.Resolve(spell, CastTargetLaw.RequiresHostileUnit(spell));
+        if (swing == AbilitySwing.None || _net is null || !CanAuthorControlledGameplay) return;
+        ulong target = explicitTarget != 0 ? explicitTarget : _selectionGuid;
+        if (target == 0) target = NearestAutoAcquirableEnemy();
+        if (target == 0 || !_entities.TryGet(target, out WorldEntity enemy) ||
+            enemy.Fields.ReadsDead || !CanAttack(enemy)) return;
+        if (swing == AbilitySwing.Melee)
+        {
+            if (_autoRepeatSpell != 0)
+            {
+                _net.CancelAutoRepeat();
+                _autoRepeatSpell = 0;
+            }
+            CommitSelection(target, beginAttack: true);
+            return;
+        }
+        // Auto Shot goes out before the shot itself, so it must not start a global cooldown
+        // that would then refuse the shot; it is left alone when already running or when the
+        // target sits inside its dead zone (the shot reports that range error itself).
+        uint autoShot = AttackAbilitySwingLaw.AutoShotSpellId;
+        if (_autoRepeatSpell == autoShot || _actions is null || !_actions.KnownSpells.Contains(autoShot) ||
+            _spellCatalog is null || !_spellCatalog.TryGet(autoShot, out SpellInfo autoShotInfo) ||
+            autoShotInfo.StartRecoveryMs != 0 || CastRangeRefusal(autoShotInfo, target) is not null) return;
+        if (target != _selectionGuid && explicitTarget == 0) CommitSelection(target, beginAttack: false);
+        TryCast(autoShot, target);
     }
 
     /// <summary>

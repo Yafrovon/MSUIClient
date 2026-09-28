@@ -722,6 +722,8 @@ public enum Op : ushort
     // KOTOR-style per-actor plans authored while the lock is active.
     CMSG_SUI_COMMANDER_RAID      = 0x036A, // capability 13
     SMSG_SUI_COMMANDER_RAID      = 0x036B,
+    CMSG_SUI_THREAT              = 0x036C, // capability 14, ThreatMeterWire
+    SMSG_SUI_THREAT              = 0x036D,
     CMSG_SUI_TACTICAL_FREEZE      = 0x0366, // decimal 870
     SMSG_SUI_TACTICAL_FREEZE      = 0x0367, // decimal 871
     CMSG_SUI_TACTICAL_QUEUE       = 0x0368, // decimal 872

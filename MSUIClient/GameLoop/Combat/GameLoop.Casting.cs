@@ -438,6 +438,8 @@ public sealed partial class GameLoop
         UpdateObservedChannels(now);
         UpdateDynamicObjectVisuals(now);
         UpdateCreatureBodyLoops();
+        // The driven body's sounds outrank the crowd's when the mix is full (AudioVoicePriorityLaw).
+        if (_audioMixer is not null) _audioMixer.PriorityOwner = ControlledGuid;
         _spellSounds?.Tick(_controller?.Position ?? Vector3.Zero, guid =>
         {
             SpellUnitPose pose = SpellEffectUnitPose(guid);

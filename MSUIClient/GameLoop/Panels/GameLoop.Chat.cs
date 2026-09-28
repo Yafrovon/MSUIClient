@@ -1496,6 +1496,29 @@ public sealed partial class GameLoop
             RequestPartyLeadClaim();
             return true;
         }
+        // Vanilla's loot-method verbs (/ffa, /roundrobin, /master NAME). The leader-only gate is
+        // the server's; a non-leader's request is dropped there exactly as in the reference.
+        if (LootMethodSlashCommandLaw.Resolve(command) is { } lootMethod)
+        {
+            ulong master = 0;
+            if (LootMethodSlashCommandLaw.NeedsTarget(lootMethod))
+            {
+                string? target = ResolveGroupSlashTarget(args);
+                if (target is null) return true;   // vanilla's bare /master is a silent no-op
+                master = target.Equals(_net?.PlayerName, StringComparison.OrdinalIgnoreCase)
+                    ? _net?.PlayerGuid ?? 0 : KnownPlayerGuid(target);
+                if (master == 0)
+                {
+                    AddChatMessage($"{target} is not in your party.");
+                    return true;
+                }
+            }
+            if (!RefuseTacticalFreezeLiveCommand("changing party loot rules") &&
+                !RefuseTacticalFrozenActor(master, "make them master looter") &&
+                !TryPartyTestLoot(lootMethod, master, _partyLootThreshold))
+                _net?.GroupLootMethod(lootMethod, master, _partyLootThreshold);
+            return true;
+        }
         if (GroupSlashCommandLaw.Resolve(command) is { } groupCommand)
         {
             string? name = ResolveGroupSlashTarget(args);

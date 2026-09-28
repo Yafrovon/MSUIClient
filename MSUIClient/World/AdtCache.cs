@@ -250,6 +250,24 @@ public sealed class AdtCache
     public int HeldTiles { get { lock (_gate) return _cache.Count; } }
 
     /// <summary>
+    /// Drop every parse of the CURRENT map and abandon in-flight ones - the archive chain under
+    /// it changed (World Builder hot-mounted patch-7.MPQ). <see cref="SetMap"/> cannot be used for
+    /// this: it is a no-op when the map name does not change.
+    /// </summary>
+    public void Invalidate()
+    {
+        int dropped;
+        lock (_gate)
+        {
+            _generation++;
+            dropped = _cache.Count;
+            _cache.Clear();
+            _pending.Clear();
+        }
+        Console.WriteLine($"[adt] invalidated {dropped} cached tile(s) (archives changed)");
+    }
+
+    /// <summary>
     /// Drop everything. Call once a load pass is finished — the parsed data is
     /// large and nothing needs it again until tiles change.
     /// </summary>

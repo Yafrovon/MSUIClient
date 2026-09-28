@@ -598,11 +598,39 @@ public sealed partial class GameLoop
             // LOOT_SLOT_MASTER (2): the master looter ASSIGNS this row rather than taking it —
             // the candidate menu (SMSG_LOOT_MASTER_LIST) picks who, then CMSG_LOOT_MASTER_GIVE.
             // A plain take on a master row was refused by the server without a word.
-            if (slotType == 2 && _lootMasterCandidates.Count > 0)
+            if (slotType == 2)
             {
-                _lootMasterMenuSlot = row.WireSlot;
-                _lootMasterMenuOrigin = ImGui.GetMousePos();
-                EmitInterface("loot", "master-menu", "OPEN", _loot.Source, $"slot={row.WireSlot}");
+                if (_lootMasterCandidates.Count > 0)
+                {
+                    _lootMasterMenuSlot = row.WireSlot;
+                    _lootMasterMenuItemId = row.ItemId;
+                    // Docked to the loot frame (not the mouse): recover the frame origin from
+                    // this row's seat so the panel sits beside the item it assigns.
+                    _lootMasterMenuFrameOrigin = rowMin - LootFrameUiLaw.Row(visual).ScaledMin(Vector2.Zero, s);
+                    _lootMasterMenuRowTop = rowMin.Y;
+                    EmitInterface("loot", "master-menu", "OPEN", _loot.Source, $"slot={row.WireSlot}");
+                    return;
+                }
+                // The row IS master loot but no candidate list arrived, so there is nobody to
+                // assign it to. Sending the take anyway earned a silent server refusal, which is
+                // exactly the "I can't loot and nothing happens" report.
+                ShowUiError("Only the master looter can assign this item.");
+                EmitInterface("loot", "master-menu", "NO-CANDIDATES", _loot.Source, $"slot={row.WireSlot}");
+                return;
+            }
+            // LOOT_SLOT_ROLL_ONGOING (1): a group-loot roll owns this row until it resolves. The
+            // roll window is the only way to claim it; a take is refused without a word.
+            if (slotType == 1)
+            {
+                ShowUiError("A roll is already in progress for that item.");
+                EmitInterface("loot", "row", "ROLL-ONGOING", _loot.Source, $"slot={row.WireSlot}");
+                return;
+            }
+            // LOOT_SLOT_LOCKED (3): shown in red, never takeable by this viewer.
+            if (slotType == 3)
+            {
+                ShowUiError("You don't have permission to loot that item.");
+                EmitInterface("loot", "row", "LOCKED", _loot.Source, $"slot={row.WireSlot}");
                 return;
             }
             if (displayInfoId != 0) PlayItemPickupSound(displayInfoId);

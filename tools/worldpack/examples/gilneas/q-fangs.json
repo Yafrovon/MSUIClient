@@ -1,0 +1,25 @@
+{
+  "Entry": 0,
+  "Title": "Fangs for the Watch",
+  "Details": "The Bloodfang pack has been bold, $N. Bold enough that the Watch no longer believes my reports.$B$BBring me proof: fangs, pulled from the Bloodfang Stalkers on the western ridge. Six should silence the doubters. Take them to Sergeant Blackwald - he will know what they mean.",
+  "Objectives": "Collect 6 Large Fangs from Bloodfang Stalkers and bring them to Sergeant Morris Blackwald in Duskhaven.",
+  "RequestText": "Lorna sent you? Then you have something for me.",
+  "CompleteText": "By the Light... these are no wolf's teeth. Lorna was right, and I owe her an apology. Take this, $C - the Watch pays its debts.",
+  "Level": 37,
+  "MinLevel": 33,
+  "Zone": 7001,
+  "Giver": 7000104,
+  "Ender": 7000103,
+  "Goals": [
+    { "Kind": "Collect", "Item": 5637, "Count": 6, "DropFrom": 7000200, "DropChance": 40, "Text": "" }
+  ],
+  "Choices": [ { "Item1": 14898, "Item2": 1 }, { "Item1": 9933, "Item2": 1 } ],
+  "Fixed": [],
+  "Xp": 3200,
+  "Money": 3000,
+  "RepFaction": 0,
+  "RepValue": 0,
+  "PrevQuest": 0,
+  "NextInChain": 0,
+  "ExclusiveGroup": 0
+}

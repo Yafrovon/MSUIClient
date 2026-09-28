@@ -152,6 +152,109 @@ public sealed partial class GameLoop
         _commanderRaidMessage = errors.Count == 0 ? "Assigned. Review primary patients, teams and duties, then apply." : errors[0];
     }
 
+    /// <summary>
+    /// Load the authored fight that owns the current target (boss OR any member of a compiled
+    /// trash pack), falling back to the boss catalogue's generated basic plan. Returns false when
+    /// nothing in the world is selected that any definition or catalogue fact covers.
+    /// </summary>
+    private bool LoadCommanderEncounterForTarget(ulong mainGuid, int groupSize, bool announce)
+    {
+        ulong guid = _selectionGuid != 0 ? _selectionGuid : NearestCommanderEncounterGuid();
+        if (!_entities.TryGet(guid, out var target))
+        {
+            if (announce) _commanderRaidMessage = "Select the pack or boss you want the raid to fight.";
+            return false;
+        }
+        uint entry = target.Fields.Entry ?? 0;
+        uint map = (uint)_config.Start.Map;
+        Vector3 targetPosition = UnitWorldPosition(target);
+        CommanderEncounterDefinition? authored =
+            CommanderEncounterSelectionLaw.FindForEntry(_commanderEncounters, map, entry, targetPosition);
+        CommanderEncounterDefinition definition;
+        if (authored is not null) definition = authored;
+        else if (CommanderBossCatalog.Find(entry) is { } fact)
+            definition = CommanderEncounterSelectionLaw.Select(_commanderEncounters, fact, map,
+                targetPosition, groupSize);
+        else
+        {
+            if (announce)
+                _commanderRaidMessage = $"No fight definition covers that target (entry {entry}) on this map.";
+            return false;
+        }
+        if (!ReferenceEquals(definition, _commanderRaidDraft.Encounter))
+        {
+            _commanderRaidDraft = CommanderRaidPlan.ForEncounter(definition) with
+            { MainGuid = mainGuid, MainRole = _commanderRaidDraft.MainRole };
+            _commanderRaidApplied = null; _commanderRaidPage = 0; _commanderAutoAssignPending = false;
+        }
+        if (announce)
+            _commanderRaidMessage = authored is not null
+                ? $"Loaded {definition.Name}. Auto-assign when ready."
+                : "Basic plan built from this target's live facts; special mechanics need a fight definition.";
+        return true;
+    }
+
+    /// <summary>The nearest live hostile the raid could be fighting, when nothing is selected.</summary>
+    private ulong NearestCommanderEncounterGuid()
+    {
+        if (!TryGetControlledBodyPose(out WorldBodyPose body)) return 0;
+        WorldEntity? best = null; float bestDistance = float.MaxValue;
+        foreach (WorldEntity unit in _entities.Units)
+        {
+            if (!unit.IsCreature || unit.IsDead || !CanAttack(unit)) continue;
+            float distance = Vector3.DistanceSquared(unit.Position, body.Position);
+            // Same reach the executor's own engage circle uses; further than that is not
+            // "the pack in front of me".
+            if (distance > 60 * 60 || distance >= bestDistance) continue;
+            best = unit; bestDistance = distance;
+        }
+        return best?.Guid ?? 0;
+    }
+
+    private enum CommanderOneClickStage { Idle, Applying, Arming }
+    private CommanderOneClickStage _commanderRaidOneClick;
+    private double _commanderRaidOneClickAt;
+
+    /// <summary>Target -> definition -> auto-assign -> Apply; Arm follows on the server's ack.</summary>
+    private void BeginCommanderOneClick(ulong mainGuid, IReadOnlyList<CommanderRaidMember> roster)
+    {
+        if (_commanderRaidDraft.MainRole == CommanderRaidRole.Unassigned)
+        { _commanderRaidMessage = "Choose your own role first - the assignment fills around it."; return; }
+        if (!LoadCommanderEncounterForTarget(mainGuid, roster.Count, announce: false)) return;
+        AutoAssignCommanderRaid(roster, mainGuid);
+        var errors = CommanderRaidPlanLaw.Validate(_commanderRaidDraft, roster);
+        if (errors.Count > 0) { _commanderRaidMessage = errors[0]; return; }
+        SendCommanderRaid(CommanderRaidOperation.Apply);
+        if (_commanderRaidPending == 0) return;          // the send itself was refused
+        _commanderRaidOneClick = CommanderOneClickStage.Applying;
+        _commanderRaidOneClickAt = NowSeconds();
+        _commanderRaidMessage = $"Handling {_commanderRaidDraft.Encounter.Name}...";
+    }
+
+    /// <summary>
+    /// Drives the Apply -> Arm handshake the one-click button started. Arm is a separate request
+    /// that the server only accepts once it has acknowledged the applied plan, so this waits for
+    /// the ack rather than firing both and hoping.
+    /// </summary>
+    private void AdvanceCommanderOneClick()
+    {
+        if (_commanderRaidOneClick == CommanderOneClickStage.Idle) return;
+        if (NowSeconds() - _commanderRaidOneClickAt > 10)
+        { _commanderRaidOneClick = CommanderOneClickStage.Idle; return; }
+        if (_commanderRaidPending != 0) return;
+        if (_commanderRaidOneClick == CommanderOneClickStage.Applying)
+        {
+            if (!ReferenceEquals(_commanderRaidApplied, _commanderRaidDraft) ||
+                _commanderRaidStatus?.State is not (1 or 3))
+            { _commanderRaidOneClick = CommanderOneClickStage.Idle; return; }
+            SendCommanderRaid(CommanderRaidOperation.Arm);
+            _commanderRaidOneClick = _commanderRaidPending == 0
+                ? CommanderOneClickStage.Idle : CommanderOneClickStage.Arming;
+            return;
+        }
+        _commanderRaidOneClick = CommanderOneClickStage.Idle;
+    }
+
     private void SendCommanderRaid(CommanderRaidOperation operation)
     {
         if (!_commanderRaidAvailable || _net is not { IsInWorld: true } || _commanderRaidPending != 0) return;
@@ -213,6 +316,7 @@ public sealed partial class GameLoop
             _commanderRaidPending = 0; _commanderRaidPendingPlan = null; _commanderRaidApplied = null;
             _commanderRaidMessage = "No response. Refresh status before arming.";
         }
+        AdvanceCommanderOneClick();
         if (_commanderRaidAvailable && _commanderRaidPending == 0 && now >= _commanderRaidPollAt)
         {
             bool escaping = _commanderRaidStatus is { State: 2 } live &&
@@ -295,19 +399,10 @@ public sealed partial class GameLoop
             }
             catch (Exception ex) { _commanderRaidMessage = "Definition error: " + ex.Message; }
         if (Button("raid-use-target", "Use target", 816, 24, 96, editing && previewRoster is null))
-        {
-            if (_entities.TryGet(_selectionGuid, out var target) && CommanderBossCatalog.Find(target.Fields.Entry ?? 0) is { } fact)
-            {
-                var definition = CommanderEncounterSelectionLaw.Select(_commanderEncounters, fact, (uint)_config.Start.Map,
-                    UnitWorldPosition(target), roster.Count);
-                _commanderRaidDraft = CommanderRaidPlan.ForEncounter(definition) with { MainGuid = mainGuid, MainRole = _commanderRaidDraft.MainRole };
-                _commanderRaidApplied = null; _commanderRaidPage = 0; _commanderAutoAssignPending = false;
-                _commanderRaidMessage = definition.Coverage == "authored" ? "Loaded the target's encounter definition. Auto-assign when ready."
-                    : $"Basic plan: {fact.SpellIds.Length} known spells; special mechanics need a fight definition.";
-            }
-            else _commanderRaidMessage = "Select a known boss in the world, then use its encounter facts.";
-        }
-        Text("Choose your role, then Auto-assign. Select a member to review their duty.", 0, 61);
+            LoadCommanderEncounterForTarget(mainGuid, roster.Count, announce: true);
+
+        Text("Choose your role, then Auto-assign. Select a member to review their duty. " +
+            "Your orders override the bots.", 0, 61);
         Text("CHARACTER", 0, 87, VanillaGold); Text("ROLE", 138, 87, VanillaGold);
         Text("TEAM", 248, 87, VanillaGold); Text("LIVE DUTY", 312, 87, VanillaGold);
         var assignments = _commanderRaidDraft.Assignments;
@@ -394,7 +489,13 @@ public sealed partial class GameLoop
             SupplyCommanderRaid(roster);
         if (Button("raid-prepare", "Prepare raid", 615, 584, 118, editing && previewRoster is null && NowSeconds() - _commanderPrepareSentAt > 5))
             PrepareCommanderRaid(roster);
-        Text("Your orders override the bots.", 742, 590);
+        // One click for the pack in front of you: find its fight, assign duties, apply and arm.
+        // The six-step version (cycle Encounter x N, role, auto-assign, apply, arm) is unusable
+        // when a Molten Core clear is seventy-six packs.
+        if (Button("raid-handle", "Handle target pack", 742, 584, 170,
+                _commanderRaidAvailable && previewRoster is null && _commanderRaidPending == 0 &&
+                _commanderRaidOneClick == CommanderOneClickStage.Idle))
+            BeginCommanderOneClick(mainGuid, roster);
         ImGui.End();
     }
 

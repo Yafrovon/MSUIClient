@@ -61,6 +61,7 @@ public sealed partial class GameLoop
             var trig = AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, AreaTriggerTable.MpqPath);
             _areaTriggers = trig is null ? null : AreaTriggerTable.Parse(trig);
             _teleports = AreaTriggerTeleportTable.Load(_config.RepoRoot);
+            _teleports.MergePack(AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, AreaTriggerTeleportTable.PackMpqPath));
 
             _mapWdts = new Dictionary<int, WdtFile?>(_maps.Count);
             int withWdt = 0, globalWmo = 0, terrain = 0;
@@ -84,6 +85,16 @@ public sealed partial class GameLoop
             sw.Stop();
             _instancesLoadMs = sw.Elapsed.TotalMilliseconds;
         }
+    }
+
+    /// <summary>Forget Map.dbc/WDT/AreaTrigger.dbc so the next EnsureInstanceData re-reads them —
+    /// the archive chain changed (World Builder hot-mounted a patch-7 that may add maps).</summary>
+    private void ResetInstanceData()
+    {
+        _instancesLoadAttempted = false;
+        _maps = null;
+        _mapWdts = null;
+        _areaTriggers = null;
     }
 
     private void DrawInstancesPanel()
@@ -741,6 +752,19 @@ public sealed partial class GameLoop
     private int _portalLatch;
     private int _portalLatchMap = int.MinValue;
 
+    /// <summary>
+    /// A near teleport that lands INSIDE a trigger (a summon, a GM .go, an arrival inside another
+    /// volume) must not report it in the same breath as MSG_MOVE_TELEPORT_ACK: the core handles the
+    /// ack on the map thread and CMSG_AREATRIGGER on the session thread, so the trigger can be judged
+    /// against the OLD position - "too far, ignore" (a debug-level log line) - and the latch then keeps
+    /// the player standing in a dead portal. 2026-09-27: Greymane Wall portal 7011 did nothing live.
+    /// </summary>
+    private double _areaTriggerHoldUntil;
+    private const double AreaTriggerTeleportHoldSeconds = 0.5;
+
+    private void HoldAreaTriggersAfterTeleport() =>
+        _areaTriggerHoldUntil = MSUIClient.Net.MovementInfo.ClientUptimeMs() / 1000.0 + AreaTriggerTeleportHoldSeconds;
+
     private string _lastPortalMessage = "";
 
     /// <summary>
@@ -754,6 +778,7 @@ public sealed partial class GameLoop
     {
         if (_areaTriggers is null || !TryGetInteractionBodyPose(out WorldBodyPose sessionBody)) return;
         if (_travelInProgress) return;
+        if (MSUIClient.Net.MovementInfo.ClientUptimeMs() / 1000.0 < _areaTriggerHoldUntil) return;   // see HoldAreaTriggersAfterTeleport
         // Do not latch the volume while frozen/draining: after the authoritative plan completes,
         // remaining inside must still be able to produce the first live CMSG_AREATRIGGER.
         if (TacticalFreezeBlocksLiveCommands) return;
@@ -793,7 +818,10 @@ public sealed partial class GameLoop
                 ? $"{dest.Name} (vanilla requires level {dest.RequiredLevel})"
                 : dest.Name;
         }
-        if (_net?.AreaTrigger((uint)reportId) == true)
+        bool triggerSent = _net?.AreaTrigger((uint)reportId) == true;
+        EmitInterface("portal", "area-trigger", triggerSent ? "SENT" : "SEND_FAILED", 0,
+            FormattableString.Invariant($"trigger={reportId};map={mapId};name={label}"));
+        if (triggerSent)
         {
             // Do not mutate map, position, collision, or entities here. VMaNGOS
             // validates the trigger against its authoritative player pose and

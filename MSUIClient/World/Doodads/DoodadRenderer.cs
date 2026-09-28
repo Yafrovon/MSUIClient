@@ -1917,6 +1917,15 @@ public sealed partial class DoodadRenderer : IDisposable
 
     // ── placement ────────────────────────────────────────────────────────────
 
+    /// <summary>World Builder ghost (shared_docs/WORLD_BUILDER.md §4): the exact transform an MDDF
+    /// entry with these placement-space fields gets once published, for <see cref="AddDynamic"/>.</summary>
+    public static Matrix4x4 MddfTransform(Vector3 placementPos, Vector3 rotDeg, float scale)
+        => BuildPlacement(new AdtTerrainReader.DoodadPlacement
+        {
+            PosX = placementPos.X, PosY = placementPos.Y, PosZ = placementPos.Z,
+            RotX = rotDeg.X, RotY = rotDeg.Y, RotZ = rotDeg.Z, Scale = scale,
+        });
+
     private static Matrix4x4 BuildPlacement(AdtTerrainReader.DoodadPlacement d)
     {
         const float deg = MathF.PI / 180f;

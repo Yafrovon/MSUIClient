@@ -326,6 +326,7 @@ public sealed partial class GameLoop
         ResetPartyGiverStatus();
         ResetPartyGiverQuests();
         ResetPartyLead();
+        ResetThreatMeter();
         ResetCompanions();
         ResetPartyQuestActs();
         PurgeSuiSnapshot();
@@ -887,6 +888,13 @@ public sealed partial class GameLoop
             // loot state is session-wide (one window), keyed by the corpse guid.
             case Op.SMSG_LOOT_RESPONSE:
                 ApplyLootResponse(inner);
+                break;
+            // Group::MasterLoot answers the LOOTER's session, which is the driven bot's, so the
+            // candidate list arrives here exactly like the loot window itself. Without this the
+            // master looter saw the items and had nobody to assign them to.
+            // Pair: SuiPossess.cpp MirrorOwnerPacket must whitelist SMSG_LOOT_MASTER_LIST.
+            case Op.SMSG_LOOT_MASTER_LIST:
+                ApplyLootMasterList(inner);
                 break;
             case Op.SMSG_LOOT_RELEASE_RESPONSE:
                 ApplyLootReleaseResponse(inner);

@@ -80,6 +80,7 @@ public sealed partial class GameLoop
     /// <summary>Surface a SMSG_CHAR_CREATE result (polled by PumpNet). Success -> arm the new row + close.</summary>
     private void OnCreateResult(byte code)
     {
+        _lastCreateResult = code;   // the live runner's char-create step reads it (PumpNet takes the wire result first)
         _cc.Creating = false;
         _ccStatus = CharResultText(code);
         Console.WriteLine($"[charcreate] result 0x{code:X2} - {_ccStatus}");

@@ -235,10 +235,13 @@ Explicit unlink = red field + visibly broken chain. World hold = yellow field +
 intact chain. The anchor-initial medallion (WHO, for example the liked `Z`) stays
 separate and unchanged.
 
-7.6 On party portraits, the chain badge occupies the lower-left position at
-`PartyMemberLogicalOrigin + (11.5, 39.5)`. The separate anchor-initial medallion
-(WHO) sits on the upper-left rim just above 9 o'clock at
-`PartyMemberLogicalOrigin + (8.5, 18.5)`.
+7.6 On party frames (owner 2026-09-22: "too big, bleed through, move to the right of the
+portrait, attached to the health/mana bars"), the chain badge sits at the right end of the
+mana bar, `PartyMemberLogicalOrigin + (122.5, 25)`, radius 3.6; the separate anchor-initial
+medallion (WHO) sits at the right end of the health bar, `PartyMemberLogicalOrigin +
+(122.5, 15.5)`, radius 4, its initial in FrizQt. Both draw on the member frame's own window
+list (never the foreground list), so any window over the frame covers them, and they react
+to the mouse only while the member frame is the hovered window.
 
 7.7 Command View world models carry no chain badge, WHO medallion, or chain
 connector line. The party portraits and small command cards are sufficient and

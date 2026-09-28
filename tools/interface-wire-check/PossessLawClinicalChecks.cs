@@ -334,8 +334,12 @@ internal static class PossessLawClinicalChecks
         Check(links.Contains("DrawChainAnchorMedallion(", StringComparison.Ordinal) &&
               botBars.Contains("anchorName[..1].ToUpperInvariant()", StringComparison.Ordinal),
             "POSSESS_LAW 7.3: the anchor-initial medallion (WHO) must stay beside the chain badge");
-        Check(links.Contains("new Vector2(11.5f, 39.5f)", StringComparison.Ordinal) &&
-              links.Contains("new Vector2(8.5f, 18.5f)", StringComparison.Ordinal),
+        // Owner 2026-09-22: smaller, docked at the bars' right end, drawn on the member frame's own
+        // window list so the loot and master-loot windows cover them (never the foreground list).
+        Check(links.Contains("new Vector2(122.5f, 25f)", StringComparison.Ordinal) &&
+              links.Contains("new Vector2(122.5f, 15.5f)", StringComparison.Ordinal) &&
+              !links.Contains("GetForegroundDrawList()", StringComparison.Ordinal) &&
+              links.Contains("ImGui.IsWindowHovered()", StringComparison.Ordinal),
             "POSSESS_LAW 7.6: party chain/WHO positions lost their owner-tuned placement");
         Check(!control.Contains("DrawCommandViewChainLines(", StringComparison.Ordinal) &&
               !control.Contains("DrawChainGlyph(draw, pa", StringComparison.Ordinal) &&

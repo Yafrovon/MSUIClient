@@ -94,82 +94,7 @@ public sealed class AreaTriggerTeleportTable
                 Console.WriteLine($"[teleport] {path} has no rows");
                 return table;
             }
-
-            // Read the header rather than assuming column order. The schema
-            // drifts between MaNGOS forks and this is one line of defence for
-            // the price of one dictionary.
-            var header = lines[0].Split('\t');
-            var col = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < header.Length; i++) col[header[i].Trim()] = i;
-
-            int Need(string name)
-                => col.TryGetValue(name, out int i) ? i : -1;
-
-            int cId = Need("id"), cPatch = Need("patch"), cName = Need("name"),
-                cMsg = Need("message"), cLevel = Need("required_level"),
-                cMap = Need("target_map"), cX = Need("target_position_x"),
-                cY = Need("target_position_y"), cZ = Need("target_position_z"),
-                cO = Need("target_orientation");
-
-            if (cId < 0 || cMap < 0 || cX < 0 || cY < 0 || cZ < 0)
-            {
-                Console.WriteLine($"[teleport] {path} header is missing required columns " +
-                                  $"(saw: {string.Join(", ", header)}). NOT LOADED.");
-                return table;
-            }
-
-            int superseded = 0;
-            var patchOf = new Dictionary<int, int>();
-
-            // Bound on every column this loop indexes, not just two of them.
-            // The header is read precisely because the schema drifts, so the
-            // guard must not quietly assume target_orientation is last: one
-            // short row would throw, and the catch below would discard the whole
-            // table as "portals disabled".
-            int maxCol = 0;
-            foreach (int c in new[] { cId, cPatch, cName, cMsg, cLevel, cMap, cX, cY, cZ, cO })
-                if (c > maxCol) maxCol = c;
-
-            for (int i = 1; i < lines.Length; i++)
-            {
-                var f = lines[i].Split('\t');
-                if (f.Length <= maxCol) continue;
-                if (!int.TryParse(f[cId], out int id)) continue;
-
-                // D8: mysql -B prints a NULL as the literal text "NULL", and an
-                // empty field fails to parse too. Defaulting either to 0 would
-                // leave a corrupt row looking like a perfectly good portal to
-                // Eastern Kingdoms. Drop it instead.
-                if (!int.TryParse(f[cMap], out int targetMap)) continue;
-
-                int patch = cPatch >= 0 && int.TryParse(f[cPatch], out int p) ? p : 0;
-
-                // Highest patch wins - see the class summary on Dire Maul.
-                if (patchOf.TryGetValue(id, out int have) && have >= patch)
-                {
-                    superseded++;
-                    continue;
-                }
-                if (patchOf.ContainsKey(id)) superseded++;
-
-                var entry = new AreaTriggerTeleport
-                {
-                    Id = id,
-                    Patch = patch,
-                    Name = cName >= 0 ? f[cName] : "",
-                    Message = cMsg >= 0 ? f[cMsg] : "",
-                    RequiredLevel = cLevel >= 0 && int.TryParse(f[cLevel], out int lv) ? lv : 0,
-                    TargetMap = targetMap,
-                    TargetPosition = new Vector3(F(f[cX]), F(f[cY]), F(f[cZ])),
-                    TargetOrientation = cO >= 0 ? F(f[cO]) : 0f,
-                };
-
-                patchOf[id] = patch;
-                table._byId[id] = entry;
-            }
-
-            Console.WriteLine($"[teleport] {table._byId.Count} destination(s) from {FileName}" +
-                              (superseded > 0 ? $" ({superseded} superseded by a later patch)" : ""));
+            table.AddRows(lines, FileName);
         }
         catch (Exception ex)
         {
@@ -177,6 +102,110 @@ public sealed class AreaTriggerTeleportTable
         }
 
         return table;
+    }
+
+    /// <summary>MPQ path of the World Content Packs' portal table (MangosSuperUI
+    /// WorldPackBuildService.TeleportsMpqPath): same TSV format, written into patch-7.MPQ.</summary>
+    public const string PackMpqPath = @"WorldPacks\areatrigger_teleport.tsv";
+
+    /// <summary>
+    /// Merge the pack portals shipped inside patch-7.MPQ over the stock reference table: without them a
+    /// pack portal is only a trigger VOLUME (AreaTrigger.dbc) - no name, no destination for the loading
+    /// screen or the destination prewarm. Pack ids (7000+) never collide with stock ones. Never throws.
+    /// </summary>
+    public void MergePack(byte[]? tsv)
+    {
+        if (tsv is null) return;
+        try
+        {
+            string[] lines = System.Text.Encoding.UTF8.GetString(tsv).Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.TrimEnd('\r')).ToArray();
+            if (lines.Length >= 2) AddRows(lines, "patch-7 (World Content Packs)");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[teleport] could not merge the pack portal table ({ex.Message})");
+        }
+    }
+
+    private void AddRows(string[] lines, string source)
+    {
+        // Read the header rather than assuming column order. The schema
+        // drifts between MaNGOS forks and this is one line of defence for
+        // the price of one dictionary.
+        var header = lines[0].Split('\t');
+        var col = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < header.Length; i++) col[header[i].Trim()] = i;
+
+        int Need(string name)
+            => col.TryGetValue(name, out int i) ? i : -1;
+
+        int cId = Need("id"), cPatch = Need("patch"), cName = Need("name"),
+            cMsg = Need("message"), cLevel = Need("required_level"),
+            cMap = Need("target_map"), cX = Need("target_position_x"),
+            cY = Need("target_position_y"), cZ = Need("target_position_z"),
+            cO = Need("target_orientation");
+
+        if (cId < 0 || cMap < 0 || cX < 0 || cY < 0 || cZ < 0)
+        {
+            Console.WriteLine($"[teleport] {source} header is missing required columns " +
+                              $"(saw: {string.Join(", ", header)}). NOT LOADED.");
+            return;
+        }
+
+        int superseded = 0, added = 0;
+        var patchOf = new Dictionary<int, int>();
+
+        // Bound on every column this loop indexes, not just two of them.
+        // The header is read precisely because the schema drifts, so the
+        // guard must not quietly assume target_orientation is last: one
+        // short row would throw, and the catch would discard the whole
+        // table as "portals disabled".
+        int maxCol = 0;
+        foreach (int c in new[] { cId, cPatch, cName, cMsg, cLevel, cMap, cX, cY, cZ, cO })
+            if (c > maxCol) maxCol = c;
+
+        for (int i = 1; i < lines.Length; i++)
+        {
+            var f = lines[i].Split('\t');
+            if (f.Length <= maxCol) continue;
+            if (!int.TryParse(f[cId], out int id)) continue;
+
+            // D8: mysql -B prints a NULL as the literal text "NULL", and an
+            // empty field fails to parse too. Defaulting either to 0 would
+            // leave a corrupt row looking like a perfectly good portal to
+            // Eastern Kingdoms. Drop it instead.
+            if (!int.TryParse(f[cMap], out int targetMap)) continue;
+
+            int patch = cPatch >= 0 && int.TryParse(f[cPatch], out int p) ? p : 0;
+
+            // Highest patch wins - see the class summary on Dire Maul.
+            if (patchOf.TryGetValue(id, out int have) && have >= patch)
+            {
+                superseded++;
+                continue;
+            }
+            if (patchOf.ContainsKey(id)) superseded++;
+
+            var entry = new AreaTriggerTeleport
+            {
+                Id = id,
+                Patch = patch,
+                Name = cName >= 0 ? f[cName] : "",
+                Message = cMsg >= 0 ? f[cMsg] : "",
+                RequiredLevel = cLevel >= 0 && int.TryParse(f[cLevel], out int lv) ? lv : 0,
+                TargetMap = targetMap,
+                TargetPosition = new Vector3(F(f[cX]), F(f[cY]), F(f[cZ])),
+                TargetOrientation = cO >= 0 ? F(f[cO]) : 0f,
+            };
+
+            patchOf[id] = patch;
+            _byId[id] = entry;
+            added++;
+        }
+
+        Console.WriteLine($"[teleport] {added} destination(s) from {source}" +
+                          (superseded > 0 ? $" ({superseded} superseded by a later patch)" : ""));
     }
 
     /// <summary>

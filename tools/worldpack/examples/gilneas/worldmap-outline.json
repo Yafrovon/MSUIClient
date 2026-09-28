@@ -1,0 +1,615 @@
+{
+  "schema": 1,
+  "map": 0,
+  "area": 7001,
+  "directory": "Gilneas",
+  "polygon": [
+    [
+      -1066.66667,
+      2369.69925
+    ],
+    [
+      -1066.66667,
+      760.76169
+    ],
+    [
+      -1175.29156,
+      806.43022
+    ],
+    [
+      -1280.68048,
+      823.99504
+    ],
+    [
+      -1386.0694,
+      894.25432
+    ],
+    [
+      -1421.19904,
+      999.64325
+    ],
+    [
+      -1473.8935,
+      1069.90253
+    ],
+    [
+      -1491.45832,
+      1175.29145
+    ],
+    [
+      -1561.7176,
+      1238.52481
+    ],
+    [
+      -1667.10653,
+      1238.52481
+    ],
+    [
+      -1807.62509,
+      1245.55073
+    ],
+    [
+      -1948.14365,
+      1231.49888
+    ],
+    [
+      -2053.53258,
+      1227.98591
+    ],
+    [
+      -2158.9215,
+      1192.85627
+    ],
+    [
+      -2229.18078,
+      1164.75256
+    ],
+    [
+      -2369.69934,
+      1171.77849
+    ],
+    [
+      -2510.21791,
+      1192.85627
+    ],
+    [
+      -2615.60683,
+      1210.42109
+    ],
+    [
+      -2685.86611,
+      1263.11556
+    ],
+    [
+      -2738.56057,
+      1350.93966
+    ],
+    [
+      -2784.22911,
+      1438.76376
+    ],
+    [
+      -2812.33282,
+      1526.58786
+    ],
+    [
+      -2861.51432,
+      1603.87307
+    ],
+    [
+      -2931.7736,
+      1631.97679
+    ],
+    [
+      -2984.46806,
+      1667.10643
+    ],
+    [
+      -3019.5977,
+      1772.49535
+    ],
+    [
+      -3037.16252,
+      1860.31945
+    ],
+    [
+      -3019.5977,
+      1941.11763
+    ],
+    [
+      -2966.90324,
+      2000.83802
+    ],
+    [
+      -2879.07914,
+      2046.50655
+    ],
+    [
+      -2808.81986,
+      2123.79176
+    ],
+    [
+      -2756.12539,
+      2194.05104
+    ],
+    [
+      -2668.30129,
+      2257.2844
+    ],
+    [
+      -2605.06794,
+      2324.03072
+    ],
+    [
+      -2527.78273,
+      2387.26407
+    ],
+    [
+      -2439.95863,
+      2457.52335
+    ],
+    [
+      -2334.5697,
+      2503.19189
+    ],
+    [
+      -2211.61596,
+      2527.78263
+    ],
+    [
+      -2088.66222,
+      2527.78263
+    ],
+    [
+      -1948.14365,
+      2527.78263
+    ],
+    [
+      -1790.06027,
+      2545.34746
+    ],
+    [
+      -1667.10653,
+      2562.91228
+    ],
+    [
+      -1561.7176,
+      2605.06785
+    ],
+    [
+      -1456.32868,
+      2605.06785
+    ],
+    [
+      -1368.50458,
+      2552.37338
+    ],
+    [
+      -1280.68048,
+      2485.62707
+    ],
+    [
+      -1175.29156,
+      2422.39371
+    ]
+  ],
+  "bounds": {
+    "left": 2605.06785,
+    "right": 760.76169,
+    "top": -1066.66667,
+    "bottom": -3037.16252
+  },
+  "source": {
+    "method": "manual coastline trace",
+    "note": "Hand-traced just inside the pale coastline wash of the existing unnamed peninsula south of Silverpine. Northern joining edge (vertices 0 to 1) is ADT row 34, world X=-1066.6666667, and is a chosen land border, not a coast. Do not lower or sever that edge; blend it into unchanged Silverpine. Preserve the hatched water east and south as the open approach to Baradin Bay. The trace is precise to the native painted pixels (about 35 world yards per pixel), not a survey of existing game terrain.",
+    "continentDirectory": "Azeroth",
+    "visiblePixels": [
+      1002,
+      668
+    ],
+    "pixelPolygon": [
+      [
+        388,
+        242.90788503005274
+      ],
+      [
+        433.8,
+        242.90788503005274
+      ],
+      [
+        432.5,
+        246
+      ],
+      [
+        432,
+        249
+      ],
+      [
+        430,
+        252
+      ],
+      [
+        427,
+        253
+      ],
+      [
+        425,
+        254.5
+      ],
+      [
+        422,
+        255
+      ],
+      [
+        420.2,
+        257
+      ],
+      [
+        420.2,
+        260
+      ],
+      [
+        420,
+        264
+      ],
+      [
+        420.4,
+        268
+      ],
+      [
+        420.5,
+        271
+      ],
+      [
+        421.5,
+        274
+      ],
+      [
+        422.3,
+        276
+      ],
+      [
+        422.1,
+        280
+      ],
+      [
+        421.5,
+        284
+      ],
+      [
+        421,
+        287
+      ],
+      [
+        419.5,
+        289
+      ],
+      [
+        417,
+        290.5
+      ],
+      [
+        414.5,
+        291.8
+      ],
+      [
+        412,
+        292.6
+      ],
+      [
+        409.8,
+        294
+      ],
+      [
+        409,
+        296
+      ],
+      [
+        408,
+        297.5
+      ],
+      [
+        405,
+        298.5
+      ],
+      [
+        402.5,
+        299
+      ],
+      [
+        400.2,
+        298.5
+      ],
+      [
+        398.5,
+        297
+      ],
+      [
+        397.2,
+        294.5
+      ],
+      [
+        395,
+        292.5
+      ],
+      [
+        393,
+        291
+      ],
+      [
+        391.2,
+        288.5
+      ],
+      [
+        389.3,
+        286.7
+      ],
+      [
+        387.5,
+        284.5
+      ],
+      [
+        385.5,
+        282
+      ],
+      [
+        384.2,
+        279
+      ],
+      [
+        383.5,
+        275.5
+      ],
+      [
+        383.5,
+        272
+      ],
+      [
+        383.5,
+        268
+      ],
+      [
+        383,
+        263.5
+      ],
+      [
+        382.5,
+        260
+      ],
+      [
+        381.3,
+        257
+      ],
+      [
+        381.3,
+        254
+      ],
+      [
+        382.8,
+        251.5
+      ],
+      [
+        384.7,
+        249
+      ],
+      [
+        386.5,
+        246
+      ]
+    ],
+    "worldMapAreaRow": 14,
+    "worldMapAreaBounds": {
+      "left": 16000.0,
+      "right": -19199.900390625,
+      "top": 7466.60009765625,
+      "bottom": -16000.0
+    },
+    "projection": "X=top-v/668*(top-bottom); Y=left-u/1002*(left-right)",
+    "dbc": {
+      "path": "DBFilesClient\\WorldMapArea.dbc",
+      "archive": "patch.MPQ",
+      "sha256": "428a0d284601c9f2b65190bf56121032ab1d65fa0c6509c67f1c6a4bd1293379"
+    },
+    "art": [
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth1.blp",
+        "archive": "interface.MPQ",
+        "sha256": "d6d952ee9624204f4574652144ccde239e7b70620b14c46b97502bf1903e4e49"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth2.blp",
+        "archive": "interface.MPQ",
+        "sha256": "48314d13d233c038495ab5da6fc21be01030bb3d778d309ab87d2ee9076bd517"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth3.blp",
+        "archive": "interface.MPQ",
+        "sha256": "72f94d869f12fdafbcd162c150701dc08a6fdf9699afd3cfbb807e87ed7f9453"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth4.blp",
+        "archive": "interface.MPQ",
+        "sha256": "d2ccb0c9395d651c45b2abe1c71cf1f72c18384926fce4bc1e643cb18f8f2dd8"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth5.blp",
+        "archive": "interface.MPQ",
+        "sha256": "7c76a9c0c6f96c178c39ed0174279eebfed6cbac9bf0b69a73b743fe4e632576"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth6.blp",
+        "archive": "interface.MPQ",
+        "sha256": "c94e57fedd36182c1ee66022465d9a9e1509435c4d67e68ce5758ab50b7bc8ac"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth7.blp",
+        "archive": "interface.MPQ",
+        "sha256": "9440014756c54aaa860005054d07d9da1cfa6a46a61ec1685b7d4b212dc06ecd"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth8.blp",
+        "archive": "interface.MPQ",
+        "sha256": "d4b1db665a613871705bddfd3e60de16a4601015b5cafcd5f0b6173408062a4c"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth9.blp",
+        "archive": "interface.MPQ",
+        "sha256": "107485bc3e52f82a0527bbbfb9fc36e00267780bab78a46503a482dabda11056"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth10.blp",
+        "archive": "interface.MPQ",
+        "sha256": "5ec400641ae7cb2d77602a38f679a64ccbb7ddebe3236bfc0d47aa9dc5e973d1"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth11.blp",
+        "archive": "interface.MPQ",
+        "sha256": "b03dd489f4969affc4594da3829d1454a5821859958e19b5889359133cfa5463"
+      },
+      {
+        "path": "Interface\\WorldMap\\Azeroth\\Azeroth12.blp",
+        "archive": "interface.MPQ",
+        "sha256": "8e28602dd4ab5b779d83f0a8ad4c184d0a1b91023321723473cb5ccb186226dd"
+      }
+    ]
+  },
+  "checks": {
+    "simplePolygon": true,
+    "projectionRoundTrip": true,
+    "zmpCellRule": "cell center inside polygon; column + row * 128",
+    "zmpCells": [
+      [
+        55,
+        68
+      ],
+      [
+        56,
+        68
+      ],
+      [
+        57,
+        68
+      ],
+      [
+        58,
+        68
+      ],
+      [
+        59,
+        68
+      ],
+      [
+        60,
+        68
+      ],
+      [
+        54,
+        69
+      ],
+      [
+        55,
+        69
+      ],
+      [
+        56,
+        69
+      ],
+      [
+        57,
+        69
+      ],
+      [
+        58,
+        69
+      ],
+      [
+        59,
+        69
+      ],
+      [
+        54,
+        70
+      ],
+      [
+        55,
+        70
+      ],
+      [
+        56,
+        70
+      ],
+      [
+        57,
+        70
+      ],
+      [
+        58,
+        70
+      ],
+      [
+        55,
+        71
+      ],
+      [
+        56,
+        71
+      ],
+      [
+        57,
+        71
+      ],
+      [
+        58,
+        71
+      ],
+      [
+        55,
+        72
+      ],
+      [
+        56,
+        72
+      ],
+      [
+        57,
+        72
+      ],
+      [
+        58,
+        72
+      ],
+      [
+        59,
+        72
+      ],
+      [
+        55,
+        73
+      ],
+      [
+        56,
+        73
+      ],
+      [
+        57,
+        73
+      ],
+      [
+        58,
+        73
+      ],
+      [
+        59,
+        73
+      ],
+      [
+        56,
+        74
+      ],
+      [
+        57,
+        74
+      ]
+    ]
+  }
+}

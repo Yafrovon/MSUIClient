@@ -54,7 +54,7 @@ public sealed class CreatorItemTable
 
     /// <summary>
     /// Case-insensitive substring search; a purely numeric query is an exact
-    /// entry match. invTypeFilter -1 means any equippable type. Results are
+    /// entry match. invTypeFilter -1 means any equippable type, -2 any item. Results are
     /// ordered highest quality first, then item level, then name.
     /// </summary>
     public List<Item> Search(string query, int invTypeFilter, int limit = 60)
@@ -63,8 +63,9 @@ public sealed class CreatorItemTable
         bool numeric = uint.TryParse(query, out uint entry);
         foreach (var item in _items)
         {
+            // -1: any equippable type; -2: any item at all (quest objectives - fangs, letters, reagents).
             if (invTypeFilter >= 0 ? item.InventoryType != invTypeFilter
-                                   : !IsEquippable(item.InventoryType)) continue;
+                                   : invTypeFilter == -1 && !IsEquippable(item.InventoryType)) continue;
             if (numeric)
             {
                 if (item.Entry != entry) continue;

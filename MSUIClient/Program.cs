@@ -708,6 +708,12 @@ public sealed partial class GameLoop : IDisposable
         _window.Camera.Target = new Vector3(_config.Start.X, _config.Start.Y, _config.Start.Z);
         _window.Camera.Yaw = _config.Start.Orientation;
 
+        // World Content Packs: mirror the server's published build (patch-7 + pack collision) BEFORE
+        // mounting - a stale client renders the wrong terrain and falls through pack buildings.
+        Console.WriteLine("[worldpacks] " + WorldPackStartupSync.EnsureCurrent(new WorldPackClient(), SuiWebAppUrl,
+            _config.ClientDataPath, WbServerDataDir(_config.VmapPath, "vmaps"), WbServerDataDir(_config.MmapPath, "mmaps"),
+            TimeSpan.FromSeconds(90)));
+
         // Mount the archives once and point AdtTerrainReader's extractor hook at
         // them. Without this every file read reopens up to fifteen MPQs.
         _mpq = new MpqMount(_config.ClientDataPath);
@@ -1545,6 +1551,7 @@ public sealed partial class GameLoop : IDisposable
 
         // Scripted creator-mode texture-swap reproduction (MSUI_CREATOR_PROBE).
         UpdateCreatorProbe();
+        UpdateWorldBuilderScript();
         UpdateXrayProbe();
 
         // Scripted Encounter Lab raid proof (MSUI_ENCLAB_PROBE).

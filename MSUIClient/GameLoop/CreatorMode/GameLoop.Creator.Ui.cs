@@ -26,7 +26,7 @@ namespace MSUIClient;
 // ─────────────────────────────────────────────────────────────────────────────
 public sealed partial class GameLoop
 {
-    private enum CreatorPanel { None, Character, Gear, Teleport, Target, Spells, XRay }
+    private enum CreatorPanel { None, Character, Gear, Teleport, Target, Spells, XRay, World }
     private CreatorPanel _creatorPanel;
 
     // Character look state (defaults mirror the offline test character).
@@ -164,6 +164,7 @@ public sealed partial class GameLoop
         RegisterCreatorTargetSections();
         RegisterCreatorSpellsSections();
         RegisterCreatorXraySections();
+        RegisterCreatorWorldSections();
 
         if (Settings.Creator.Workspace)
         {
@@ -182,8 +183,10 @@ public sealed partial class GameLoop
                 case CreatorPanel.Target: DrawCreatorSectionPanel("Target", "Target", 430f, 560f); break;
                 case CreatorPanel.Spells: DrawCreatorSectionPanel("Spells", "Spell Workshop", 500f, 640f); break;
                 case CreatorPanel.XRay: DrawCreatorSectionPanel("XRay", "Collision X-Ray", 460f, 560f); break;
+                case CreatorPanel.World: DrawCreatorSectionPanel("World", "World Builder", 470f, 680f); break;
             }
         }
+        UpdateWorldBuilder();
         DrawCreatorGizmoLabels();
         DrawPoppedCreatorSections();
         DrawMountToolkit();
@@ -402,6 +405,8 @@ public sealed partial class GameLoop
         CreatorBarButton("Spells", CreatorPanel.Spells, size, captionPx);
         ImGui.SameLine();
         CreatorBarButton("X-Ray", CreatorPanel.XRay, size, captionPx);
+        ImGui.SameLine();
+        CreatorBarButton("World", CreatorPanel.World, size, captionPx);
 
         // The Encounter Lab has its own lifetime (Ctrl+E, draws in live mode
         // too), so its button toggles the Lab directly instead of being a panel.
@@ -792,6 +797,7 @@ public sealed partial class GameLoop
         "Teleport" => _travelStatus ?? "",
         "Spells" => _creatorSpell is { } doc ? $"{doc.Info.Id}  {doc.Info.Name}" : "no spell selected",
         "Target" => _creatorSpawns.Count > 0 ? $"{_creatorSpawns.Count} spawned" : "",
+        "World" => WorldBuilderStatus(),
         "XRay" => _xrayActive
             ? (_xrayWorld is { } w ? $"active, {w.TriangleCount:N0} triangles" : "active, building...")
             : "off",

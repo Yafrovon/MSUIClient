@@ -34,6 +34,7 @@ touching the code:
   gameobjects are lit inside a WMO (the floor's MOCV under the feet, one law with
   the props); the `MSUI_INTERIORLIGHT_PROBE` offline proof.
 - `shared_docs/COMMANDER_RAID_STATE.md` — the one page that is overwritten every session: current status, streaks, hashes, acceptance rule and the next step. Read this first for raid work.
+- `shared_docs/AUTOPILOT_HANDOFF.md` — the Raid Autopilot (bot leader runs MC/dungeons with no human; generic tactics, telemetry, pull planner, respawn execution): how to run the deploy/watch loop, code map, current MC state and next steps. Read this first for autopilot work (added 2026-09-24).
 - `shared_docs/COMMANDER_RAID_ARCHITECTURE.md` — stable design of the Commander raid system: what is code, what is data, the definition schema, the compiler and its global policy, the checkpoint/QA tools, the regression runner and the acceptance rule.
 - `shared_docs/COMMANDER_RAID_PLAN.md` — original design record and research basis for the raid planner and executor (historical detail; ARCHITECTURE is the current summary).
 - `shared_docs/COMMANDER_MOLTEN_CORE.md` — generated Core/DB review of the ten Molten Core bosses with the executor primitives each still needs.
@@ -51,6 +52,13 @@ touching the code:
   (the spell's timeline of parts), the field-level inventory with real-use counts
   (`tools/spellvis/spell_visual_census.py`), the task walk and the ordered slice
   list. Read this before adding to or reordering Spell IDE work.
+- `shared_docs/WORLD_BUILDER.md` — the World Builder (Creator Mode terrain sculpt + WMO/M2
+  placement) and optional World Content Packs: client → web app ops (audited, undoable) →
+  `patch-7.MPQ` + real extractor maps/vmaps/mmaps with a vanilla baseline; the NPC Creator and
+  Dungeon Maker; why the old browser editor broke mob pathing (added 2026-09-26).
+- `shared_docs/WORLD_BUILDER_HANDOFF.md` — the CURRENT World Builder / Gilneas state (rewritten 2026-09-27 night): what is
+  built and verified, copy-paste commands for every task (tools/worldpack/: launch-wb/launch-live, generators, navmesh
+  planner, make-group), the open items in order and the uncommitted change list.
 - `CODE_STRUCTURE_LAW.md` (repo root) — where a `.cs` file goes and how it is named.
 
 `interface-wire-check --shared-docs-only` fails when a file in `shared_docs/` is not
@@ -124,6 +132,23 @@ Host names, ssh config, tree paths and the install/restart one-liner are
 machine-specific and live in `AGENTS.local.md` (git-ignored). Copy the block
 from another machine or ask the owner.
 
+
+## This is a TEST environment - build and test freely (Nico, 2026-09-27)
+
+The box, its server, its databases' game state and every character on it exist for development and testing. For
+World Builder / content work (and any other feature work) agents do what a test needs WITHOUT asking and without
+treating the raid whitelist below as a limit:
+
+- **Bots are SuperUI bots, never stock vmangos `.partybot`s** (PartyBotAI is not part of this project - behaviour
+  proven on partybots proves nothing, and patching PartyBotAI is wasted work). Need a group? Create NEW SuperUI bots
+  (`POST http://192.168.0.2:5000/Bots/AddBots {"spawns":[{"race":"human","cls":"priest","count":1}]}` = `.bot addai`),
+  then level them, train their spells, max their weapon skills, gear and spec them, teleport, group, kill and revive
+  them with GM commands - whatever the test needs. Delete them when they are no longer useful.
+- Create test characters, level/gear/teleport them, GM-complete setup steps (label SETUP in reports).
+- The 40-man raid roster (Testwar + the 39 prepared bots) belongs to the raid mission: leave it alone unless the task
+  is raid work - make new bots instead of borrowing it.
+- Still off-limits: commits/pushes/branches (the owner does git), direct SQL writes, worldstate restores, the
+  unrelated CMaNGOS server. Everything else on this box is a sandbox - use your judgement, don't ask permission.
 
 ## Persistent owner authorization: Testwar +39 live raid QA
 

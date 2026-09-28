@@ -58,6 +58,15 @@ public sealed class SkillLineCatalog
             spellId = previous;
         return spellId;
     }
+    /// <summary>Rank of a spell in its ability chain: 1 for the root, +1 per predecessor.</summary>
+    public int AbilityRank(uint spellId)
+    {
+        int rank = 1;
+        var visited = new HashSet<uint>();
+        while (visited.Add(spellId) && _abilityPredecessors.TryGetValue(spellId, out uint previous))
+        { spellId = previous; rank++; }
+        return rank;
+    }
     /// <summary>
     /// The 1.12 spellbook tab for a known spell. Generic/racial/proficiency lines whose matching
     /// SkillRaceClassInfo row carries DISPLAY_SORTED, missing lines, and lines with no admitting

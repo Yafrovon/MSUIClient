@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "source": "Offline actual BuildNewMaps/sculpt/stitch/coast probe, map-fit-plan-probe/report.json, 2026-09-28. Ground heights sampled at proposed X/Y; camp interior is beyond coast blend.",
+  "spawnZ": {
+    "1500106": { "x": -1482.573, "y": 2532.453, "z": 6, "reason": "Build33 client collision check found this outdoor harbor NPC 1.4 yd above the rebuilt floor; offline terrain at its exact XY is 6.0." },
+    "1500037": { "x": -2100.533, "y": 2097.033, "z": 189.003 },
+    "1500108": { "x": -1583.69, "y": 2297.863, "z": 94.495 },
+    "1500109": { "x": -1601.1, "y": 2315.033, "z": 100.343 },
+    "1500110": { "x": -1604.68, "y": 2315.073, "z": 100.414 },
+    "1500111": { "x": -1623.63, "y": 2294.413, "targetX": -1607.63, "targetY": 2302.413, "z": 101.826, "reason": "Move 17.9 yd off 69 degree face; actual built terrain across 6 yd wander disc has worst sampled slope 42.77 degrees (1 yd grid, 1.5 yd slope rays)." },
+    "1500112": { "x": -1600.07, "y": 2286.903, "z": 96.526 },
+    "1500113": { "x": -1591.69, "y": 2287.553, "z": 94.781 },
+    "1500149": { "x": -1587.743, "y": 2308.043, "z": 96.295 },
+    "1500150": { "x": -1620.743, "y": 2291.043, "targetX": -1603.743, "targetY": 2288.043, "z": 97.299, "reason": "Move 17.3 yd off 74 degree face; actual built terrain across 6 yd wander disc has worst sampled slope 40.63 degrees (1 yd grid, 1.5 yd slope rays)." }
+  },
+  "preserveSpawnZ": {
+    "1500021": "Inside a stock WMO; terrain is below its intentional interior floor."
+  },
+  "placementAdjustments": {
+    "8": { "dy": 41, "z": -2.86286, "reason": "The upward collision deck is local Z=5.922024, not underside2.859164. Lower model so actual deck is worldZ3.059164; ramp12 connects plateau to it and west deck remains above water." },
+    "12": { "dx": -18, "dy": 20.511102, "z": 2.932178, "rotY": 180, "rotZ": 2, "scale": 0.4, "reason": "Both end bevels must be buried: build36 blocked on the former 0.098yd raised high bevel. With serialized scale410/1024 and +2degree pitch, highY2591.968687/top5.670397 is 0.197yd under terrain; lowY2599.7/top2.9 is 0.159yd under dock. Ramp slope19.714 degrees, main side is 0.100yd below ramp, overlap0.723yd. All unwalkable triangles in the 2yd center corridor were sampled; live two-way proof remains required." },
+    "13": { "dy": 50, "reason": "Rowboat is offshore west of dock, with origin at sea level." },
+    "11": { "z": 7, "reason": "Stable foundation extends about 1 yd below origin; place it on rebuilt terrain Z=6 instead of floating 5.4 yd." }
+  },
+  "maritimePlacements": [8, 12, 13]
+}

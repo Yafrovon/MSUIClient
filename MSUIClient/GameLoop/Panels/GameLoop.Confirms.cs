@@ -398,15 +398,35 @@ public sealed partial class GameLoop
         EmitInterface("loot", "master-list", "DECODED", _loot.Source, $"count={_lootMasterCandidates.Count}");
     }
 
-    /// <summary>The candidate menu for a master-loot row: pick who receives the item.</summary>
+    /// <summary>
+    /// The master-loot "Give loot to" panel (<see cref="LootMasterMenuUiLaw"/>): docked beside the
+    /// loot frame, headed by the item, candidates grouped by class with class icons and colours,
+    /// those who can use the item first and the rest dimmed (still assignable).
+    /// </summary>
     private void DrawLootMasterMenu()
     {
         if (_lootMasterMenuSlot < 0 || _skin is null) return;
         if (!_loot.IsOpen || _lootMasterCandidates.Count == 0) { _lootMasterMenuSlot = -1; return; }
         float s = GameplayUiScale();
-        float rowHeight = 16 * s, width = 160 * s;
-        Vector2 origin = _lootMasterMenuOrigin;
-        Vector2 size = new(width, rowHeight * _lootMasterCandidates.Count + 8 * s);
+        ItemTemplate? item = null;
+        if (_lootMasterMenuItemId != 0) _items?.TryGet(_lootMasterMenuItemId, out item);
+
+        var candidates = new List<LootMasterMenuUiLaw.Candidate>(_lootMasterCandidates.Count);
+        foreach (ulong guid in _lootMasterCandidates)
+        {
+            // A name query can still be in flight; keep asking rather than showing a hex stub
+            // forever, because an unnamed row is an unassignable row in practice.
+            string name = _playerNames.GetValueOrDefault(guid, "");
+            if (name.Length == 0) { _net?.NameQuery(guid); name = $"Player-{guid & 0xffff:X4}"; }
+            byte classId = LootCandidateClass(guid, name);
+            bool usable = item is null ||
+                LootMasterMenuUiLaw.CanUse(classId, item.AllowableClass, item.Class, item.Subclass);
+            candidates.Add(new(guid, name, classId, usable));
+        }
+        LootMasterMenuUiLaw.Layout layout = LootMasterMenuUiLaw.Resolve(candidates,
+            _lootMasterMenuFrameOrigin, _lootMasterMenuRowTop, ImGui.GetIO().DisplaySize, s);
+        Vector2 origin = layout.Origin, size = layout.Size;
+
         ImGui.SetNextWindowPos(origin, ImGuiCond.Always);
         ImGui.SetNextWindowSize(size, ImGuiCond.Always);
         ImGui.SetNextWindowBgAlpha(0);
@@ -414,37 +434,93 @@ public sealed partial class GameLoop
             ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoNav;
         if (!ImGui.Begin("##loot-master-menu", flags)) { ImGui.End(); return; }
         ImDrawListPtr draw = ImGui.GetWindowDrawList();
+
+        // Opaque slab under the riveted dialog edge: the stock dialog fill is translucent, and a
+        // see-through list over the loot frame read as noise.
+        draw.AddRectFilled(origin + new Vector2(5, 5) * s, origin + size - new Vector2(5, 5) * s,
+            0xF20A0A0Cu, 6 * s);
         _skin.DrawBackdrop(draw, origin, origin + size, WowSkin.Dialog);
-        for (int i = 0; i < _lootMasterCandidates.Count; i++)
+
+        // Header: the item being assigned.
+        if (item is not null && _gameplayArt?.Handle(item.IconPath) is uint icon and not 0)
+            draw.AddImage((nint)icon, layout.ItemIconMin, layout.ItemIconMax);
+        uint titleColor = item is null ? VanillaGold
+            : ImGui.ColorConvertFloat4ToU32(GroupLootFrameUiLaw.QualityColor(item.Quality));
+        draw.PushClipRect(layout.TitleTextMin,
+            layout.TitleTextMin + new Vector2(layout.TitleWidth, 32 * s), true);
+        GameText.Draw(draw, "GameFontNormal", item?.Name ?? "Give loot", layout.TitleTextMin, s, titleColor);
+        draw.PopClipRect();
+        int usableCount = candidates.Count(c => c.Usable);
+        string subtitle = item is null || usableCount == candidates.Count
+            ? $"Give to ({candidates.Count} in range)"
+            : $"Give to ({usableCount} of {candidates.Count} can use it)";
+        GameText.Draw(draw, "GameFontHighlightSmall", subtitle, layout.SubtitleMin, s, 0xFFB0B0B0u);
+        draw.AddRectFilled(layout.DividerMin, layout.DividerMax, 0x9000A8D0u);
+
+        uint classSheet = _skin.TextureHandle("cc.classes");
+        Vector2 cellSize = layout.CellSize;
+        foreach (LootMasterMenuUiLaw.Cell cell in layout.Cells)
         {
-            ulong candidate = _lootMasterCandidates[i];
-            Vector2 min = origin + new Vector2(4 * s, 4 * s + i * rowHeight);
+            Vector2 min = layout.CellMin(cell);
+            uint classColor = CommanderClassColor(ClassIdName(cell.ClassId));
+            if (cell.Kind == LootMasterMenuUiLaw.CellKind.ClassHeader)
+            {
+                float iconSide = LootMasterMenuUiLaw.ClassIconSize * s;
+                Vector2 iconMin = min + new Vector2(0, (cellSize.Y - iconSide) * 0.5f);
+                if (classSheet != 0 && cell.ClassId != 0)
+                {
+                    var (uv0, uv1) = ClassIconUv(cell.ClassId);
+                    draw.AddImage((nint)classSheet, iconMin, iconMin + new Vector2(iconSide), uv0, uv1);
+                }
+                string className = cell.ClassId != 0 ? ClassIdName(cell.ClassId) : "Unknown";
+                GameText.Draw(draw, "GameFontNormalSmall", $"{className}  {cell.GroupCount}",
+                    min + new Vector2(iconSide + 4 * s, 2 * s), s, classColor);
+                continue;
+            }
+
+            LootMasterMenuUiLaw.Candidate member = cell.Member;
             ImGui.SetCursorScreenPos(min);
-            bool clicked = ImGui.InvisibleButton($"##loot-master-{i}", new Vector2(width - 8 * s, rowHeight));
+            bool clicked = ImGui.InvisibleButton($"##loot-master-{member.Guid:X16}", cellSize);
             if (ImGui.IsItemHovered())
             {
                 uint highlight = _gameplayArt?.AdditiveHandle(DropdownCapsuleUiLaw.RowHighlight) ?? 0;
-                if (highlight != 0) draw.AddImage((nint)highlight, min, min + new Vector2(width - 8 * s, rowHeight));
+                if (highlight != 0) draw.AddImage((nint)highlight, min, min + cellSize);
             }
-            GameText.Draw(draw, "GameFontHighlightSmall",
-                _playerNames.GetValueOrDefault(candidate, $"Player-{candidate & 0xffff:X4}"),
-                min + new Vector2(4 * s, 2 * s), s);
+            uint nameColor = member.Usable ? classColor : WithAlphaByte(classColor, 0x60);
+            GameText.Draw(draw, member.Usable ? "GameFontHighlightSmall" : "GameFontDisableSmall",
+                member.Name, min + new Vector2(LootMasterMenuUiLaw.NameIndent * s, 2 * s), s, nameColor);
             if (clicked && !RefuseTacticalFreezeLiveCommand("assigning loot") &&
                 !RefuseTacticalFrozenActor(_loot.Source, "assign its loot") &&
-                !RefuseTacticalFrozenActor(candidate, "assign loot to them"))
+                !RefuseTacticalFrozenActor(member.Guid, "assign loot to them"))
             {
-                bool sent = _net?.LootMasterGive(_loot.Source, (byte)_lootMasterMenuSlot, candidate) == true;
+                bool sent = _net?.LootMasterGive(_loot.Source, (byte)_lootMasterMenuSlot, member.Guid) == true;
                 EmitInterface("loot", "master-give", sent ? "SENT" : "SEND_FAILED", _loot.Source,
-                    $"slot={_lootMasterMenuSlot};target=0x{candidate:X16}");
+                    $"slot={_lootMasterMenuSlot};target=0x{member.Guid:X16};usable={member.Usable}");
                 _lootMasterMenuSlot = -1;
             }
         }
         ImGui.End();
-        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !ImGui.IsMouseHoveringRect(origin, origin + size))
+        if ((ImGui.IsMouseClicked(ImGuiMouseButton.Left) || ImGui.IsMouseClicked(ImGuiMouseButton.Right)) &&
+            !ImGui.IsMouseHoveringRect(origin, origin + size))
             _lootMasterMenuSlot = -1;
     }
 
-    private Vector2 _lootMasterMenuOrigin;
+    /// <summary>A candidate's class: the streamed body, then name-query traits, then the bot roster by name.</summary>
+    private byte LootCandidateClass(ulong guid, string name)
+    {
+        if (_entities.TryGet(guid, out WorldEntity entity) && entity.IsPlayer && entity.Fields.Bytes0.Class != 0)
+            return entity.Fields.Bytes0.Class;
+        if (_playerTraits.TryGetValue(guid, out PlayerTraits traits) && traits.Class != 0)
+            return traits.Class;
+        string className = LoadBotBars().BotClasses.GetValueOrDefault(name, "");
+        foreach (byte id in LootMasterMenuUiLaw.ClassOrder)
+            if (ClassIdName(id).Equals(className, StringComparison.OrdinalIgnoreCase)) return id;
+        return 0;
+    }
+
+    private uint _lootMasterMenuItemId;
+    private Vector2 _lootMasterMenuFrameOrigin;
+    private float _lootMasterMenuRowTop;
 
     // ── Broadcasts ───────────────────────────────────────────────────────────────────────────
 

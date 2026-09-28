@@ -186,10 +186,21 @@ public sealed partial class GameLoop
         }
         _partyOwnFlags = wire.OwnFlags;
         _partyRosterRevision++;
+        bool lootRulesChanged = _partyLeaderGuid != wire.LeaderGuid ||
+            _partyLootMethod != wire.LootMethod ||
+            _partyMasterLooterGuid != wire.MasterLooterGuid ||
+            _partyLootThreshold != wire.LootThreshold;
         _partyLeaderGuid = wire.LeaderGuid;
         _partyLootMethod = wire.LootMethod;
         _partyMasterLooterGuid = wire.MasterLooterGuid;
         _partyLootThreshold = wire.LootThreshold;
+        // SMSG_GROUP_LIST is the ONLY thing the server says about loot rules - 1.12 ships
+        // ERR_SET_LOOT_MASTER but no FrameXML prints it and vmangos sends no chat line - so this
+        // trace is how a change is provable without reading pixels off the player frame.
+        if (lootRulesChanged && !leaving)
+            EmitInterface("party", "loot-rules", "APPLIED", wire.LeaderGuid,
+                $"method={wire.LootMethod};master=0x{wire.MasterLooterGuid:X16};" +
+                $"threshold={wire.LootThreshold}");
         _partyInGroup = !leaving;
         _partyGroupType = leaving ? (byte)0 : wire.GroupType;
         if (leaving) Array.Clear(_partyRaidTargets);
@@ -701,6 +712,7 @@ public sealed partial class GameLoop
             MathF.Max(0f, (float)(now - _partyLowHealthLastAt));
         _partyLowHealthLastAt = now;
 
+        _partyChainRoster = members;
         int hoveredIndex = -1;
         PartyMemberView? hoveredView = null;
         for (int i = 0; i < members.Length; i++)
@@ -720,7 +732,6 @@ public sealed partial class GameLoop
             "reference-caps-party-slots-at-four");
 
         DrawRtsCommandStrips(members);
-        DrawPartyChainLinks(members);
         DrawPartyDragFeedback(members);
         ResolvePartyPointerRelease(hoveredIndex, members);
         bool tooltipQueued = UpdateAndQueuePartyTooltip(hoveredIndex, hoveredView, now, capture);
@@ -1043,6 +1054,7 @@ public sealed partial class GameLoop
         TracePartyIcon(dl, capture, root, p, root + "PVPIcon", pvpPath,
             p + new Vector2(-9, 15) * s, new Vector2(32) * s, pvpIconVisible,
             fullClip, pvpHiddenReason);
+        DrawPartyChainLinks(dl, index);
         dl.PopClipRect();
         ImGui.End();
         return hovered;

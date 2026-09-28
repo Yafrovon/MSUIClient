@@ -73,8 +73,11 @@ public sealed class AudioMixer : IDisposable
 
     /// <summary>A live logical PCM source in the one shared renderer.</summary>
     private sealed record Voice(long Id, string Category, long StartedAtMs, bool Looping,
-        WaveOutVoice Pcm, string Path)
+        WaveOutVoice Pcm, string Path, AudioVoicePriorityLaw.Rank Rank)
     {
+        /// <summary>Latest applied output gain; admission prefers stealing the quietest voice.</summary>
+        public float Gain { get; set; }
+
         /// <summary>Rolling baseline for the drift probe: the wall clock and driver
         /// byte position at the start of the window being judged. Zero clock = not
         /// sampled yet.</summary>
@@ -113,6 +116,17 @@ public sealed class AudioMixer : IDisposable
     // the reference client's own rule (benilla pinned finding B3).
 
     public bool SoundEnabled { get; set; } = true;
+
+    /// <summary>The driven body's guid: its sounds outrank every other unit's when the mix is
+    /// full (<see cref="AudioVoicePriorityLaw"/>). Set by the game loop each frame.</summary>
+    public ulong PriorityOwner
+    {
+        get => (ulong)Interlocked.Read(ref _priorityOwner);
+        set => Interlocked.Exchange(ref _priorityOwner, (long)value);
+    }
+    private long _priorityOwner;
+    private readonly ConcurrentDictionary<string, long> _otherUnitStarts = new(StringComparer.OrdinalIgnoreCase);
+    private long _otherUnitRepeatsDropped;
     public bool MusicEnabled { get; set; } = true;
     public bool AmbienceEnabled { get; set; } = true;
     public float MasterVolume { get; set; } = 1f;
@@ -345,6 +359,14 @@ public sealed class AudioMixer : IDisposable
             return 0;
         }
 
+        AudioVoicePriorityLaw.Rank rank = AudioVoicePriorityLaw.Classify(
+            request.Category, request.Owner, PriorityOwner, request.Looping);
+        if (AudioVoicePriorityLaw.IsOtherUnit(rank) && !OtherUnitRepeatAllowed(request))
+        {
+            ReleaseNoDuplicateReservation(request.NoDuplicateReservation);
+            return 0;
+        }
+
         long voiceId = Interlocked.Increment(ref _nextVoice);
         var requestState = new VoiceRequestState();
         string path = request.Path;
@@ -371,8 +393,28 @@ public sealed class AudioMixer : IDisposable
         uint playbackFrequency = request.PlaybackFrequency;
         Task<PreparedSource> fileTask = PrepareFile(voiceId, path);
         Enqueue(() => PlayOnWorker(voiceId, requestState, path, fileTask, looping, gain, pan,
-            playbackFrequency, category, announce));
+            playbackFrequency, category, announce, rank));
         return voiceId;
+    }
+
+    /// <summary>The same sound from other units restarts at most once per
+    /// <see cref="AudioVoicePriorityLaw.OtherUnitRepeatWindowMs"/>: a raid's ten identical precasts
+    /// in one instant are one sound to the ear, and ten voices to the budget.</summary>
+    private bool OtherUnitRepeatAllowed(in AudioPlayRequest request)
+    {
+        string key = request.SoundId != 0 ? $"#{request.SoundId}" : request.Path;
+        long now = Environment.TickCount64;
+        if (_otherUnitStarts.TryGetValue(key, out long last) &&
+            now - last < AudioVoicePriorityLaw.OtherUnitRepeatWindowMs)
+        {
+            Interlocked.Increment(ref _otherUnitRepeatsDropped);
+            return false;
+        }
+        _otherUnitStarts[key] = now;
+        if (_otherUnitStarts.Count > 512)
+            foreach (var stale in _otherUnitStarts)
+                if (now - stale.Value > 10_000) _otherUnitStarts.TryRemove(stale.Key, out _);
+        return true;
     }
 
     public void Stop(long voiceId)
@@ -518,6 +560,7 @@ public sealed class AudioMixer : IDisposable
             if (!_pendingVolume.TryRemove(id, out PendingMix mix)) continue;
             if (mix.Pan is int pan) voice.Pcm.SetMix(mix.Volume / 1000f, pan / 1000f);
             else voice.Pcm.SetGain(mix.Volume / 1000f);
+            voice.Gain = mix.Volume / 1000f;
         }
     }
 
@@ -877,7 +920,7 @@ public sealed class AudioMixer : IDisposable
     private void PlayOnWorker(long voiceId, VoiceRequestState requestState,
         string path, Task<PreparedSource> fileTask,
         bool looping, float gain, float pan, uint playbackFrequency,
-        string category, bool announce)
+        string category, bool announce, AudioVoicePriorityLaw.Rank rank)
     {
         // Stopped before it ever started: do not open a device for a dead voice.
         if (!_live.ContainsKey(voiceId)) return;
@@ -892,7 +935,7 @@ public sealed class AudioMixer : IDisposable
         {
             fileTask.ContinueWith(_ => Enqueue(() => PlayOnWorker(
                     voiceId, requestState, path, fileTask, looping, gain, pan, playbackFrequency,
-                    category, announce)),
+                    category, announce, rank)),
                 TaskContinuationOptions.ExecuteSynchronously);
             return;
         }
@@ -937,7 +980,9 @@ public sealed class AudioMixer : IDisposable
                 voice.Dispose();
                 return;
             }
-            if (!MakeRoomForVoice(category))
+            if (_pendingVolume.TryGetValue(voiceId, out PendingMix admissionMix))
+                gain = admissionMix.Volume / 1000f;
+            if (!MakeRoomForVoice(category, rank, gain))
             {
                 voice.Dispose();
                 RetireLive(voiceId);
@@ -960,7 +1005,7 @@ public sealed class AudioMixer : IDisposable
                 return;
             }
             _voices[voiceId] = new Voice(
-                voiceId, category, Environment.TickCount64, looping, voice, path);
+                voiceId, category, Environment.TickCount64, looping, voice, path, rank) { Gain = gain };
             voice.Activate();
             Interlocked.Increment(ref _routes);
             if (announce)
@@ -970,44 +1015,69 @@ public sealed class AudioMixer : IDisposable
     }
 
     /// <summary>
-    /// Keep the logical mix bounded. Sources no longer open devices or copy whole
-    /// clips into unmanaged buffers, but an unbounded crowd can still waste render
-    /// work and turn useful world detail into an indistinct wall of overlapping cues.
-    ///
-    /// The budget is spent oldest-first and only on ONE-SHOT sfx: music and ambience
-    /// beds are the two things the player would actually notice being cut, and a
-    /// looping bed never finishes on its own to make room. A request that cannot be
-    /// afforded is dropped rather than queued - a footstep that arrives late is worse
-    /// than one that never plays.
+    /// Keep the logical mix bounded, spending the budget by importance
+    /// (<see cref="AudioVoicePriorityLaw"/>). Three limits apply: the whole mix, other units'
+    /// voices together, and other units' loops. When a limit is reached the best victim inside
+    /// it (lowest rank, then quietest, then oldest) is stopped only if it is strictly less
+    /// important than the incoming cue; otherwise the INCOMING cue is dropped. Cutting a sound
+    /// that is already playing is what the ear hears as chop; a cue that never starts in a
+    /// crowd is not missed. Music and ambience beds are never stolen.
     /// </summary>
-    private bool MakeRoomForVoice(string category)
+    private bool MakeRoomForVoice(string category, AudioVoicePriorityLaw.Rank rank, float gain)
     {
-        if (_voices.Count < MaxConcurrentVoices) return true;
-        Voice? oldest = null;
+        bool other = AudioVoicePriorityLaw.IsOtherUnit(rank);
+        int total = _voices.Count, others = 0, otherLoops = 0;
+        foreach (Voice live in _voices.Values)
+        {
+            if (!AudioVoicePriorityLaw.IsOtherUnit(live.Rank)) continue;
+            others++;
+            if (live.Rank == AudioVoicePriorityLaw.Rank.OtherLoop) otherLoops++;
+        }
+        // Tightest limit first: a loop over the loop cap competes with loops only, an other-unit
+        // cue over its budget with other-unit voices only, anything else with the whole mix.
+        Func<Voice, bool>? pool =
+            rank == AudioVoicePriorityLaw.Rank.OtherLoop && otherLoops >= AudioVoicePriorityLaw.OtherUnitLoops
+                ? v => v.Rank == AudioVoicePriorityLaw.Rank.OtherLoop
+            : other && others >= AudioVoicePriorityLaw.OtherUnitVoices
+                ? v => AudioVoicePriorityLaw.IsOtherUnit(v.Rank)
+            : total >= MaxConcurrentVoices
+                ? v => true
+            : null;
+        if (pool is null) return true;
+
+        Voice? victim = null;
         foreach (Voice candidate in _voices.Values)
         {
-            if (candidate.Looping || candidate.Category is "music" or "ambience") continue;
-            if (oldest is null || candidate.StartedAtMs < oldest.StartedAtMs) oldest = candidate;
+            if (!pool(candidate) || candidate.Rank == AudioVoicePriorityLaw.Rank.Bed) continue;
+            if (victim is null || AudioVoicePriorityLaw.IsBetterVictim(
+                    candidate.Rank, candidate.Gain, candidate.StartedAtMs,
+                    victim.Rank, victim.Gain, victim.StartedAtMs))
+                victim = candidate;
         }
-        if (oldest is not null)
+        if (victim is not null &&
+            AudioVoicePriorityLaw.MayReplace(victim.Rank, victim.Gain, rank, gain))
         {
-            StopOnWorker(oldest.Id);
+            StopOnWorker(victim.Id);
             return true;
         }
+        _voiceBudgetDrops++;
         long now = Environment.TickCount64;
-        if (now - _lastVoiceBudgetReportAtMs >= 1000)
+        if (now - _lastVoiceBudgetReportAtMs >= 2000)
         {
             _lastVoiceBudgetReportAtMs = now;
-            Console.WriteLine($"[audio] voice budget full ({_voices.Count} open, all held) " +
-                              $"- dropping a '{category}' cue");
+            Console.WriteLine($"[audio] voice budget: {total} open ({others} other-unit, " +
+                              $"{otherLoops} other-unit loops); dropped {_voiceBudgetDrops} " +
+                              $"lower-priority cue(s) and {Interlocked.Read(ref _otherUnitRepeatsDropped)} " +
+                              $"other-unit repeat(s) so far - latest '{category}' ({rank})");
         }
         return false;
     }
 
     /// <summary>Concurrent logical sources. Vanilla's own Sound_NumChannels sat in
     /// this range; the ceiling bounds both mix work and pathological cue overlap.</summary>
-    private const int MaxConcurrentVoices = 32;
+    private const int MaxConcurrentVoices = AudioVoicePriorityLaw.MaximumVoices;
 
+    private long _voiceBudgetDrops;
     private long _lastVoiceBudgetReportAtMs;
     private bool _probeArmedAnnounced;
 

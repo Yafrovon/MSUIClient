@@ -1,0 +1,25 @@
+{
+  "Entry": 7000112,
+  "Title": "Eyes on the Ridge",
+  "Details": "If the Bloodfang are this bold, something is driving them. The Moonrage hold the eastern ridge - and nobody has looked at their camp in weeks.$B$BGo up there, $N. Don't fight unless you must. Just see what they are doing and come back alive.",
+  "Objectives": "Scout the Moonrage camp on the eastern ridge, then report to Sergeant Morris Blackwald in Duskhaven.",
+  "RequestText": "Well? What did you see up there?",
+  "CompleteText": "Howlers and shadowcasters, gathered together... that is no hunting party. I'll send word to Lord Crowley at once.",
+  "Level": 38,
+  "MinLevel": 33,
+  "Zone": 7001,
+  "Giver": 7000103,
+  "Ender": 7000103,
+  "Goals": [
+    { "Kind": "Explore", "ExploreMap": 800, "ExploreX": -296.6, "ExploreY": -575.5, "ExploreZ": 152.9, "ExploreRadius": 15, "Text": "Moonrage camp scouted" }
+  ],
+  "Choices": [],
+  "Fixed": [],
+  "Xp": 3400,
+  "Money": 3500,
+  "RepFaction": 0,
+  "RepValue": 0,
+  "PrevQuest": 7000111,
+  "NextInChain": 0,
+  "ExclusiveGroup": 0
+}

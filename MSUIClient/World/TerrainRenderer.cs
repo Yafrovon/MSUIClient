@@ -332,6 +332,28 @@ public sealed class TerrainRenderer : IDisposable
     }
 
     /// <summary>
+    /// World Builder live sculpt (shared_docs/WORLD_BUILDER.md §4): rebuild one RESIDENT tile's
+    /// mesh and every CPU grid from an edited ADT (its chunk heights/normals already changed), so
+    /// what is drawn, walked on and picked all agree. Render thread only. False when the tile is
+    /// not resident (it will pick the edit up from the shared AdtCache instance when it streams).
+    /// </summary>
+    public bool RebuildTile((int col, int row) key, AdtTerrainReader.AdtResult adt)
+    {
+        if (!_tiles.TryGetValue(key, out var old)) return false;
+        var tile = TerrainTile.Load(_gl, adt, _config.ClientDataPath, key.col, key.row);
+        if (tile is null) return false;
+        old.Dispose();
+        _tiles[key] = tile;
+        _heights[key] = BuildHeightGrid(adt);
+        _innerHeights[key] = BuildInnerHeightGrid(adt);
+        _chunkMinimumHeights[key] = BuildChunkMinimumHeightGrid(adt);
+        return true;
+    }
+
+    /// <summary>Is this tile's mesh on the GPU right now?</summary>
+    public bool IsResident((int col, int row) key) => _tiles.ContainsKey(key);
+
+    /// <summary>
     /// Prepare the lead ring off the render thread and upload it through the
     /// shared GL context. These tiles remain unpublished until residency asks
     /// for them; the render thread only creates their small VAO container.
@@ -718,7 +740,18 @@ public sealed class TerrainRenderer : IDisposable
     /// safer answer. Vanilla draws the same line between INVALID_HEIGHT and
     /// VMAP_INVALID_HEIGHT_VALUE.
     /// </summary>
-    public float? SampleHeight(float worldX, float worldY, out bool hole)
+    public float? SampleHeight(float worldX, float worldY, out bool hole) =>
+        SampleHeightCore(worldX, worldY, ApplyHoles, out hole);
+
+    /// <summary>
+    /// The height field as authored, IGNORING the MCNK holes: what the terrain would be had the
+    /// artist not cut the square. Only for the controller's hole void guard - a hole with nothing
+    /// under it (the building leaves a corner open) holds the body here instead of the void.
+    /// </summary>
+    public float? SampleHeightThroughHoles(float worldX, float worldY) =>
+        SampleHeightCore(worldX, worldY, false, out _);
+
+    private float? SampleHeightCore(float worldX, float worldY, bool applyHoles, out bool hole)
     {
         hole = false;
 
@@ -740,7 +773,7 @@ public sealed class TerrainRenderer : IDisposable
         // same quads here is the whole fix: otherwise the height grid keeps
         // answering with terrain that is neither drawn nor there, and the
         // player walks up an invisible hillside instead of into the mine.
-        if (ApplyHoles &&
+        if (applyHoles &&
             _holes.TryGetValue(key, out var holeGrid) &&
             holeGrid.Length == QuadGridSide * QuadGridSide &&
             holeGrid[r0 * QuadGridSide + c0] != 0)

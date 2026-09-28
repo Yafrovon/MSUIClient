@@ -213,6 +213,7 @@ public sealed partial class GameLoop
             // switch is off by default and either, neither or both may be on.
             DrawPlayerPowerBars();
             DrawSwingTimer();
+            DrawThreatMeter();
             DrawTargetFrame();
             DrawPetFrameAndActionBar();
             DrawStanceBar();

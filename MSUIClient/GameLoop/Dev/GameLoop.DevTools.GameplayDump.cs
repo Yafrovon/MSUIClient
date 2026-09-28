@@ -79,6 +79,7 @@ public sealed partial class GameLoop
                 Console.WriteLine($"[gdump] screenshot unavailable - {ex.Message}");
             }
             Console.WriteLine($"[gdump] wrote {relativeJson}{(png ? " (+ .png)" : "")}");
+            PruneAutomaticDumps(Path.GetDirectoryName(jsonPath)!, fileName);
             if (_liveRunOptions?.Background != true) ImGui.SetClipboardText(relativeJson);
         }
         catch (Exception ex)
@@ -90,6 +91,35 @@ public sealed partial class GameLoop
             _gameplayDumpDirectoryOverride = null;
             _gameplayDumpLayout.Clear();
             _gameplayDumpVisibleActions.Clear();
+        }
+    }
+
+    /// <summary>Machine-generated dump families and how many files (png + json) each keeps.</summary>
+    private static readonly (string Prefix, int Keep)[] AutomaticDumpFamilies =
+    {
+        ("gameplay-wb-", 60),      // World Builder surveys / script shots (reviewed as contact sheets)
+        ("gameplay-fight-", 60),   // live-run fight captures (start + outcome per fight)
+    };
+
+    /// <summary>
+    /// Owner rule (2026-09-26): don't collect tens of thousands of screenshots. After writing a dump of an
+    /// AUTOMATIC family, delete that family's oldest files beyond its cap. Hand-named evidence dumps
+    /// (any other prefix) are never touched.
+    /// </summary>
+    private static void PruneAutomaticDumps(string directory, string justWritten)
+    {
+        foreach (var (prefix, keep) in AutomaticDumpFamilies)
+        {
+            if (!justWritten.StartsWith(prefix, StringComparison.Ordinal)) continue;
+            try
+            {
+                var old = new DirectoryInfo(directory).EnumerateFiles(prefix + "*")
+                    .Where(f => f.Extension is ".png" or ".json")
+                    .OrderByDescending(f => f.LastWriteTimeUtc).Skip(keep).ToList();
+                foreach (var f in old) f.Delete();
+                if (old.Count > 0) Console.WriteLine($"[gdump] pruned {old.Count} old {prefix}* file(s) (keeping {keep})");
+            }
+            catch (Exception ex) { Console.WriteLine($"[gdump] prune failed - {ex.Message}"); }
         }
     }
 

@@ -97,6 +97,46 @@ public static class WorldMapUiLaw
     public static Vector2 At(Vector2 origin, Vector2 logicalPoint, float scale) =>
         origin + logicalPoint * scale;
 
+    /// <summary>World Content Pack maps start here (MangosSuperUI WorldPackContent.MapIdBase).</summary>
+    public const uint PackMapIdBase = 800;
+
+    /// <summary>
+    /// A pack map ships no WorldMapArea row and no painted Interface\WorldMap art, so its world map is
+    /// the mosaic of its own minimap tiles (every pack tile has one - verifier G11). The bounds are a
+    /// WorldMapArea row's: Left/Right = world Y at the map's left/right edge, Top/Bottom = world X at
+    /// its top/bottom, fitted around the tile set at the detail frame's 1002:668 (3:2) aspect with a
+    /// small margin, centred. ADT tile (col, row) spans Y (32-col-1..32-col)*533.3 and X likewise by row.
+    /// </summary>
+    public static bool TryMinimapMosaicBounds(IEnumerable<(int Col, int Row)> tiles,
+        out float left, out float right, out float top, out float bottom)
+    {
+        const float tile = 533.33333f, aspect = 1002f / 668f, margin = 1.06f;
+        left = right = top = bottom = 0f;
+        var list = tiles.ToList();
+        if (list.Count == 0) return false;
+        float west = (32 - list.Min(t => t.Col)) * tile, east = (31 - list.Max(t => t.Col)) * tile;
+        float north = (32 - list.Min(t => t.Row)) * tile, south = (31 - list.Max(t => t.Row)) * tile;
+        float width = (west - east) * margin, height = (north - south) * margin;
+        if (width / height < aspect) width = height * aspect; else height = width / aspect;
+        float cy = (west + east) * .5f, cx = (north + south) * .5f;
+        left = cy + width * .5f; right = cy - width * .5f;
+        top = cx + height * .5f; bottom = cx - height * .5f;
+        return true;
+    }
+
+    /// <summary>Tiles one minimap image must cover before it counts as the map's shared open-sea image.</summary>
+    public const int MinSharedSeaTiles = 16;
+
+    /// <summary>
+    /// The open-sea image a map shares across its empty ocean tiles (Blizzard's covers 165 Eastern Kingdoms
+    /// tiles), or 0 when no image is shared that widely. A small pack map (map 801: four unique tiles) has no
+    /// sea: its most-common image is just one of its tiles, and filling with it repeated the town around the
+    /// dungeon's edges (2026-09-27, live).
+    /// </summary>
+    public static uint SharedSeaTexture(IEnumerable<uint> tileTextures) =>
+        tileTextures.GroupBy(t => t).Where(g => g.Key != 0 && g.Count() >= MinSharedSeaTiles)
+            .OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+
     public static Vector2 MapPoint(Vector2 mapMin, Vector2 mapSize, float x, float y) =>
         new(mapMin.X + x * mapSize.X, mapMin.Y + y * mapSize.Y);
 

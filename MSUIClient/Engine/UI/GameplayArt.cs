@@ -427,6 +427,23 @@ public sealed class GameplayArt : IDisposable
         catch { _additiveRegionTextures[key] = null; return 0; }
     }
 
+    /// <summary>Evict map art, including cached misses, after a pack mount. Call on the GL thread before drawing a frame.</summary>
+    public void ClearMapCache()
+    {
+        var released = new HashSet<Texture>();
+        Dictionary<string, Texture?>[] caches = [_textures, _repeatTextures, _additiveTextures,
+            _brightHighlightTextures, _additiveRegionTextures, _circularTextures,
+            _painterlyTextures, _painterlyCircularTextures];
+        foreach (var cache in caches)
+            foreach (string key in cache.Keys.Where(path =>
+                path.StartsWith(@"Interface\WorldMap\", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith(@"textures\Minimap\", StringComparison.OrdinalIgnoreCase)).ToArray())
+            {
+                if (cache.Remove(key, out Texture? texture) && texture is not null) released.Add(texture);
+            }
+        foreach (Texture texture in released) texture.Dispose();
+    }
+
     public void Dispose()
     {
         foreach (Texture texture in _textures.Values.Where(t => t is not null).Distinct()!) texture.Dispose();

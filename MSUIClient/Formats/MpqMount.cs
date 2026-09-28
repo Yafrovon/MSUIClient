@@ -149,6 +149,68 @@ public sealed class MpqMount : IDisposable
     public void ClearOverride(string internalPath) => SetOverride(internalPath, null);
 
     /// <summary>
+    /// Hot (un)mount one archive by file name — the World Builder's patch-7.MPQ download
+    /// (shared_docs/WORLD_BUILDER.md §4). Null <paramref name="path"/> closes and drops the named
+    /// archive (so the file can be replaced on disk); a path opens it and re-sorts the chain with
+    /// <see cref="OrderArchives"/>. The negative cache is cleared either way. Returns false when
+    /// the new file is not a readable MPQ (the archive then stays unmounted).
+    /// </summary>
+    public bool ReplaceArchive(string fileName, string? path)
+    {
+        _lock.EnterWriteLock();
+        try
+        {
+            for (int i = _archives.Count - 1; i >= 0; i--)
+            {
+                if (!_archives[i].Name.Equals(fileName, StringComparison.OrdinalIgnoreCase)) continue;
+                _archives[i].Archive.Dispose();
+                _archives.RemoveAt(i);
+            }
+            _negative.Clear();
+            if (path is null) return true;
+
+            var opened = MpqArchive.Open(path);
+            if (opened is null) return false;
+            _archives.Add((fileName, opened));
+            var order = OrderArchives(_archives.Select(a => a.Name)).ToList();
+            _archives.Sort((a, b) => order.IndexOf(a.Name).CompareTo(order.IndexOf(b.Name)));
+            Console.WriteLine($"[mpq] hot-mounted {fileName}; priority: {string.Join(" > ", _archives.Select(x => x.Name))}");
+            return true;
+        }
+        finally { _lock.ExitWriteLock(); }
+    }
+
+    public bool IsMounted(string fileName)
+    {
+        _lock.EnterReadLock();
+        try { return _archives.Any(a => a.Name.Equals(fileName, StringComparison.OrdinalIgnoreCase)); }
+        finally { _lock.ExitReadLock(); }
+    }
+
+    /// <summary>Read through the normal priority chain but skipping one archive (overrides and the
+    /// negative cache are bypassed). The World Builder reads STOCK terrain this way while patch-7
+    /// is mounted.</summary>
+    public byte[]? ReadFileExcluding(string internalPath, string excludedArchive)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            foreach (var (name, archive) in _archives)
+            {
+                if (name.Equals(excludedArchive, StringComparison.OrdinalIgnoreCase)) continue;
+                try
+                {
+                    var data = archive.ReadFile(internalPath);
+                    if (data is not null) return data;
+                }
+                catch { }
+            }
+            return null;
+        }
+        finally { _lock.ExitReadLock(); }
+    }
+
+    /// <summary>
     /// Pure 1.12 archive-priority computation. Highest priority is returned
     /// first because ReadFile returns the first matching file.
     /// </summary>

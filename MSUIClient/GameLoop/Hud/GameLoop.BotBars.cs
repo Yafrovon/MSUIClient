@@ -603,49 +603,52 @@ public sealed partial class GameLoop
     /// back in range) — and a small medallion beside it carrying the ANCHOR's initial. Hover
     /// names it in words; click toggles the link. Server truth (roster row v2).
     /// </summary>
-    private void DrawPartyChainLinks(PartyMember[] members)
+    private void DrawPartyChainLinks(ImDrawListPtr draw, int i)
     {
+        // Owner 2026-09-22: drawn on the member frame's OWN window list, not the foreground list,
+        // so the loot window and the master-loot panel cover the badges instead of the badges
+        // bleeding through them; and smaller, docked at the right end of the bars (chain beside
+        // the mana bar, the anchor's initial beside the health bar) instead of on the portrait.
+        if (_partyChainRoster is not { } members || i < 0 || i >= members.Length) return;
         float scale = GameplayUiScale();
-        var draw = ImGui.GetForegroundDrawList();
-        for (int i = 0; i < members.Length; i++)
-        {
-            PartyMember member = members[i];
-            byte state = PartyChainState(member);
-            ulong anchor = PartyChainAnchor(member);
-            // Owner 2026-09-03 live correction: the chain takes the former WHO-medallion
-            // position at the portrait's lower-left.
-            Vector2 center = (PartyMemberLogicalOrigin(i) + new Vector2(11.5f, 39.5f)) * scale;
-            float radius = 7f * scale;
-            DrawChainGlyph(draw, center, radius, state);
-            // WHO: the anchor's initial moves to the upper-left rim, just above 9 o'clock.
-            string anchorName = anchor != 0 ? ResolveUnitName(anchor) : "";
-            Vector2 medallion = (PartyMemberLogicalOrigin(i) + new Vector2(8.5f, 18.5f)) * scale;
-            if (anchorName.Length > 0)
-                DrawChainAnchorMedallion(draw, medallion, 5.5f * scale, anchorName, state, scale);
+        PartyMember member = members[i];
+        byte state = PartyChainState(member);
+        ulong anchor = PartyChainAnchor(member);
+        Vector2 center = (PartyMemberLogicalOrigin(i) + new Vector2(122.5f, 25f)) * scale;
+        float radius = 3.6f * scale;
+        DrawChainGlyph(draw, center, radius, state);
+        string anchorName = anchor != 0 ? ResolveUnitName(anchor) : "";
+        Vector2 medallion = (PartyMemberLogicalOrigin(i) + new Vector2(122.5f, 15.5f)) * scale;
+        if (anchorName.Length > 0)
+            DrawChainAnchorMedallion(draw, medallion, 4f * scale, anchorName, state, scale);
 
-            Vector2 hitMin = new(medallion.X - 6f * scale, medallion.Y - 6f * scale);
-            Vector2 hitMax = center + new Vector2(radius + 2f * scale, radius + 2f * scale);
-            bool hovered = ImGui.IsMouseHoveringRect(hitMin, hitMax, false);
-            if (hovered)
+        Vector2 hitMin = new(medallion.X - 5f * scale, medallion.Y - 5f * scale);
+        Vector2 hitMax = center + new Vector2(radius + 2f * scale, radius + 2f * scale);
+        // The member window must be the hovered one: a click on a window lying over the badge
+        // (loot, master loot) belongs to that window, never to the chain.
+        bool hovered = ImGui.IsWindowHovered() && ImGui.IsMouseHoveringRect(hitMin, hitMax, false);
+        if (hovered)
+        {
+            string text = state switch
             {
-                string text = state switch
-                {
-                    SuiChainLinked => anchorName.Length > 0 ? $"Chained to {anchorName}" : "Chained",
-                    SuiChainWorldHold => anchorName.Length > 0
-                        ? $"Holding — waits for {anchorName} to come back in range"
-                        : "Holding — waits for the party to come back in range",
-                    _ => "Unchained — stands its ground until re-linked",
-                };
-                OfferOwnerAnchoredSharedGameTooltip(new("party-chain", member.Guid),
-                    [new(text, GameTooltipTextTone.White),
-                     new(state == SuiChainUnlinked ? "Click to re-link" : "Click to unchain",
-                         GameTooltipTextTone.Gold)],
-                    hitMax, Vector2.Zero);
-                if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-                    SetPartyLink(member, linked: state == SuiChainUnlinked);
-            }
+                SuiChainLinked => anchorName.Length > 0 ? $"Chained to {anchorName}" : "Chained",
+                SuiChainWorldHold => anchorName.Length > 0
+                    ? $"Holding — waits for {anchorName} to come back in range"
+                    : "Holding — waits for the party to come back in range",
+                _ => "Unchained — stands its ground until re-linked",
+            };
+            OfferOwnerAnchoredSharedGameTooltip(new("party-chain", member.Guid),
+                [new(text, GameTooltipTextTone.White),
+                 new(state == SuiChainUnlinked ? "Click to re-link" : "Click to unchain",
+                     GameTooltipTextTone.Gold)],
+                hitMax, Vector2.Zero);
+            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                SetPartyLink(member, linked: state == SuiChainUnlinked);
         }
     }
+
+    /// <summary>This frame's roster, for the per-member chain badges drawn inside each frame.</summary>
+    private PartyMember[]? _partyChainRoster;
 
     /// <summary>The authored bordered chain badge shared by party frames and command cards.
     /// The roster state chooses the sprite; anchor identity stays in
@@ -669,9 +672,8 @@ public sealed partial class GameLoop
         dl.AddCircleFilled(center, radius, SuiChainColor(state));
         dl.AddCircle(center, radius, 0xff10181f, 0, MathF.Max(1f, 1.5f * scale));
         string glyph = anchorName[..1].ToUpperInvariant();
-        Vector2 half = ImGui.CalcTextSize(glyph) * 0.5f;
-        dl.AddText(center - half + new Vector2(1f, 1f) * scale, 0xd0000000, glyph);
-        dl.AddText(center - half, 0xffffffff, glyph);
+        // FrizQt at the disc's size: 10 pt fills an 11 px disc, so the text scale follows the radius.
+        GameText.DrawCentered(dl, "GameFontHighlightSmall", glyph, center, radius / 5.5f);
     }
 
     /// <summary>Dashed hint from the dragged portrait to the cursor while chaining a follow.</summary>

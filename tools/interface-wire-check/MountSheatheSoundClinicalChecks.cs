@@ -68,11 +68,14 @@ internal static class MountSheatheSoundClinicalChecks
               sheath.Contains("drawing ? pair.Unsheathe : pair.Sheathe",
                   StringComparison.Ordinal) &&
               // The resync adoption after a body hand-off is silent; combat outranks the
-              // server byte rather than fighting it frame by frame, and leaves state 2 alone.
+              // server byte rather than fighting it frame by frame, and leaves state 2 alone
+              // only while a ranged action is live (a one-shot pull must not keep the bow up).
               sheath.Contains("bool resync = !_sheathSoundSynced;", StringComparison.Ordinal) &&
               sheath.Contains("bool combatForcesDrawn = !_freeView && player.Engaged;",
                   StringComparison.Ordinal) &&
-              sheath.Contains("combatForcesDrawn && _visualSheathState != 2",
+              sheath.Contains("bool rangedPoseHeld = _visualSheathState == 2 && RangedActionLive();",
+                  StringComparison.Ordinal) &&
+              sheath.Contains("combatForcesDrawn && !rangedPoseHeld",
                   StringComparison.Ordinal) &&
               sheath.Contains("_character.BeginSheathCeremony()", StringComparison.Ordinal) &&
               sheath.Contains("_character.ConsumeSheathSwap()", StringComparison.Ordinal) &&

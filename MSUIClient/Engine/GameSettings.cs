@@ -307,8 +307,39 @@ public sealed class GameSettings
         /// while the camera turns, so frames-only is the predictable half.</summary>
         public bool HovercastWorldUnits { get; set; }
 
+        /// <summary>Pressing an attack ability also starts the swing (melee) or Auto Shot (a
+        /// hunter's shot), even when the ability itself is refused for rage, energy, cooldown or
+        /// range - an implicit /startattack. On by default (owner 2026-09-22); the stock 1.12
+        /// behaviour, where a refused ability does nothing, is one switch away.</summary>
+        public bool AbilitiesStartAttack { get; set; } = true;
+
         /// <summary>The melee/ranged auto-attack swing rail.</summary>
         public SwingTimerSettings SwingTimer { get; set; } = new();
+
+        /// <summary>Threat on your target: the top few and where you stand.</summary>
+        public ThreatMeterSettings ThreatMeter { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Threat Meter (owner 2026-09-22). Needs a server advertising threat-meter-v1; 1.12 itself
+    /// never sends threat. Offsets are logical UI units, like the swing timer.
+    /// </summary>
+    public sealed class ThreatMeterSettings
+    {
+        /// <summary>Off by default: furniture nobody asked for stays off the screen.</summary>
+        public bool Enabled { get; set; }
+
+        /// <summary>Drag the meter to move it. Unlocked also keeps it on screen out of combat.</summary>
+        public bool Unlocked { get; set; }
+
+        public float OffsetX { get; set; }
+        public float OffsetY { get; set; }
+
+        /// <summary>How many of the top threat holders to list (3..10). You are always shown.</summary>
+        public int Rows { get; set; } = 5;
+
+        /// <summary>Hide the meter when your target has no threat list (out of combat).</summary>
+        public bool HideWhenIdle { get; set; } = true;
     }
 
     /// <summary>

@@ -32,6 +32,9 @@ VerifyDistantCollisionFloorDoesNotOpenHillside();
 VerifyOverheadSteepTerrainDoesNotWallInterior();
 VerifyImpassableMcnkIsOneWay();
 VerifyContinuousInteriorEntryRetainsTerrainShell(CreateTerrain(height: 100f));
+VerifyHoleWithNothingUnderItHoldsTheBody();
+VerifyHoleOverACellarStillDropsIntoIt();
+VerifyShellWithNothingBelowRecoversToTheSurface();
 VerifyGlobalWmoFall(CreateEmptyTerrain(), collision);
 VerifyWalkableTriangleGather();
 VerifyCameraTerrainShellClassification();
@@ -990,6 +993,67 @@ static void VerifyContinuousInteriorEntryRetainsTerrainShell(TerrainRenderer ter
         $"continuous interior entry forgot its terrain shell and snapped to Z={controller.Position.Z:F3}");
     Require(!controller.Grounded && controller.Velocity.Z < 0f,
         "continuous interior entry froze instead of falling through a support gap");
+}
+
+// Hole void law (Gilneas 2026-09-27, proven live: stock mine/crypt/cave mouths leave a corner of their
+// terrain-hole square with NOTHING under it; ten walk-offs fell out of the world). Quads 2..5 x 2..5 of
+// tile (32,32) are holes = world x,y in (-25, -8.3]; a far-away floor keeps the collision world loaded.
+static TerrainRenderer CreateTerrainWithHole(float height)
+{
+    TerrainRenderer terrain = CreateTerrain(height);
+    FieldInfo holeField = typeof(TerrainRenderer).GetField("_holes", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("TerrainRenderer._holes not found");
+    var holes = (Dictionary<(int col, int row), byte[]>)holeField.GetValue(terrain)!;
+    var grid = new byte[TerrainRenderer.QuadGridSide * TerrainRenderer.QuadGridSide];
+    for (int r = 2; r <= 5; r++)
+    for (int c = 2; c <= 5; c++)
+        grid[r * TerrainRenderer.QuadGridSide + c] = 1;
+    holes[(32, 32)] = grid;
+    return terrain;
+}
+
+static CollisionWorld CreateFarFloor(float cellarHeight = float.NaN)
+{
+    var collision = new CollisionWorld();
+    AddFloor(collision, -300f, -290f, -300f, -290f, 100f);                       // elsewhere: the world is loaded
+    if (!float.IsNaN(cellarHeight)) AddFloor(collision, -30f, -4f, -30f, -4f, cellarHeight);
+    collision.Build();
+    return collision;
+}
+
+static void VerifyHoleWithNothingUnderItHoldsTheBody()
+{
+    CharacterController controller = CreateController(CreateTerrainWithHole(100f), CreateFarFloor());
+    controller.Teleport(-16f, -16f, 106f);                                        // dropped onto the open hole
+    for (int i = 0; i < 180; i++) controller.Update(1f / 60f, default);
+    Require(controller.Position.Z > 99f && controller.GroundSource == "hole-void-guard",
+        $"a terrain hole with nothing under it dropped the body to Z={controller.Position.Z:F1} ({controller.GroundSource})");
+
+    controller.Teleport(-4f, -16f, 100f);                                         // on terrain, walk into it
+    for (int i = 0; i < 30; i++) controller.Update(1f / 60f, default);
+    var walk = new MovementInput { Forward = 1f, Yaw = MathF.PI };               // toward -x, into the hole
+    for (int i = 0; i < 60; i++) controller.Update(1f / 60f, walk);
+    for (int i = 0; i < 120; i++) controller.Update(1f / 60f, default);
+    Require(controller.Position.X < -8.4f && controller.Position.Z > 99f,
+        $"walking into a void hole corner ended at ({controller.Position.X:F1}, Z={controller.Position.Z:F1}) ({controller.GroundSource})");
+}
+
+static void VerifyHoleOverACellarStillDropsIntoIt()
+{
+    CharacterController controller = CreateController(CreateTerrainWithHole(100f), CreateFarFloor(cellarHeight: 80f));
+    controller.Teleport(-16f, -16f, 100.5f);
+    for (int i = 0; i < 240; i++) controller.Update(1f / 60f, default);
+    Require(MathF.Abs(controller.Position.Z - 80f) < 0.5f && controller.Grounded,
+        $"a hole over a cellar must drop the body onto the cellar floor, got Z={controller.Position.Z:F1} ({controller.GroundSource})");
+}
+
+static void VerifyShellWithNothingBelowRecoversToTheSurface()
+{
+    CharacterController controller = CreateController(CreateTerrain(100f), CreateFarFloor());
+    controller.Teleport(-16f, -16f, 97f);                                         // under the height field: a "tunnel"
+    for (int i = 0; i < 240; i++) controller.Update(1f / 60f, default);
+    Require(MathF.Abs(controller.Position.Z - 100f) < 0.5f,
+        $"under the terrain shell with nothing below, the body must return to the surface, got Z={controller.Position.Z:F1} ({controller.GroundSource})");
 }
 
 static void VerifyGlobalWmoFall(TerrainRenderer terrain, CollisionWorld collision)

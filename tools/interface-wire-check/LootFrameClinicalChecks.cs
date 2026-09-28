@@ -5,6 +5,7 @@ internal static class LootFrameClinicalChecks
 {
     public static void Run()
     {
+        CheckMasterLootPanel();
         LootFrameUiLaw.OpenPresentation empty = LootFrameUiLaw.OnShow(1, 0, 0);
         LootFrameUiLaw.OpenPresentation emptyFishing = LootFrameUiLaw.OnShow(3, 0, 0);
         LootFrameUiLaw.OpenPresentation fishing = LootFrameUiLaw.OnShow(3, 1, 0);
@@ -142,6 +143,41 @@ internal static class LootFrameClinicalChecks
               !runtime.Contains("DrawArt(dl, @\"Interface\\TargetingFrame\\TargetDead\"",
                   StringComparison.Ordinal),
             "LootFrame open presentation bypasses its law");
+    }
+
+    /// <summary>Owner 2026-09-22: the master-loot panel groups by class, puts who can use the item
+    /// first, fits a 40-man raid in at most four columns without paging, and docks beside the
+    /// loot frame instead of over it.</summary>
+    private static void CheckMasterLootPanel()
+    {
+        // The Testwar +39 roster: 5 warriors, 4 paladins, 3 hunters, 8 rogues, 6 priests,
+        // 10 mages, 4 warlocks. Giantstalker's Belt: mail, hunters only.
+        (byte Class, int Count)[] roster = [(1, 5), (2, 4), (3, 3), (4, 8), (5, 6), (8, 10), (9, 4)];
+        const int hunterMask = 1 << 2;
+        var candidates = new List<LootMasterMenuUiLaw.Candidate>();
+        ulong guid = 100;
+        foreach (var (classId, count) in roster)
+            for (int i = 0; i < count; i++)
+                candidates.Add(new(guid++, $"C{classId}-{i}", classId,
+                    LootMasterMenuUiLaw.CanUse(classId, hunterMask, 4, 3)));
+        var display = new System.Numerics.Vector2(1920, 1080);
+        var frame = new System.Numerics.Vector2(40, 200);
+        LootMasterMenuUiLaw.Layout layout = LootMasterMenuUiLaw.Resolve(candidates, frame, 300, display, 1f);
+        var members = layout.Cells.Where(c => c.Kind == LootMasterMenuUiLaw.CellKind.Member).ToList();
+        Check(members.Count == 40 && layout.Columns <= LootMasterMenuUiLaw.MaximumColumns &&
+              layout.Cells.Count(c => c.Kind == LootMasterMenuUiLaw.CellKind.ClassHeader) == 7,
+            "master-loot panel lost a candidate, a class header, or overflowed four columns");
+        Check(layout.Cells[0].Kind == LootMasterMenuUiLaw.CellKind.ClassHeader && layout.Cells[0].ClassId == 3 &&
+              members.Take(3).All(c => c.Member.Usable && c.ClassId == 3) &&
+              members.Skip(3).All(c => !c.Member.Usable),
+            "master-loot panel no longer lists the classes that can use the item first");
+        Check(layout.Origin.X >= frame.X + LootMasterMenuUiLaw.LootFrameVisibleRight &&
+              layout.Origin.X + layout.Size.X <= display.X && layout.Origin.Y + layout.Size.Y <= display.Y,
+            "master-loot panel is not docked beside the loot frame inside the display");
+        Check(LootMasterMenuUiLaw.CanUse(1, -1, 4, 4) && !LootMasterMenuUiLaw.CanUse(8, -1, 4, 2) &&
+              LootMasterMenuUiLaw.CanUse(8, -1, 2, 19) && !LootMasterMenuUiLaw.CanUse(4, -1, 2, 10) &&
+              LootMasterMenuUiLaw.CanUse(0, hunterMask, 4, 4),
+            "master-loot proficiency table drifted (plate warrior, leather mage, wand mage, staff rogue, unknown class)");
     }
 
     private static void Check(bool condition, string message)

@@ -101,11 +101,15 @@ public sealed partial class GameLoop
         // draw on _freeView alone), so a controllerOwnsBody gate would leave a flying character
         // sheathed through a fight. Only in the free view is the rig a camera rather than a
         // body, and there the mirror is left alone so it can re-adopt the server's byte.
-        // State 2 is excluded: combat pulls weapons out of the STOW, it does not overrule Auto
-        // Shot. Without this the ranged pose survived a single frame before being forced back to
-        // melee — and with the cue attached, starting Auto Shot in melee range sounded a
-        // spurious sword draw every time.
-        if (!liveAuthorshipBlocked && combatForcesDrawn && _visualSheathState != 2 &&
+        // The ranged pose is held only while a ranged action is live: combat does not overrule
+        // Auto Shot or a shot mid-cast. Without that hold the ranged pose survived a single frame
+        // before being forced back to melee — and with the cue attached, starting Auto Shot in
+        // melee range sounded a spurious sword draw every time. Once the shot is done (a
+        // one-shot Shoot Bow/Throw pull, or Auto Shot cancelled by a melee ability), melee
+        // engagement draws the melee weapons (owner 2026-09-22: the bow stayed in hand for
+        // the whole fight after a ranged pull).
+        bool rangedPoseHeld = _visualSheathState == 2 && RangedActionLive();
+        if (!liveAuthorshipBlocked && combatForcesDrawn && !rangedPoseHeld &&
             (_visualSheathState != 1 ||
             _pendingCeremonialSheathState is not null))
         {
@@ -224,6 +228,12 @@ public sealed partial class GameLoop
                 forceLoop: false, trackHold: false, category: "sfx");
         }
     }
+
+    /// <summary>An auto-repeat is running, or a ranged-weapon cast is still in flight.</summary>
+    private bool RangedActionLive() =>
+        _autoRepeatSpell != 0 ||
+        (_pendingCastSpell != 0 && _spellCatalog is not null &&
+         _spellCatalog.TryGet(_pendingCastSpell, out SpellInfo pending) && pending.Ranged);
 
     private void SetVisualSheath(byte state, bool volunteer = true)
     {

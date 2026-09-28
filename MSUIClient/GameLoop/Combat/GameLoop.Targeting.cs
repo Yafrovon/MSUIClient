@@ -224,6 +224,8 @@ public sealed partial class GameLoop
             // every world click, ahead of the free-view router - no stray RTS orders
             // while placing path nodes. No-op unless a mode is armed.
             if (HandleDevEditClick(click)) continue;
+            // Creator World Builder: an armed tool (sculpt/place/select) owns the click.
+            if (HandleWorldBuilderClick(click)) continue;
             // Encounter Lab: an armed placement (probe body, scenario actor, boss)
             // owns the click the same way, so dropping a probe never also issues an
             // order. No-op unless a placement is armed.

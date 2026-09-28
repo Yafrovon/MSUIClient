@@ -104,6 +104,35 @@ internal static class SpatialAudioClinicalChecks
               mixer.Contains("MaxConcurrentVoices", StringComparison.Ordinal),
             "the device dropout probe / voice budget went missing");
 
+        // Raid chop (owner 2026-09-22): admission is ranked, never oldest-first. The driven body,
+        // UI and beds outrank the crowd; a new cue only replaces a strictly less important voice,
+        // otherwise the new cue is the one dropped.
+        {
+            const ulong me = 787, bot = 115;
+            var own = MSUIClient.World.Sound.AudioVoicePriorityLaw.Classify("spell", me, me, false);
+            var ui = MSUIClient.World.Sound.AudioVoicePriorityLaw.Classify("ui.loot", bot, me, false);
+            var other = MSUIClient.World.Sound.AudioVoicePriorityLaw.Classify("spell", bot, me, false);
+            var otherLoop = MSUIClient.World.Sound.AudioVoicePriorityLaw.Classify("spell", bot, me, true);
+            var bed = MSUIClient.World.Sound.AudioVoicePriorityLaw.Classify("music", 0, me, true);
+            Check(own == MSUIClient.World.Sound.AudioVoicePriorityLaw.Rank.Own && ui == own &&
+                  other == MSUIClient.World.Sound.AudioVoicePriorityLaw.Rank.Other &&
+                  otherLoop == MSUIClient.World.Sound.AudioVoicePriorityLaw.Rank.OtherLoop &&
+                  bed == MSUIClient.World.Sound.AudioVoicePriorityLaw.Rank.Bed,
+                "audio voice ranks drifted");
+            Check(MSUIClient.World.Sound.AudioVoicePriorityLaw.MayReplace(other, 0.9f, own, 0.1f) &&
+                  MSUIClient.World.Sound.AudioVoicePriorityLaw.MayReplace(otherLoop, 0.9f, other, 0.1f) &&
+                  !MSUIClient.World.Sound.AudioVoicePriorityLaw.MayReplace(other, 0.5f, other, 0.6f) &&
+                  MSUIClient.World.Sound.AudioVoicePriorityLaw.MayReplace(other, 0.1f, other, 0.6f) &&
+                  !MSUIClient.World.Sound.AudioVoicePriorityLaw.MayReplace(own, 0.1f, other, 1f) &&
+                  !MSUIClient.World.Sound.AudioVoicePriorityLaw.MayReplace(bed, 0f, own, 1f),
+                "audio admission may cut a playing voice for an equal or less important cue");
+            Check(!mixer.Contains("oldest is null || candidate.StartedAtMs < oldest.StartedAtMs",
+                      StringComparison.Ordinal) &&
+                  mixer.Contains("AudioVoicePriorityLaw.MayReplace(", StringComparison.Ordinal) &&
+                  mixer.Contains("OtherUnitRepeatAllowed(", StringComparison.Ordinal),
+                "the mixer reverted to oldest-first voice stealing");
+        }
+
         // ONE REAL OUTPUT, many logical voices. Gain/pan are multiplied into each
         // source before summing, changes glide for 15 ms, forced stops de-click, and
         // the final wide mix is soft-limited before int16 conversion. There must be

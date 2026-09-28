@@ -857,6 +857,13 @@ if (args.Contains("--npc-session-only", StringComparer.Ordinal))
     return;
 }
 
+if (args.Contains("--threat-meter-only", StringComparer.Ordinal))
+{
+    ThreatMeterClinicalChecks.Run();
+    Console.WriteLine("interface-wire-check: ThreatMeter PASS");
+    return;
+}
+
 if (args.Contains("--loot-frame-only", StringComparer.Ordinal))
 {
     LootFrameClinicalChecks.Run();
@@ -1568,6 +1575,13 @@ if (args.Contains("--world-map-only", StringComparer.Ordinal))
 {
     WorldMapClinicalChecks.Run();
     Console.WriteLine("interface-wire-check: WorldMap PASS");
+    return;
+}
+
+if (args.Contains("--world-builder-only", StringComparer.Ordinal))
+{
+    WorldBuilderClinicalChecks.Run();
+    Console.WriteLine("interface-wire-check: WorldBuilder PASS");
     return;
 }
 
@@ -4842,6 +4856,7 @@ MacroBookClinicalChecks.Run();
 Console.WriteLine("interface-wire-check: MacroBook PASS");
 SpellClassificationClinicalChecks.Run();
 SharedDocsClinicalChecks.Run();
+WorldBuilderClinicalChecks.Run();
 Console.WriteLine("interface-wire-check: SharedDocs PASS");
 
 Console.WriteLine("interface wire checks passed: minimap projection/area/zone + action icons + gossip + vendor + trainer + quest + loot + inventory + bank + mail + auction + profession + guild + social + trade + tabard + talents + gameobjects + taxi opcodes/bodies/bounds/state/render-binding + gameplay-text fence");

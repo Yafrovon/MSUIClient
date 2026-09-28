@@ -1515,9 +1515,11 @@ public sealed partial class GameLoop
                 !string.Equals(groupName, zoneText, StringComparison.Ordinal))
                 subZoneText = groupName;
         }
+        MinimapZonePvpType zonePvp = MinimapZonePvpType.Unknown;
         if (_entities.TryGet(ControlledGuid, out WorldEntity zonePlayer))
         {
             MinimapZonePvpInfo pvp = ResolveAreaPvp(zonePlayer, areaId, zoneId);
+            zonePvp = pvp.Type;
             UpdateZoneTextIdentity(new(zoneId, zoneText, subZoneText, interior is not null), pvp);
         }
         // The minimap deliberately follows the commanded body, but
@@ -1538,7 +1540,7 @@ public sealed partial class GameLoop
             (interior is not { } logInterior ? "" :
                 $"wmo={logInterior.RootWmoId}/{logInterior.NameSetId}/{logInterior.GroupWmoId};") +
             $"subZone={_areas?.AreaName(areaId)};displayZone={zoneId};" +
-            $"reportedSessionZone={reportedZoneId}");
+            $"reportedSessionZone={reportedZoneId};pvp={zonePvp}");
         Console.WriteLine($"[minimap] area={areaId} '{_areas?.AreaName(areaId)}' " +
                           $"displayZone={zoneId} reportedSessionZone={reportedZoneId}");
     }

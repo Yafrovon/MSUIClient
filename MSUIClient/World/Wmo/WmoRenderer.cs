@@ -2846,6 +2846,15 @@ public sealed class WmoRenderer : IDisposable
     private static Matrix4x4 BuildPlacement(AdtTerrainReader.WmoInstance w)
         => BuildPlacement(w, PlacementToWorld);
 
+    /// <summary>World Builder ghost (shared_docs/WORLD_BUILDER.md §4): the exact transform a MODF
+    /// entry with these placement-space fields gets once published, for <see cref="AddDynamic"/>.</summary>
+    public static Matrix4x4 ModfTransform(Vector3 placementPos, Vector3 rotDeg)
+        => BuildPlacement(new AdtTerrainReader.WmoInstance
+        {
+            PosX = placementPos.X, PosY = placementPos.Y, PosZ = placementPos.Z,
+            RotX = rotDeg.X, RotY = rotDeg.Y, RotZ = rotDeg.Z,
+        });
+
     private static Matrix4x4 BuildGlobalPlacement(AdtTerrainReader.WmoInstance w)
         => BuildPlacement(w, GlobalPlacementToWorld);
 
@@ -3720,6 +3729,66 @@ public sealed class WmoRenderer : IDisposable
         }
 
         return placed;
+    }
+
+    /// <summary>
+    /// Dev probe for "fell through the world here": every authored face of every resident WMO
+    /// instance whose footprint contains the world XY, top to bottom, with its height at that
+    /// point, MOPY flags, material and whether walking collision keeps it (DETAIL 0x04 = dropped).
+    /// Re-reads the group files: this is what the DATA offers a falling body at that column.
+    /// </summary>
+    public void DumpFacesUnder(float x, float y)
+    {
+        foreach (Instance instance in _instances)
+        {
+            if (x < instance.WorldMin.X || x > instance.WorldMax.X || y < instance.WorldMin.Y || y > instance.WorldMax.Y) continue;
+            Console.WriteLine($"[wmo-column] ({x:F1}, {y:F1}) inside {instance.Path} id={instance.Id} z {instance.WorldMin.Z:F0}..{instance.WorldMax.Z:F0}");
+            byte[]? rootBytes = AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, instance.Path);
+            WmoRootData? root = rootBytes is null ? null : WmoReader.ParseRoot(rootBytes);
+            if (root is null) { Console.WriteLine("[wmo-column]   root unreadable"); continue; }
+            string stem = instance.Path[..^4];
+            var rows = new List<(float Z, string Line)>();
+            // Whole-instance census of walkable-facing faces (n.z > 0.5) per group and MOPY flag:
+            // where a stair's rendered treads are DETAIL, is there a solid ramp anywhere at all?
+            var floors = new SortedDictionary<string, (int N, float Lo, float Hi)>();
+            for (int g = 0; g < (int)root.NGroups; g++)
+            {
+                byte[]? groupBytes = AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, $"{stem}_{g:D3}.wmo");
+                if (groupBytes is null) { Console.WriteLine($"[wmo-column]   g{g} unreadable"); continue; }
+                WmoGroupData group;
+                try { group = WmoReader.ParseGroup(groupBytes, root.Flags); } catch (Exception e) { Console.WriteLine($"[wmo-column]   g{g} parse failed: {e.Message}"); continue; }
+                for (int t = 0; t < group.Indices.Count / 3; t++)
+                {
+                    int i0 = group.Indices[t * 3], i1 = group.Indices[t * 3 + 1], i2 = group.Indices[t * 3 + 2];
+                    if (i0 >= group.Vertices.Count || i1 >= group.Vertices.Count || i2 >= group.Vertices.Count) continue;
+                    var (ax, ay, az) = group.Vertices[i0]; var (bx, by, bz) = group.Vertices[i1]; var (cx, cy, cz) = group.Vertices[i2];
+                    Vector3 a = Vector3.Transform(new Vector3(ax, ay, az), instance.Transform);
+                    Vector3 b = Vector3.Transform(new Vector3(bx, by, bz), instance.Transform);
+                    Vector3 c = Vector3.Transform(new Vector3(cx, cy, cz), instance.Transform);
+                    float d = (b.Y - c.Y) * (a.X - c.X) + (c.X - b.X) * (a.Y - c.Y);
+                    (byte fl0, byte mat0) = t < group.TriMaterials.Count ? group.TriMaterials[t] : ((byte)0, (byte)0);
+                    if (Vector3.Normalize(Vector3.Cross(b - a, c - a)).Z > 0.5f)
+                    {
+                        string key = $"g{g} mopy=0x{fl0:X2}{(mat0 == 0xFF ? " mat=0xFF" : "")}";
+                        float lo = MathF.Min(a.Z, MathF.Min(b.Z, c.Z)), hi = MathF.Max(a.Z, MathF.Max(b.Z, c.Z));
+                        floors[key] = floors.TryGetValue(key, out var f) ? (f.N + 1, MathF.Min(f.Lo, lo), MathF.Max(f.Hi, hi)) : (1, lo, hi);
+                    }
+                    if (MathF.Abs(d) < 1e-6f) continue;   // vertical face: no floor at a column
+                    float l1 = ((b.Y - c.Y) * (x - c.X) + (c.X - b.X) * (y - c.Y)) / d;
+                    float l2 = ((c.Y - a.Y) * (x - c.X) + (a.X - c.X) * (y - c.Y)) / d;
+                    float l3 = 1f - l1 - l2;
+                    if (l1 < -1e-4f || l2 < -1e-4f || l3 < -1e-4f) continue;
+                    float z = l1 * a.Z + l2 * b.Z + l3 * c.Z;
+                    (byte flags, byte material) = t < group.TriMaterials.Count ? group.TriMaterials[t] : ((byte)0, (byte)0);
+                    Vector3 n = Vector3.Normalize(Vector3.Cross(b - a, c - a));
+                    rows.Add((z, $"[wmo-column]   z {z,7:F2}  g{g} gflags=0x{group.GroupFlags:X} tri{t} mopy=0x{flags:X2} mat={material} n.z={n.Z:F2} walk={((flags & 0x04) == 0 ? "KEPT" : "dropped(detail)")}"));
+                }
+            }
+            foreach (var (_, line) in rows.OrderByDescending(r => r.Z)) Console.WriteLine(line);
+            Console.WriteLine($"[wmo-column]   {rows.Count} face(s) over this column");
+            foreach (var (key, f) in floors)
+                Console.WriteLine($"[wmo-floors]   {key,-24} {f.N,5} upward face(s), z {f.Lo:F1}..{f.Hi:F1}");
+        }
     }
 
     /// <summary>

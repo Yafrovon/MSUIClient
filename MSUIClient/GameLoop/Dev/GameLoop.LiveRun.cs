@@ -65,6 +65,15 @@ public sealed partial class GameLoop
     private int _liveStep;
     private double _liveWaitUntil;
     private string? _liveWaitPattern;
+    private double _liveWaitGroundedUntil;
+    // char-create: a real CMSG_CHAR_CREATE from the character select screen (--character-select runs).
+    private double _liveCreateDeadline;
+    private string _liveCreateLine = "";
+    private byte? _lastCreateResult;
+    // walk-to: a real walk (W held, facing re-aimed every frame) - seamless zone entry, paths, bridges.
+    private Vector2? _liveWalkTarget;
+    private float _liveWalkRadius, _liveWalkBest, _liveWalkStartZ;
+    private double _liveWalkDeadline, _liveWalkProgressAt;
     private double _liveWaitTimeout;
     private string? _liveSpellWaitResult;
     private double _liveSpellWaitTimeout;
@@ -154,6 +163,9 @@ public sealed partial class GameLoop
         if (!_liveTeleportSent) FinishLiveBootstrap("GM_SEND_FAILED", command);
     }
 
+    private uint _liveTrackEntry;
+    private double _liveTrackUntil, _liveTrackNext;
+
     private void AdvanceProtocol()
     {
         if (_liveSteps is null)
@@ -167,6 +179,16 @@ public sealed partial class GameLoop
             _liveLog.Add($"START protocol={path}");
         }
         double now=NowSeconds();
+        // `track <entry> <seconds>`: print every visible creature of that entry twice a second
+        // (World Builder pathing proof - shared_docs/WORLD_BUILDER.md). Runs through waits.
+        if (_liveTrackEntry != 0 && now >= _liveTrackNext)
+        {
+            _liveTrackNext = now + 0.5;
+            foreach (var e in _entities.Units.Where(x => x.IsCreature && x.Entry == _liveTrackEntry))
+                Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                    $"[track] {now:F1} {e.Entry} {e.Guid & 0xFFFFFF} {e.Position.X:F2} {e.Position.Y:F2} {e.Position.Z:F2}"));
+            if (now >= _liveTrackUntil) _liveTrackEntry = 0;
+        }
         if (_liveWaitUntil>now) return;
         if (_liveSpellWaitResult is not null)
         {
@@ -200,12 +222,59 @@ public sealed partial class GameLoop
             }
             else return;
         }
+        if (_liveCreateDeadline > 0)
+        {
+            if (_lastCreateResult is { } created)
+            {
+                _lastCreateResult = null;
+                Log(created == 0x2E, FormattableString.Invariant($"{_liveCreateLine} result=0x{created:X2};roster={string.Join('|', _net.Characters.Select(c => c.Name))}"));
+                _liveCreateDeadline = 0; _liveStep++;
+            }
+            else if (now >= _liveCreateDeadline) { Log(false, _liveCreateLine + " timeout"); _liveCreateDeadline = 0; _liveStep++; }
+            else return;
+        }
+        if (_liveWalkTarget is { } walkTo && _controller is not null)
+        {
+            var here = new Vector2(_controller.Position.X, _controller.Position.Y);
+            float left = Vector2.Distance(here, walkTo);
+            if (left < _liveWalkBest - 0.5f) { _liveWalkBest = left; _liveWalkProgressAt = now; }
+            string verdict = left <= _liveWalkRadius ? "arrived"
+                : _controller.Position.Z < _liveWalkStartZ - 60f ? "fell"
+                : now - _liveWalkProgressAt > 5 ? "stuck"
+                : now >= _liveWalkDeadline ? "timeout" : "";
+            if (verdict.Length > 0)
+            {
+                _liveHeld.Remove("W");
+                _liveWalkTarget = null;
+                Log(verdict == "arrived", FormattableString.Invariant(
+                    $"walk-to {walkTo.X:F1} {walkTo.Y:F1} {verdict} at ({_controller.Position.X:F1}, {_controller.Position.Y:F1}, {_controller.Position.Z:F1}) left={left:F1} ground={_controller.GroundSource}"));
+                _liveStep++;
+            }
+            else
+            {
+                // Re-aim every frame: slopes, walls and the capsule push the body off the straight line.
+                float yaw = MathF.Atan2(walkTo.Y - here.Y, walkTo.X - here.X);
+                _controller.Yaw = yaw; _window.Camera.Yaw = yaw; _window.Camera.OrbitYaw = 0;
+                _liveHeld.Add("W");
+                return;
+            }
+        }
+        if (_liveWaitGroundedUntil > 0)
+        {
+            // wait-grounded: a body teleported onto a wandering mob's live (server) position can land on
+            // a slope or a lip and slide a moment before it stands; combat fixtures need it standing.
+            if (_controller?.Grounded == true)
+            { Log(true, FormattableString.Invariant($"wait-grounded z={_controller.Position.Z:F1}")); _liveWaitGroundedUntil = 0; _liveStep++; }
+            else if (now >= _liveWaitGroundedUntil)
+            { Log(false, FormattableString.Invariant($"wait-grounded timeout ground={_controller?.GroundSource};z={_controller?.Position.Z:F1}")); _liveWaitGroundedUntil = 0; _liveStep++; }
+            else return;
+        }
         if (_liveWaitPattern is not null)
         {
-            if (VerdictLines().Any(x=>x.Contains(_liveWaitPattern,StringComparison.OrdinalIgnoreCase)))
-            { Log(true,$"waitfor {_liveWaitPattern}"); _liveWaitPattern=null; _liveStep++; }
+            if ((_liveWaitNewOnly ? VerdictLinesSinceMark() : VerdictLines()).Any(x=>x.Contains(_liveWaitPattern,StringComparison.OrdinalIgnoreCase)))
+            { Log(true,$"waitfor {_liveWaitPattern}"); _liveWaitPattern=null; _liveWaitNewOnly=false; _liveStep++; }
             else if (now>=_liveWaitTimeout)
-            { Log(false,$"waitfor {_liveWaitPattern} timeout"); _liveWaitPattern=null; _liveStep++; }
+            { Log(false,$"waitfor {_liveWaitPattern} timeout"); _liveWaitPattern=null; _liveWaitNewOnly=false; _liveStep++; }
             else return;
         }
         if (_liveStep>=_liveSteps!.Count)
@@ -223,6 +292,9 @@ public sealed partial class GameLoop
                     if (!AdvanceCommanderRaidLiveQa(line)) return;
                     break;
                 case "inbox": Log(OpenLiveInbox(line), line); break;
+                case "worldmap-probe": RunLiveWorldMapProbe(line); break;
+                case "worldmap-continent": OpenLiveWorldMapContinent(line); break;
+                case "worldmap-hover": PositionLiveWorldMapHover(line); break;
                 case "gm":
                     if(line[3..].StartsWith(".npc spawn add",StringComparison.OrdinalIgnoreCase))
                         _liveSpawnBefore=_entities.Units.Where(x=>x.IsCreature).Select(x=>x.Guid).ToHashSet();
@@ -345,10 +417,97 @@ public sealed partial class GameLoop
                     else Log(false, $"unknown {line}");
                     break;
                 case "wait": _liveWaitUntil=now+double.Parse(p[1],CultureInfo.InvariantCulture); Log(true,line); break;
+                case "track":
+                {
+                    string[] t = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    _liveTrackEntry = uint.Parse(t[1], CultureInfo.InvariantCulture);
+                    _liveTrackUntil = now + double.Parse(t[2], CultureInfo.InvariantCulture);
+                    _liveTrackNext = now;
+                    Log(true, line);
+                    break;
+                }
                 case "waitfor":
                     string[] w=line[8..].Split(' '); double timeout=double.Parse(w[^1],CultureInfo.InvariantCulture);
                     _liveWaitPattern=string.Join(' ',w[..^1]); _liveWaitTimeout=now+timeout; return;
                 case "assert": Log(VerdictLines().Any(x=>x.Contains(line[7..],StringComparison.OrdinalIgnoreCase)),line); break;
+                // mark / waitfor-new / assert-new: only verdicts emitted AFTER the mark count, so a
+                // per-NPC check cannot pass on an earlier NPC's vendor list (World Pack tier 3).
+                case "mark": _liveMarkTime = NowSeconds(); Log(true, line); break;
+                // assert-grounded <minZ>: held by the world - above minZ and not in free fall (standing, or
+                // sliding down a slope; a cellar or crypt floor under a terrain hole is fine) - not in the
+                // void below it. The World Pack hole walk (tools/worldpack/gen-live.py).
+                case "assert-grounded":
+                {
+                    float minZ = float.Parse(p[1], CultureInfo.InvariantCulture);
+                    bool grounded = _controller?.Grounded == true;
+                    float vz = _controller?.Velocity.Z ?? 0f;
+                    float z = _entities.TryGet(ControlledGuid, out WorldEntity grounder) ? grounder.Position.Z : float.NaN;
+                    Log(z > minZ && (grounded || vz > -5f), FormattableString.Invariant($"{line} grounded={grounded};vz={vz:F1};z={z:F1};ground={_controller?.GroundSource}"));
+                    break;
+                }
+                // assert-z-above <z>: the acting body has NOT fallen through the world (World Pack hole walk).
+                case "assert-z-above":
+                {
+                    float floorZ = float.Parse(p[1], CultureInfo.InvariantCulture);
+                    bool up = _entities.TryGet(ControlledGuid, out WorldEntity body) && body.Position.Z > floorZ;
+                    Log(up, FormattableString.Invariant($"{line} z={(up || _entities.TryGet(ControlledGuid, out body) ? body.Position.Z : float.NaN):F1}"));
+                    break;
+                }
+                case "wait-grounded": _liveWaitGroundedUntil = now + double.Parse(p[1], CultureInfo.InvariantCulture); return;
+                // char-create <name> <race> <class> <gender>: create a character on this account from the character
+                // select screen (run with --character-select) through the same CMSG_CHAR_CREATE the glue screen sends.
+                case "char-create":
+                {
+                    // (p holds at most three fields: split the whole line for the four arguments)
+                    string[] cc = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (_net is null || _net.State != NetState.CharacterSelect) { Log(false, line + " not at character select"); break; }
+                    _net.CreateCharacter(new CharCreateParams(cc[1], byte.Parse(cc[2], CultureInfo.InvariantCulture),
+                        byte.Parse(cc[3], CultureInfo.InvariantCulture), byte.Parse(cc[4], CultureInfo.InvariantCulture), 0, 0, 0, 0, 0));
+                    _lastCreateResult = null; _liveCreateLine = line; _liveCreateDeadline = now + 20;
+                    return;
+                }
+                // walk-to <x> <y> <timeoutSeconds> [radius]: walk there for real; fails when stuck 5 s, falling or out of time.
+                case "walk-to":
+                {
+                    string[] wt = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);   // p holds at most three fields
+                    if (_controller is null) { Log(false, line + " no controller"); break; }
+                    _liveWalkTarget = new Vector2(float.Parse(wt[1], CultureInfo.InvariantCulture), float.Parse(wt[2], CultureInfo.InvariantCulture));
+                    _liveWalkDeadline = now + double.Parse(wt[3], CultureInfo.InvariantCulture);
+                    _liveWalkRadius = wt.Length > 4 ? float.Parse(wt[4], CultureInfo.InvariantCulture) : 3f;
+                    _liveWalkBest = float.MaxValue; _liveWalkProgressAt = now; _liveWalkStartZ = _controller.Position.Z;
+                    return;
+                }
+                case "waitfor-new":
+                    string[] wn=line[12..].Split(' '); double wnTimeout=double.Parse(wn[^1],CultureInfo.InvariantCulture);
+                    _liveWaitPattern=string.Join(' ',wn[..^1]); _liveWaitTimeout=now+wnTimeout; _liveWaitNewOnly=true; return;
+                case "assert-new": Log(VerdictLinesSinceMark().Any(x=>x.Contains(line[11..],StringComparison.OrdinalIgnoreCase)),line); break;
+                // assert-skills-capped: every Weapon Skills line (SkillLine category 6, Defense included) the
+                // character knows is at its cap and the cap is level x 5. A character GM-levelled from 1 keeps
+                // weapon skill 5 and defense 1 - it misses nearly every swing (Gilnwar's first fair run, 2026-09-27:
+                // the wolf never left 100%). From the player's own PLAYER_SKILL_INFO fields.
+                case "assert-skills-capped":
+                {
+                    if (_mpq is null || _net is not { PlayerGuid: not 0 } snet || !_entities.TryGet(snet.PlayerGuid, out WorldEntity me))
+                    { Log(false, line + " no player"); break; }
+                    _skillLines ??= SkillLineCatalog.Load(_mpq);
+                    uint cap = me.Fields.Level * 5;
+                    var rows = new List<string>();
+                    bool capped = _skillLines is not null;
+                    foreach ((byte slot, ushort skillId, ushort rank) in me.Fields.PlayerSkills())
+                    {
+                        if (_skillLines is null || !_skillLines.TryGet(skillId, out SkillLineInfo info) || info.CategoryId != 6) continue;
+                        uint max = (me.Fields.GetU32((ushort)(ObjectFields.PLAYER_SKILL_INFO_1_1 + slot * 3 + 1)) ?? 0) >> 16;
+                        if (max <= 1) continue;                  // Dual Wield: a proficiency, no rank
+                        bool ok = rank == max && max == cap;
+                        capped &= ok;
+                        rows.Add($"{info.Name.Replace(' ', '_')}={rank}/{max}{(ok ? "" : "!")}");
+                    }
+                    capped &= rows.Count > 0;
+                    string detail = $"level={me.Fields.Level};cap={cap};lines={string.Join(',', rows)}";
+                    EmitInterface("skill", "capped", capped ? "PASS" : "FAIL", snet.PlayerGuid, detail);
+                    Log(capped, line + " " + detail);
+                    break;
+                }
                 case "select":
                     if (p.Length == 2 && p[1].StartsWith("guid:", StringComparison.OrdinalIgnoreCase))
                     {
@@ -360,6 +519,9 @@ public sealed partial class GameLoop
                     bool anchor=p[1].Equals("anchor",StringComparison.OrdinalIgnoreCase);
                     bool npcFlagNearest=p[1].StartsWith("npc-flag-nearest:",StringComparison.OrdinalIgnoreCase);
                     bool entryNearest=p[1].StartsWith("entry-nearest:",StringComparison.OrdinalIgnoreCase);
+                    // corpse-nearest:<entry> - the nearest DEAD creature of that entry (entry-nearest skips the
+                    // dead, so "kill, then loot it" could never select its own corpse).
+                    bool corpseNearest=p[1].StartsWith("corpse-nearest:",StringComparison.OrdinalIgnoreCase);
                     bool objectEntryNearest=p[1].StartsWith("object-entry-nearest:",StringComparison.OrdinalIgnoreCase);
                     bool objectTypeNearest=p[1].StartsWith("object-type-nearest:",StringComparison.OrdinalIgnoreCase);
                     bool mailboxNearest=p[1].Equals("mailbox-nearest",StringComparison.OrdinalIgnoreCase);
@@ -374,6 +536,7 @@ public sealed partial class GameLoop
                         objectTypeNearest?LiveObjectTypeNearestGuid(ordinal):
                         objectEntryNearest?LiveObjectEntryNearestGuid(ordinal):
                         entryNearest?LiveEntryNearestGuid(ordinal):
+                        corpseNearest?LiveEntryNearestGuid(ordinal, dead: true):
                         anchor&&_entities.TryGet(_liveAnchorGuid,out _)?_liveAnchorGuid:
                         wildEntryNearest?LiveWildEntryNearestGuid(ordinal):wildEntry?LiveWildEntryGuid(ordinal):wildHostile?LiveWildHostileGuid(ordinal):
                         wild?LiveWildGuid(ordinal):LiveSpawnGuid(ordinal);
@@ -498,6 +661,13 @@ public sealed partial class GameLoop
                     {
                         ResetGossip();
                         Log(true, line);
+                    }
+                    else if (p[1].Equals("select-icon", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Pick the option a player would click for a service (1 vendor, 3 trainer, 5 inn, 6 bank).
+                        byte icon = byte.Parse(p[2], CultureInfo.InvariantCulture);
+                        int index = _gossipMenu?.Options.Select((o, i) => (o, i)).FirstOrDefault(x => x.o.Icon == icon, (default, -1)).Item2 ?? -1;
+                        Log(index >= 0 && SelectGossipOption(index), $"{line} index={index};options={_gossipMenu?.Options.Count ?? 0}");
                     }
                     else if (!p[1].Equals("select", StringComparison.OrdinalIgnoreCase))
                         Log(false, $"unknown {line}");
@@ -650,11 +820,14 @@ public sealed partial class GameLoop
                     else Log(false, $"unknown {line}");
                     break;
                 case "loot":
+                {
+                    // p holds at most three fields: the four-field forms split the whole line.
+                    string[] lp = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (p[1].Equals("master-setup", StringComparison.OrdinalIgnoreCase)) Log(TryLiveRaidMasterLootSetup(), line);
-                    else if (p.Length == 4 && p[1].Equals("master-give", StringComparison.OrdinalIgnoreCase))
-                        Log(TryLiveMasterLoot(byte.Parse(p[2], CultureInfo.InvariantCulture), ulong.Parse(p[3], CultureInfo.InvariantCulture)), line);
-                    else if (p.Length == 4 && p[1].Equals("equip-reward", StringComparison.OrdinalIgnoreCase))
-                        Log(TryLiveEquipRaidLoot(uint.Parse(p[2], CultureInfo.InvariantCulture), ulong.Parse(p[3], CultureInfo.InvariantCulture)), line);
+                    else if (lp.Length == 4 && lp[1].Equals("master-give", StringComparison.OrdinalIgnoreCase))
+                        Log(TryLiveMasterLoot(byte.Parse(lp[2], CultureInfo.InvariantCulture), ulong.Parse(lp[3], CultureInfo.InvariantCulture)), line);
+                    else if (lp.Length == 4 && lp[1].Equals("equip-reward", StringComparison.OrdinalIgnoreCase))
+                        Log(TryLiveEquipRaidLoot(uint.Parse(lp[2], CultureInfo.InvariantCulture), ulong.Parse(lp[3], CultureInfo.InvariantCulture)), line);
                     else if (p.Length == 3 && p[1].Equals("inventory-report", StringComparison.OrdinalIgnoreCase)) Log(WriteLiveRaidInventoryReport(p[2]), line);
                     else if (p.Length == 3 && p[1].Equals("report", StringComparison.OrdinalIgnoreCase)) Log(WriteLiveLootReport(p[2]), line);
                     else if (p[1].Equals("request", StringComparison.OrdinalIgnoreCase)) Log(RequestLoot(_selectionGuid), line);
@@ -669,6 +842,7 @@ public sealed partial class GameLoop
                     { SimulateLootFlow(empty: true); Log(true, line); }
                     else Log(false, $"unknown {line}");
                     break;
+                }
                 case "gameobject":
                     if (p[1].Equals("use", StringComparison.OrdinalIgnoreCase)) Log(UseGameObject(_selectionGuid), line);
                     else if (p[1].Equals("snapshot", StringComparison.OrdinalIgnoreCase)) { SnapshotGameObjects(); Log(true, line); }
@@ -724,6 +898,17 @@ public sealed partial class GameLoop
                     if (inventory.Length == 4 && inventory[1].Equals("equip-bag", StringComparison.OrdinalIgnoreCase))
                         Log(LiveEquipBag(uint.Parse(inventory[2], CultureInfo.InvariantCulture),
                             int.Parse(inventory[3], CultureInfo.InvariantCulture)), line);
+                    // ensure-bag <entry> <container 1-4>: a bag already in that slot passes (re-runnable SETUP),
+                    // otherwise equip a carried <entry> there - a fair tester carries bags like a real character.
+                    else if (inventory.Length == 4 && inventory[1].Equals("ensure-bag", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int bagContainer = int.Parse(inventory[3], CultureInfo.InvariantCulture);
+                        bool present = bagContainer is >= 1 and <= 4 && _net is not null &&
+                                       _entities.TryGet(_net.PlayerGuid, out WorldEntity bagOwner) &&
+                                       bagOwner.Fields.PlayerInventorySlot(18 + bagContainer) != 0;
+                        Log(present || LiveEquipBag(uint.Parse(inventory[2], CultureInfo.InvariantCulture), bagContainer),
+                            line + (present ? " present" : ""));
+                    }
                     else if (inventory.Length == 3 && inventory[1].Equals("stage-bag", StringComparison.OrdinalIgnoreCase))
                         Log(LiveStageBag(uint.Parse(inventory[2], CultureInfo.InvariantCulture)), line);
                     else if (inventory.Length == 2 && inventory[1].Equals("require-key", StringComparison.OrdinalIgnoreCase))
@@ -781,6 +966,21 @@ public sealed partial class GameLoop
                     break;
                 case "fight-until-dead":
                     if (!AdvanceLiveFight(line)) return;
+                    break;
+                case "boss-trial":
+                    if (!AdvanceBossTrial(line)) return;
+                    break;
+                case "pack-trial":
+                    if (!AdvancePackTrial(line)) return;
+                    break;
+                case "patrol-watch":
+                    if (!AdvancePatrolWatch(line)) return;
+                    break;
+                case "patrol-at":
+                    if (!AdvancePatrolWatch(line, mustTravel: false)) return;
+                    break;
+                case "kill-for-quest":
+                    if (!AdvanceQuestKills(line)) return;
                     break;
                 case "companion":
                     RunLiveCompanionStep(line);
@@ -1509,6 +1709,15 @@ public sealed partial class GameLoop
     }
 
     private IEnumerable<string> VerdictLines()=>_verdicts.SnapshotAll().Select(v=>$"[{v.Channel}] {v.ToLine()}");
+    private double _liveMarkTime;
+    private bool _liveWaitNewOnly;
+    private IEnumerable<string> VerdictLinesSinceMark() => VerdictLines().Where(x =>
+    {
+        int at = x.IndexOf("time=", StringComparison.Ordinal);
+        if (at < 0) return false;
+        int end = x.IndexOf(' ', at);
+        return double.TryParse(end < 0 ? x[(at + 5)..] : x[(at + 5)..end], NumberStyles.Float, CultureInfo.InvariantCulture, out double t) && t >= _liveMarkTime;
+    });
 
     private ulong LiveSpawnGuid(int ordinal)
     {
@@ -1750,10 +1959,10 @@ public sealed partial class GameLoop
         return true;
     }
 
-    private ulong LiveEntryNearestGuid(int entry)
+    private ulong LiveEntryNearestGuid(int entry, bool dead = false)
     {
         if (_controller is null || entry <= 0) return 0;
-        WorldEntity? selected = _entities.Units.Where(x => x.IsCreature && !x.IsDead && x.Entry == (uint)entry)
+        WorldEntity? selected = _entities.Units.Where(x => x.IsCreature && x.IsDead == dead && x.Entry == (uint)entry)
             .OrderBy(x => Vector3.Distance(x.Position, _controller.Position)).ThenBy(x => x.Guid).FirstOrDefault();
         if (selected is null) return 0;
         float distance = Vector3.Distance(selected.Position, _controller.Position);

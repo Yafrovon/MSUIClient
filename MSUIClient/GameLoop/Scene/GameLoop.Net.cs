@@ -285,7 +285,9 @@ public sealed partial class GameLoop
             _net = new NetworkClient(netSettings, CaptureWirePacket,
                 _config.DevTools ? ObserveSocketWrite : null);
             _net.CombatSendObserved = ObserveCombatSend;
-            if (!suppressAutoLogin && _config.Server.AutoConnect &&
+            // A World Builder script run (MSUI_WB_SCRIPT) is offline + web app only: logging the account
+            // in would kick any live session on it (a live protocol run died this way, 2026-09-27).
+            if (!suppressAutoLogin && WbScriptPath is null && _config.Server.AutoConnect &&
                 !string.IsNullOrWhiteSpace(_config.Server.Account) &&
                 !string.IsNullOrWhiteSpace(_config.Server.Password))
             {
@@ -742,6 +744,9 @@ public sealed partial class GameLoop
                                 if (!_worldLoadStarted)
                                     throw new InvalidDataException(
                                         "NEW_WORLD arrived before initial world adoption");
+                                // Evidence for portal/teleport proofs (World Pack tier 3: "trigger X → map N").
+                                EmitInterface("world", "new-world", "ARRIVED", 0,
+                                    FormattableString.Invariant($"map={worldEntry.Map};x={worldEntry.Position.X:F1};y={worldEntry.Position.Y:F1};z={worldEntry.Position.Z:F1}"));
                                 MarkPendingWorldportAck(worldEntry.Map);
                             }
                             else if (_worldLoadStarted || _worldportAckPending)
@@ -1215,6 +1220,9 @@ public sealed partial class GameLoop
                         break;
                     case Op.SMSG_SUI_PARTY_LEAD_RESULT:
                         ApplySuiPartyLeadResult(body);
+                        break;
+                    case Op.SMSG_SUI_THREAT:
+                        ApplySuiThreat(body);
                         break;
                     case Op.MSG_QUEST_PUSH_RESULT:
                         ApplyQuestPushResult(body);
@@ -1925,6 +1933,7 @@ public sealed partial class GameLoop
                             _character?.SnapFacing(destination.Orientation);
                             _movementSender.Reset(destination.Orientation);
                             ObserveTeleportApplied(moverGuid, counter, destination);
+                            HoldAreaTriggersAfterTeleport();
 
                             if (promotedPreparedWorld)
                             {

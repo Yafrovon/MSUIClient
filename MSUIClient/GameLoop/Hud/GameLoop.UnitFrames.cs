@@ -157,6 +157,7 @@ public sealed partial class GameLoop
             : PlayerFrameStatus.None;
         if (playerFrame && !PainterlyUi)
             DrawPlayerFrameStatus(dl, unit, p, s, playerStatus);
+        if (playerFrame) DrawPlayerFrameGroupIcons(dl, unit, p, s);
 
         string? pvpPath = UnitFrameUiLaw.PvpIcon(unit.Fields.Bytes0.Race,
             unit.Fields.UnitFlags, unit.Fields.PlayerFlags);
@@ -207,7 +208,13 @@ public sealed partial class GameLoop
             (!playerFrame || UnitFrameUiLaw.ShowsLevelText(playerStatus));
         if (showLevel)
         {
-            uint levelColor = playerFrame ? UiGoldU32() : ReactionColorU32(reaction, unit.IsPlayer, unit.IsDead);
+            // TargetFrame_CheckLevel (1.12 FrameXML): an attackable target's level takes GetDifficultyColor
+            // against the acting body's level (red/orange/yellow/green/grey); anything else is gold.
+            // Never the reaction colour - that painted a level-36 mob red for a level-60 player.
+            uint levelColor = UiGoldU32();
+            if (!playerFrame && CanActorAttack(unit, ControlledGuid) &&
+                _entities.TryGet(ControlledGuid, out WorldEntity actingBody))
+                levelColor = ImGui.ColorConvertFloat4ToU32(QuestFrameUiLaw.QuestDifficultyColor(actingBody.Level, unit.Level));
             (Vector2 levelMin, Vector2 levelSize) = DrawUnitFrameText(dl, levelCenter, unit.Level.ToString(), 10f * s, levelColor);
             if (_uiParityArmed && _uiParityPanel == parityPanel)
                 CollectUiParityDraw(playerFrame ? "PlayerLevelText" : "TargetLevelText", "FontString", levelMin, levelSize,
@@ -258,6 +265,36 @@ public sealed partial class GameLoop
     /// shares this icon's slot and the two decisions have to agree. PLAYER_REGEN_DISABLED /
     /// ENABLED is derived from UNIT_FLAG_IN_COMBAT in current Benilla.
     /// </summary>
+    /// <summary>
+    /// PlayerFrame.xml's own PlayerLeaderIcon and PlayerMasterIcon, 16x16, anchored TOPLEFT at
+    /// (44,-10) and (80,-10). FrameXML measures Y UPWARD, so those authored -10s are ten pixels
+    /// DOWN the frame, not ten above its top edge - anchored the other way both icons drew off
+    /// the top of the screen and nothing appeared at all.
+    ///
+    /// The party frames already drew both for OTHER members, so the one person who could never
+    /// see that they held the crown or the loot master role was the player holding it. There is
+    /// no chat line to fall back on: 1.12 ships ERR_SET_LOOT_MASTER / ERR_NEW_LOOT_MASTER_S but
+    /// no FrameXML file prints them, and vmangos answers a loot-method change with SMSG_GROUP_LIST
+    /// alone. These icons ARE the confirmation.
+    /// </summary>
+    private void DrawPlayerFrameGroupIcons(ImDrawListPtr dl, WorldEntity player, Vector2 frameMin,
+        float scale)
+    {
+        if (!_partyInGroup) return;
+        var size = new Vector2(16) * scale;
+        void Icon(string path, float x, bool shown)
+        {
+            if (!shown) return;
+            uint art = _gameplayArt?.Handle(path) ?? 0;
+            if (art == 0) return;
+            Vector2 min = frameMin + new Vector2(x, 10) * scale;
+            dl.AddImage((nint)art, min, min + size);
+        }
+        Icon(@"Interface\GroupFrame\UI-Group-LeaderIcon", 44f, player.Guid == _partyLeaderGuid);
+        Icon(@"Interface\GroupFrame\UI-Group-MasterLooter", 80f,
+            _partyLootMethod == 2 && player.Guid == _partyMasterLooterGuid);
+    }
+
     private void DrawPlayerFrameStatus(ImDrawListPtr dl, WorldEntity player, Vector2 frameMin,
         float scale, PlayerFrameStatus status)
     {

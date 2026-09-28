@@ -92,6 +92,33 @@ public sealed class CharacterController
     private readonly float _minGroundZ;
 
     private bool _warnedNoGround;
+    private bool _warnedHoleVoid;
+
+    // Hole void guard (see where GroundZ is committed): how far under the feet to look for any
+    // collision surface before a terrain hole counts as the void.
+    private const float HoleVoidProbeDepth = 2000f;
+    // Shell void guard: how far a body must have fallen under the terrain shell, with nothing walkable
+    // below it, before the shell is judged wrong (a support gap of a frame or two falls far less).
+    private const float ShellVoidDrop = 8f;
+    private float? _shellFallFromZ;
+
+    /// <summary>Is there a surface a body could stand on anywhere under <paramref name="from"/>?
+    /// Looks PAST cave undersides and steep faces (a falling body passes through a backface and
+    /// slides off a wall - neither holds it): only an up-facing, walkable face counts.</summary>
+    private bool WalkableBelow(Vector3 from)
+    {
+        if (Collision is not { IsEmpty: false } world) return false;
+        float travelled = 0f;
+        for (int hits = 0; hits < 16 && travelled < HoleVoidProbeDepth; hits++)
+        {
+            if (world.Raycast(from, -Vector3.UnitZ, HoleVoidProbeDepth - travelled) is not { } hit) return false;
+            if (hit.Normal.Z >= _minGroundZ) return true;
+            float skip = hit.Distance + 0.05f;
+            from -= new Vector3(0f, 0f, skip);
+            travelled += skip;
+        }
+        return false;
+    }
 
     /// <summary>vmap collision. Null until vmaps are configured - terrain still works.</summary>
     public CollisionWorld? Collision { get; set; }
@@ -2026,6 +2053,57 @@ public sealed class CharacterController
             GroundSource = "liquid-water-walk";
             GroundOwnerGuid = 0;
         }
+        // ── Hole void guard ───────────────────────────────────────────────────
+        // A terrain hole exists so a body can drop into the building under it (a mine mouth, a
+        // crypt stair, a cellar), so over a hole we keep falling toward that floor. But stock
+        // buildings do not always fill their square: the corner of a hole beside a mine mouth or
+        // under a cave arch has NOTHING under it, and walking over that corner dropped players out
+        // of the world (Gilneas 2026-09-27: Emberstone Mine, a crypt, the fortress entrance;
+        // proven live, z -113..-555). With no collision surface anywhere under the feet, stand on
+        // the hole's own height field - or hold the current height where that field is the hillside
+        // ABOVE a tunnel mouth (never climb into the hill). A floor that exists (cellar, cave, the
+        // building still streaming in) wins as soon as it is there.
+        if (groundZ is null && inHole && !TerrainAbsentByDesign &&
+            _terrain.SampleHeightThroughHoles(Position.X, Position.Y) is float holeShell &&
+            !WalkableBelow(Position + new Vector3(0f, 0f, _opts.StepHeight)))
+        {
+            groundZ = MathF.Min(holeShell, Position.Z);
+            GroundSource = "hole-void-guard";
+            GroundTriangle = -1;
+            GroundOwnerGuid = 0;
+            if (!_warnedHoleVoid)
+            {
+                Console.WriteLine($"[move] hole void guard at ({Position.X:F1}, {Position.Y:F1}, {groundZ:F1}): " +
+                                  "terrain hole with nothing under it - held on its height field instead of the void");
+                _warnedHoleVoid = true;
+            }
+        }
+        // Same failure through the other door: the body is UNDER the terrain shell (a teleport or
+        // landing onto a steep hillside slid it below the surface, and the shell rule then ignores
+        // the terrain as a cave roof) but there is no cave - nothing walkable anywhere below. Back
+        // onto the surface; the shell assumption was wrong. (Gilneas fortress, 2026-09-27: slid off
+        // a slope beside a cave mouth and fell to z -6 and on.)
+        // Only after a real fall under the shell (ShellVoidDrop) with a LOADED collision world: a
+        // one-frame support gap or a world still streaming keeps the proven shell (clinical check
+        // VerifyContinuousInteriorEntryRetainsTerrainShell) and falls toward the coming floor.
+        else if (groundZ is null && !inHole && GroundSource == "terrain-overhead" &&
+                 sampledTerrainZ is float shellTop &&
+                 (_shellFallFromZ ??= Position.Z) - Position.Z > ShellVoidDrop &&
+                 Collision is { IsEmpty: false } &&
+                 !WalkableBelow(Position + new Vector3(0f, 0f, _opts.StepHeight)))
+        {
+            groundZ = shellTop;
+            _underTerrainShell = false;
+            _shellFallFromZ = null;
+            GroundSource = "shell-void-guard";
+            GroundTriangle = -1;
+            GroundOwnerGuid = 0;
+            Console.WriteLine($"[move] shell void guard at ({Position.X:F1}, {Position.Y:F1}, {Position.Z:F1}): under the terrain " +
+                              $"with nothing below - back onto the surface at {shellTop:F1}");
+        }
+        else if (!inHole) _warnedHoleVoid = false;
+        if (groundZ is not null || GroundSource != "terrain-overhead") _shellFallFromZ = null;
+
         if (Hovering && groundZ is not null) groundZ += 1f;
         GroundZ = groundZ;
 
