@@ -65,3 +65,19 @@ PASS/FAIL per claim plus `DescribeInteriorLight` narration, and writes
 
 Read the offline check's method before re-theorising: the numbers are in the
 resolver's doc comment and here, and MOHD ambient / MOLT were both tried.
+
+
+## 2026-09-28 — Live equipment observation
+
+`equipment watch self` (or `selection`), a rendered frame, then
+`equipment inspect self safe-label` now saves the production interior uniform
+(RGB = unscaled MOCV, W = blend weight), enable state, sample feet, terrain height,
+fresh floor classification and WMO room narration under `lighting.interior`.
+The streamed path snapshots the uniform at its actual world draw; local self
+reports the last value assigned to CharacterRenderer. Diagnostics never call
+`InteriorUnitLight.For` or advance its blend. The floor query is an independent
+read of the current resident geometry, not proof that the last frame used it.
+`camera` additionally records `EffectiveDistance`, `EyeTarget`, the measured
+eye-to-target distance, field of view, aspect ratio and collision enable state.
+This distinguishes requested zoom from achieved framing. Pair the JSON with its
+gameplay screenshot; no model/art approval follows from an interior weight.

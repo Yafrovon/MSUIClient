@@ -23,6 +23,17 @@ public static class WorldBuilderLaw
 
     public enum BrushMode { Raise, Lower, Smooth, Flatten }
 
+    /// <summary>The preview and request use exactly the same finite deltas. Tiny dabs are not persisted.</summary>
+    public static bool SavesDelta(float delta) => float.IsFinite(delta) && MathF.Abs(delta) > 0.001f;
+
+    /// <summary>Apply or roll back one saved stroke without discarding other edits on the tile.</summary>
+    public static void ApplyStroke(float[] terrain, float[] stroke, bool undo = false)
+    {
+        if (terrain.Length != stroke.Length) throw new ArgumentException("Stroke and terrain grids must match.");
+        for (int i = 0; i < terrain.Length; i++)
+            if (SavesDelta(stroke[i])) terrain[i] += undo ? -stroke[i] : stroke[i];
+    }
+
     /// <summary>Basic import validation; the pack builder remains authoritative for polygon geometry and terrain rules.</summary>
     public static bool TryParseWorldMapOutline(string json, out JsonObject? body, out string problem)
     {
@@ -66,6 +77,22 @@ public static class WorldBuilderLaw
 
     public static Vector2 VertexWorld(int col, int row, int gridRow, int gridCol) =>
         new((32 - row) * Tile - gridRow * Unit, (32 - col) * Tile - gridCol * Unit);
+
+    /// <summary>The four adjacent physical vertices, crossing ADT boundaries. Only the edge of the
+    /// entire map clamps: a tile edge must not replace a real neighbour with the vertex itself.</summary>
+    public static (int col, int row, int gridRow, int gridCol)[] NeighbourVertices(int col, int row, int gridRow, int gridCol)
+    {
+        var result = new (int col, int row, int gridRow, int gridCol)[4];
+        int i = 0;
+        foreach (var (dr, dc) in new[] { (-1, 0), (1, 0), (0, -1), (0, 1) })
+        {
+            int r = Math.Clamp(row * 128 + gridRow + dr, 0, 64 * 128);
+            int c = Math.Clamp(col * 128 + gridCol + dc, 0, 64 * 128);
+            int tr = Math.Min(r / 128, 63), tc = Math.Min(c / 128, 63);
+            result[i++] = (tc, tr, r - tr * 128, c - tc * 128);
+        }
+        return result;
+    }
 
     /// <summary>Smooth falloff: 1 at the centre, 0 at the rim; <paramref name="hardness"/> 0..1
     /// keeps the inner part at full strength.</summary>

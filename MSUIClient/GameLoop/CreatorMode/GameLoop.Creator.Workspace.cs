@@ -700,6 +700,14 @@ public sealed partial class GameLoop
     private void DrawWorkspacePanelDeck(string panelId)
     {
         float cs = CreatorUiScale;
+        if (panelId == "World")
+        {
+            DrawWbWorkspaceHeader();
+            ImGui.BeginChild("##wb-task-body", new Vector2(0f, 0f));
+            DrawWbWorkspaceBody();
+            ImGui.EndChild();
+            return;
+        }
         float colW = 420f * cs;
         ImGui.BeginChild("##deck-panel", new Vector2(0f, 0f),
             false, ImGuiWindowFlags.HorizontalScrollbar);

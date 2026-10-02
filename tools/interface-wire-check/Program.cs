@@ -1836,6 +1836,24 @@ if (args.Contains("--character-model-reset-only", StringComparer.Ordinal))
     return;
 }
 
+if (args.Contains("--equipment-mount-identity-only", StringComparer.Ordinal))
+{
+    EquipmentMountIdentityClinicalChecks.Run();
+    return;
+}
+
+if (args.Contains("--character-skin-extra-only", StringComparer.Ordinal))
+{
+    CharacterSkinExtraClinicalChecks.Run(args.Length > 1 ? args[1] : null);
+    return;
+}
+
+if (args.Contains("--equipment-readiness-only", StringComparer.Ordinal))
+{
+    EquipmentReadinessClinicalChecks.Run();
+    return;
+}
+
 if (args.Contains("--possess-law-only", StringComparer.Ordinal))
 {
     PossessLawClinicalChecks.Run();
@@ -3522,7 +3540,7 @@ var tabardPaths = new List<string>();
 tabardEquipment.Composite(new byte[256 * 256 * 4], 256, 256, path =>
 {
     tabardPaths.Add(path); return (new byte[128 * 64 * 4], 128, 64);
-});
+}, bareFeet: false);
 Check(tabardPaths.SequenceEqual(new[]
 {
     @"Textures\GuildEmblems\Background_11_TU_U.blp",
@@ -4842,6 +4860,8 @@ Console.WriteLine("interface-wire-check: Hovercast PASS");
 CompanionClinicalChecks.Run();
 PartyTaxiClinicalChecks.Run();
 TacticalFreezeClinicalChecks.Run();
+EquipmentReadinessClinicalChecks.Run();
+EquipmentMountIdentityClinicalChecks.Run();
 PossessLawClinicalChecks.Run();
 SwingTimerClinicalChecks.Run();
 EquipBindingClinicalChecks.Run();

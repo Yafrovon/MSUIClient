@@ -75,6 +75,11 @@ public static class QuestAuthoringLaw
         public uint NextTriggerId { get; set; } = 7100;
         /// <summary>Exploration trigger a saved quest already owns (edits reuse it, never pile up new ones).</summary>
         public Dictionary<uint, uint> ExploreTriggerOf { get; init; } = new();
+        public Dictionary<uint, JsonObject> ExploreTriggers { get; init; } = new();
+        public Dictionary<uint, JsonObject> Quests { get; init; } = new();
+        public List<JsonObject> GiverRelations { get; init; } = new();
+        public List<JsonObject> EnderRelations { get; init; } = new();
+        public List<JsonObject> LootRows { get; init; } = new();
     }
 
     public const uint NpcQuestGiver = 0x2;
@@ -88,6 +93,11 @@ public static class QuestAuthoringLaw
         if (d.Giver == 0) p.Add("pick who gives the quest");
         if (d.Goals.All(g => g.Kind == ObjectiveKind.None)) p.Add("add at least one objective");
         if (d.MinLevel > d.Level) p.Add("min level is above the quest level");
+        if (d.Level is < 1 or > 63 || d.MinLevel is < 1 or > 63) p.Add("quest and minimum levels must be between 1 and 63");
+        if (d.Entry != 0 && Math.Abs((long)d.PrevQuest) == d.Entry) p.Add("a quest cannot require itself");
+        if (d.Entry != 0 && d.NextInChain == d.Entry) p.Add("a quest cannot be its own next quest");
+        if (d.Goals.Count(g => g.Kind is ObjectiveKind.Kill or ObjectiveKind.UseObject) > 4) p.Add("use at most four creature or object objectives");
+        if (d.Goals.Count(g => g.Kind == ObjectiveKind.Collect) > 4) p.Add("use at most four item objectives");
         foreach (var (g, i) in d.Goals.Select((g, i) => (g, i + 1)))
         {
             switch (g.Kind)
@@ -101,11 +111,54 @@ public static class QuestAuthoringLaw
                 case ObjectiveKind.Explore when g.ExploreRadius <= 0:
                     p.Add($"objective {i}: explore radius must be positive"); break;
             }
+            if (g.Kind == ObjectiveKind.Collect && g.DropFrom != 0 && (!float.IsFinite(g.DropChance) || g.DropChance is <= 0 or > 100))
+                p.Add($"objective {i}: drop chance must be between 1 and 100 percent");
+            if (g.Kind == ObjectiveKind.Explore && (!float.IsFinite(g.ExploreX) || !float.IsFinite(g.ExploreY) ||
+                !float.IsFinite(g.ExploreZ) || !float.IsFinite(g.ExploreRadius))) p.Add($"objective {i}: exploration position must be finite");
             if (g.Kind is ObjectiveKind.Kill or ObjectiveKind.Collect or ObjectiveKind.UseObject && g.Count <= 0)
                 p.Add($"objective {i}: count must be at least 1");
         }
         if (d.Goals.Count(g => g.Kind == ObjectiveKind.Explore) > 1) p.Add("one exploration objective per quest (vanilla has a single area-trigger slot)");
         return p;
+    }
+
+    /// <summary>Reopen every supported objective and reward without discarding an exploration trigger or fractional loot chance.</summary>
+    public static Draft Read(JsonObject q, Context ctx)
+    {
+        string S(string key) => (string?)q[key] ?? "";
+        uint entry = (uint)Num(q["entry"]);
+        var d = new Draft
+        {
+            Entry = entry, Title = S("Title"), Details = S("Details"), Objectives = S("Objectives"), RequestText = S("RequestItemsText"),
+            CompleteText = S("OfferRewardText"), Level = (int)Num(q["QuestLevel"]), MinLevel = (int)Num(q["MinLevel"]), Zone = (int)Num(q["ZoneOrSort"]),
+            Xp = (int)Num(q["RewXP"]), Money = (int)Num(q["RewOrReqMoney"]), RepFaction = (int)Num(q["RewRepFaction1"]), RepValue = (int)Num(q["RewRepValue1"]),
+            PrevQuest = (int)Num(q["PrevQuestId"]), NextInChain = (int)Num(q["NextQuestInChain"]), ExclusiveGroup = (int)Num(q["ExclusiveGroup"]),
+            Giver = (uint)ctx.GiverRelations.Where(r => Num(r["quest"]) == entry).Select(r => Num(r["id"])).FirstOrDefault(),
+            Ender = (uint)ctx.EnderRelations.Where(r => Num(r["quest"]) == entry).Select(r => Num(r["id"])).FirstOrDefault(),
+        };
+        var goals = new List<Objective>();
+        for (int i = 1; i <= 4; i++)
+        {
+            long target = Num(q[$"ReqCreatureOrGOId{i}"]);
+            if (target != 0) goals.Add(new() { Kind = target > 0 ? ObjectiveKind.Kill : ObjectiveKind.UseObject,
+                Target = (uint)Math.Abs(target), Count = (int)Num(q[$"ReqCreatureOrGOCount{i}"]), Text = S($"ObjectiveText{i}") });
+        }
+        for (int i = 1; i <= 4; i++)
+        {
+            uint item = (uint)Num(q[$"ReqItemId{i}"]); if (item == 0) continue;
+            var drop = ctx.LootRows.FirstOrDefault(l => Num(l["item"]) == item && Number(l["ChanceOrQuestChance"]) < 0);
+            uint source = drop is null ? 0 : ctx.PackTemplates.Where(t => Num(t.Value["loot_id"]) == Num(drop["entry"])).Select(t => t.Key).FirstOrDefault();
+            goals.Add(new() { Kind = ObjectiveKind.Collect, Item = item, Count = (int)Num(q[$"ReqItemCount{i}"]), DropFrom = source,
+                DropChance = drop is null ? 35 : (float)Math.Abs(Number(drop["ChanceOrQuestChance"])) });
+        }
+        if (ctx.ExploreTriggerOf.TryGetValue(entry, out uint trigger) && ctx.ExploreTriggers.TryGetValue(trigger, out var t))
+            goals.Add(new() { Kind = ObjectiveKind.Explore, ExploreMap = (int)Num(t["map_id"]), ExploreX = (float)Number(t["x"]),
+                ExploreY = (float)Number(t["y"]), ExploreZ = (float)Number(t["z"]), ExploreRadius = (float)Number(t["radius"]) });
+        while (goals.Count < 4) goals.Add(new());
+        d.Goals = goals.ToArray();
+        for (int i = 0; i < 6; i++) d.Choices[i] = ((uint)Num(q[$"RewChoiceItemId{i + 1}"]), (int)Num(q[$"RewChoiceItemCount{i + 1}"]));
+        for (int i = 0; i < 4; i++) d.Fixed[i] = ((uint)Num(q[$"RewItemId{i + 1}"]), (int)Num(q[$"RewItemCount{i + 1}"]));
+        return d;
     }
 
     /// <summary>The content items (JSON array for /WorldPacks/Content) that make the draft a working quest.</summary>
@@ -125,21 +178,39 @@ public static class QuestAuthoringLaw
             ["RewRepFaction1"] = d.RepFaction, ["RewRepValue1"] = d.RepFaction != 0 ? d.RepValue : 0,
             ["SpecialFlags"] = d.Goals.Any(g => g.Kind == ObjectiveKind.Explore) ? SpecialFlagExploration : 0,
         };
+        // An ordinary edit owns only the fields this form exposes. Keep conditions, scripts,
+        // secondary reputation rewards and other advanced fields authored elsewhere.
+        if (ctx.Quests.TryGetValue(d.Entry, out var previous))
+        {
+            foreach (var field in previous)
+                if (!q.ContainsKey(field.Key)) q[field.Key] = field.Value?.DeepClone();
+            q["SpecialFlags"] = (Num(previous["SpecialFlags"]) & ~SpecialFlagExploration) | (long)(int)q["SpecialFlags"]!;
+            foreach (string key in new[] { "patch", "Method", "MaxLevel", "Type", "EndText", "RewMoneyMaxLevel" })
+                if (previous[key] is { } value) q[key] = value.DeepClone();
+        }
+        for (int i = 1; i <= 4; i++)
+        {
+            q[$"ReqCreatureOrGOId{i}"] = 0; q[$"ReqCreatureOrGOCount{i}"] = 0;
+            q[$"ReqItemId{i}"] = 0; q[$"ReqItemCount{i}"] = 0; q[$"ObjectiveText{i}"] = "";
+            q[$"RewItemId{i}"] = 0; q[$"RewItemCount{i}"] = 0;
+        }
+        for (int i = 1; i <= 6; i++) { q[$"RewChoiceItemId{i}"] = 0; q[$"RewChoiceItemCount{i}"] = 0; }
         // Creature/GO slots and item slots are counted separately (vanilla: 4 of each).
         int unitSlot = 0, itemSlot = 0;
         var touchedTemplates = new Dictionary<uint, JsonObject>();
         foreach (var (g, i) in d.Goals.Select((g, i) => (g, i + 1)))
         {
-            if (g.Text.Trim().Length > 0) q[$"ObjectiveText{i}"] = g.Text.Trim();
             switch (g.Kind)
             {
                 case ObjectiveKind.Kill:
                     unitSlot++;
                     q[$"ReqCreatureOrGOId{unitSlot}"] = g.Target; q[$"ReqCreatureOrGOCount{unitSlot}"] = g.Count;
+                    q[$"ObjectiveText{unitSlot}"] = g.Text.Trim();
                     break;
                 case ObjectiveKind.UseObject:
                     unitSlot++;
                     q[$"ReqCreatureOrGOId{unitSlot}"] = -(long)g.Target; q[$"ReqCreatureOrGOCount{unitSlot}"] = g.Count;
+                    q[$"ObjectiveText{unitSlot}"] = g.Text.Trim();
                     break;
                 case ObjectiveKind.Collect:
                     itemSlot++;
@@ -202,6 +273,15 @@ public static class QuestAuthoringLaw
         }
 
         uint ender = d.Ender != 0 ? d.Ender : d.Giver;
+        foreach (var (kind, rows, wanted) in new[] { ("creature_questrelation", ctx.GiverRelations, d.Giver), ("creature_involvedrelation", ctx.EnderRelations, ender) })
+        {
+            // A quest authored elsewhere may have several givers. Merely reopening it keeps
+            // those relations; selecting a different giver deliberately replaces the set.
+            var existing = rows.Where(r => Num(r["quest"]) == d.Entry).ToList();
+            if (!existing.Any(r => Num(r["id"]) == wanted))
+                foreach (var old in existing)
+                    items.Add(new JsonObject { ["kind"] = "dbrow:" + kind, ["key"] = $"{Num(old["id"])}|{d.Entry}", ["body"] = null });
+        }
         items.Add(Row("creature_questrelation", new JsonObject { ["id"] = d.Giver, ["quest"] = d.Entry, ["patch_min"] = 0, ["patch_max"] = 10 }));
         items.Add(Row("creature_involvedrelation", new JsonObject { ["id"] = ender, ["quest"] = d.Entry, ["patch_min"] = 0, ["patch_max"] = 10 }));
 
@@ -267,4 +347,7 @@ public static class QuestAuthoringLaw
 
     private static long Num(JsonNode? n) => n is JsonValue v &&
         long.TryParse(v.TryGetValue<string>(out var s) ? s : v.ToJsonString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : 0;
+
+    private static double Number(JsonNode? n) => n is JsonValue v &&
+        double.TryParse(v.TryGetValue<string>(out var s) ? s : v.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) ? x : 0;
 }

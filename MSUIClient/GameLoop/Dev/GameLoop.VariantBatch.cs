@@ -80,7 +80,7 @@ public static partial class Program
             configPath = arg;
         }
 
-        if (axis is not ("npc-extras" or "items" or "players"))
+        if (axis is not ("npc-extras" or "items" or "players" or "equipment"))
         {
             error = $"axis '{axis}' is not available at the items review checkpoint";
             return false;
@@ -90,7 +90,7 @@ public static partial class Program
     }
 
     private static void PrintVariantBatchUsage() => Console.Error.WriteLine(
-        "usage: MSUIClient [config.json] --variant-batch [--axis npc-extras|items|players] " +
+        "usage: MSUIClient [config.json] --variant-batch [--axis npc-extras|items|players|equipment] " +
         "[--out <dir>] [--list <file>] [--limit <n>] [--diff <verdicts.csv>] " +
         "[--unmasked] [--exhaustive]");
 }
@@ -250,7 +250,8 @@ public sealed partial class GameLoop
             Directory.CreateDirectory(_variantOutputDirectory);
             if (options.Axis == "npc-extras") BuildNpcExtraSpecimens(options);
             else if (options.Axis == "items") BuildItemSpecimens(options);
-            else BuildPlayerSpecimens(options);
+            else if (options.Axis == "players") BuildPlayerSpecimens(options);
+            if (options.Axis == "equipment") { InitEquipmentCapture(gl); return; }
             LoadVariantBlankLists();
             _variantClock = Stopwatch.StartNew();
             Console.WriteLine($"[variant-batch] axis={options.Axis} ready: " +
@@ -487,6 +488,7 @@ public sealed partial class GameLoop
     private void StepVariantBatch()
     {
         if (_variantFinished) return;
+        if (_variantBatchOptions?.Axis == "equipment") { StepEquipmentCapture(); return; }
         bool npcAxis = _variantBatchOptions!.Axis == "npc-extras";
         if (_batchPortraitTarget is null || (npcAxis ? _creatures is null : _character is null))
         {
@@ -963,6 +965,7 @@ public sealed partial class GameLoop
     private void FinishVariantBatch(bool incomplete, string? error)
     {
         if (_variantFinished) return;
+        if (_variantBatchOptions?.Axis == "equipment") { FinishEquipmentCapture(error); return; }
         _variantFinished = true;
         try
         {

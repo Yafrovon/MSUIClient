@@ -297,6 +297,13 @@ public sealed class CharSectionsTable
                 (colour < 0 || row.ColorIndex == (uint)colour))
             .ToArray();
 
+    /// <summary>Uncomposited type-8 skin-extra sheet. Original Tauren skin rows put
+    /// mane, tail and hoof surfaces in Texture2; underwear is a different section.
+    /// Selection follows skin colour, not face/hair or equipped clothing. An absent
+    /// declaration stays absent rather than sampling a dressed body atlas.</summary>
+    public string SkinExtraTexture(uint race, uint sex, int skinColour)
+        => skinColour < 0 ? "" : Find(race, sex, SectionSkin, -1, skinColour)?.Texture2 ?? "";
+
     /// <summary>Vanilla CharRaces ids, matching the folder names used for MPQ paths.</summary>
     public static uint RaceId(string race) => race.ToLowerInvariant() switch
     {

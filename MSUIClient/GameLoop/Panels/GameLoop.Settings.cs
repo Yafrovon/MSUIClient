@@ -169,6 +169,12 @@ public sealed partial class GameLoop
             _escapeKeyDown = escape;
             return;
         }
+        // World Builder owns an armed brush/placement before any gameplay menu layer.
+        if (escape && !_escapeKeyDown && ConsumeWorldBuilderEscape())
+        {
+            _escapeKeyDown = escape;
+            return;
+        }
         // An armed Patrol route draft unwinds before every menu layer — the
         // documented Escape order puts an unfinished route draft second, right
         // after targeting (CRPG_RTS_MMO_PARTY_COMMAND_UI.md "Escape behavior").

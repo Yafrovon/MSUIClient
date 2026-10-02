@@ -59,6 +59,7 @@ touching the code:
 - `shared_docs/WORLD_BUILDER_HANDOFF.md` — the CURRENT World Builder / Gilneas state (rewritten 2026-09-27 night): what is
   built and verified, copy-paste commands for every task (tools/worldpack/: launch-wb/launch-live, generators, navmesh
   planner, make-group), the open items in order and the uncommitted change list.
+- `shared_docs/EQUIPMENT_CAPTURE.md` — deterministic weapon/armor capture with the production character renderer, body/view/pose matrix, asset hashes and offline-vs-live acceptance limits (added 2026-09-28).
 - `CODE_STRUCTURE_LAW.md` (repo root) — where a `.cs` file goes and how it is named.
 
 `interface-wire-check --shared-docs-only` fails when a file in `shared_docs/` is not

@@ -42,6 +42,7 @@ public sealed partial class GameLoop
     private WorldPackClient.State? _wbState;
     private Task<WorldPackClient.State>? _wbStateTask;
     private int _wbStateMap = -1;
+    private int _wbStateIncludePackId = -1, _wbStateRequestedPackId;
     private double _wbStateAt;
     private readonly Dictionary<(int col, int row), float[]> _wbServerSculpt = new();
 
@@ -58,6 +59,11 @@ public sealed partial class GameLoop
     private Vector3? _wbCursor;
     private double _wbLastDab, _wbLastRebuild;
     private readonly HashSet<(int col, int row)> _wbDirtyTiles = new();
+    private string _wbToolHint = "";
+    private Task<WorldPackClient.Reply>? _wbSculptSaveTask;
+    private readonly Dictionary<(int col, int row), float[]> _wbPendingSculpt = new();
+    private bool _wbSculptAwaitingState;
+    private int _wbStrokeMap, _wbStrokePackId;
 
     // stock terrain + what the preview currently owns
     private sealed class WbStockTile
@@ -123,6 +129,7 @@ public sealed partial class GameLoop
 
     private void DrawWbPackSection()
     {
+        ImGui.TextWrapped("A content pack holds your world edits. New packs start as drafts. Enable a pack when you want the next publish to include it for everyone on this server.");
         if (SuiWebAppUrl.Length == 0)
         {
             ImGui.TextWrapped("Set the MangosSuperUI address first (login screen > Web App). " +
@@ -144,8 +151,10 @@ public sealed partial class GameLoop
             foreach (var p in packs)
                 if (ImGui.Selectable($"{p.Name}  [{p.PackKey}]{(p.Enabled ? "" : "  - disabled")}", p.Id == _wbPackId))
                 {
+                    WbSetTool(WorldBuilderTool.None);
                     _wbPackId = p.Id;
                     WbRequestState();
+                    WbRequestDocs();
                 }
             ImGui.EndCombo();
         }
@@ -156,36 +165,60 @@ public sealed partial class GameLoop
             if (ImGui.Checkbox("Enabled (ships on the next publish)", ref enabled))
                 WbOp(enabled ? $"enable {sel.PackKey}" : $"disable {sel.PackKey}",
                     _wbClient.SetEnabledAsync(SuiWebAppUrl, sel.Id, enabled));
-            ImGui.TextDisabled($"{sel.Placements} placement(s), {sel.SculptVertices:N0} sculpted vertices, {sel.UndoableOps} undoable op(s)");
+            ImGui.TextDisabled($"{sel.Placements} placed objects; {sel.UndoableOps} edits available to undo");
             if (CreatorButton("Undo last (Ctrl+Z)")) WbUndo();
             ImGui.SameLine();
             if (CreatorButton("Refresh")) WbRequestState();
         }
 
         ImGui.Separator();
-        ImGui.TextDisabled("New pack");
-        ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f);
-        ImGui.InputText("key##wb-newkey", _wbNewKey, (uint)_wbNewKey.Length);
+        ImGui.TextUnformatted("Create a new pack");
         ImGui.SetNextItemWidth(CreatorControlWidth);
-        ImGui.InputText("name##wb-newname", _wbNewName, (uint)_wbNewName.Length);
-        if (CreatorButton("Create pack") && WbText(_wbNewKey).Length > 0)
+        ImGui.InputText("Name##wb-newname", _wbNewName, (uint)_wbNewName.Length);
+        if (WbText(_wbNewName).Length == 0) ImGui.TextDisabled("For example: My town changes");
+        string name = WbText(_wbNewName);
+        string generatedKey = System.Text.RegularExpressions.Regex.Replace(name.ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+        if (generatedKey.Length > 64) generatedKey = generatedKey[..64];
+        if (ImGui.TreeNode("Advanced: pack identifier"))
         {
-            var task = _wbClient.CreatePackAsync(SuiWebAppUrl, WbText(_wbNewKey), WbText(_wbNewName), "created in Creator Mode");
-            WbOp($"create pack {WbText(_wbNewKey)}", task, r => { if (r.Pack is { } p) _wbPackId = p.Id; });
+            ImGui.SetNextItemWidth(CreatorControlWidth);
+            ImGui.InputText("Identifier##wb-newkey", _wbNewKey, (uint)_wbNewKey.Length);
+            ImGui.TextDisabled("Leave empty to use: " + generatedKey);
+            ImGui.TreePop();
         }
-        if (_wbMessage.Length > 0) ImGui.TextWrapped(_wbMessage);
+        string key = WbText(_wbNewKey).Length > 0 ? WbText(_wbNewKey) : generatedKey;
+        bool duplicate = packs.Any(p => p.PackKey.Equals(key, StringComparison.OrdinalIgnoreCase));
+        if (duplicate) ImGui.TextWrapped("A pack already uses this name. Choose another name or identifier.");
+        ImGui.BeginDisabled(key.Length == 0 || name.Length == 0 || duplicate || _wbOps.Count > 0);
+        if (CreatorButton("Create pack"))
+        {
+            var task = _wbClient.CreatePackAsync(SuiWebAppUrl, key, name, "created in Creator Mode");
+            WbOp($"create pack {name}", task, r => { if (r.Pack is { } p) { _wbPackId = p.Id; WbOpenPage("terrain"); } });
+        }
+        ImGui.EndDisabled();
     }
 
     private void DrawWbSculptSection()
     {
+        ImGui.TextWrapped("Choose a brush, start sculpting, then drag on the ground. Release to save one stroke. Ctrl+Z undoes it.");
         bool armed = _wbTool == WorldBuilderTool.Sculpt;
-        if (ImGui.Checkbox("Sculpt tool (hold left mouse on terrain)", ref armed))
-            WbSetTool(armed ? WorldBuilderTool.Sculpt : WorldBuilderTool.None);
+        string problem = WbSculptProblem();
+        if (problem.Length > 0) ImGui.TextWrapped(problem);
+        ImGui.BeginDisabled(!armed && problem.Length > 0);
+        if (CreatorButton(armed ? "Stop sculpting (Esc)" : "Start sculpting"))
+            WbSetTool(armed ? WorldBuilderTool.None : WorldBuilderTool.Sculpt);
+        ImGui.EndDisabled();
+        ImGui.SameLine();
+        if (CreatorButton("Undo last pack edit")) WbUndo();
+        if (armed) ImGui.TextColored(new Vector4(1f, .82f, .3f, 1f), "Brush active: hold left mouse on the terrain.");
+        ImGui.Separator();
         int mode = (int)_wbBrush;
-        ImGui.RadioButton("Raise", ref mode, 0); ImGui.SameLine();
-        ImGui.RadioButton("Lower", ref mode, 1); ImGui.SameLine();
-        ImGui.RadioButton("Smooth", ref mode, 2); ImGui.SameLine();
+        ImGui.RadioButton("Raise", ref mode, 0); ObserveWorldBuilderUiItem("Raise"); ImGui.SameLine();
+        ImGui.RadioButton("Lower", ref mode, 1);
+        ObserveWorldBuilderUiItem("Lower");
+        ImGui.RadioButton("Smooth", ref mode, 2); ObserveWorldBuilderUiItem("Smooth"); ImGui.SameLine();
         ImGui.RadioButton("Flatten", ref mode, 3);
+        ObserveWorldBuilderUiItem("Flatten");
         _wbBrush = (WorldBuilderLaw.BrushMode)mode;
         ImGui.SetNextItemWidth(CreatorControlWidth);
         ImGui.SliderFloat("Radius (yd)", ref _wbRadius, 3f, 120f, "%.0f");
@@ -193,18 +226,26 @@ public sealed partial class GameLoop
         ImGui.SliderFloat(_wbBrush <= WorldBuilderLaw.BrushMode.Lower ? "Strength (yd/s)" : "Strength", ref _wbStrength, 0.5f, 40f, "%.1f");
         ImGui.SetNextItemWidth(CreatorControlWidth);
         ImGui.SliderFloat("Hardness", ref _wbHardness, 0f, 0.95f, "%.2f");
-        ImGui.TextDisabled("Shift inverts Raise/Lower. [ ] resize. A stroke is one undoable op.");
+        ImGui.TextWrapped("Shift reverses Raise / Lower. [ and ] change brush size. Flatten uses the height where you start the stroke.");
+        if (_wbToolHint.Length > 0) ImGui.TextWrapped(_wbToolHint);
     }
 
     private void DrawWbPlaceSection()
     {
+        ImGui.TextWrapped("Find a building or prop, select it, then place its preview in the world. Escape cancels placing.");
         bool armed = _wbTool == WorldBuilderTool.Place;
-        if (ImGui.Checkbox("Place tool (left click drops the model)", ref armed))
-            WbSetTool(armed ? WorldBuilderTool.Place : WorldBuilderTool.None);
+        ImGui.BeginDisabled(_wbModel is null);
+        if (CreatorButton(armed ? "Stop placing (Esc)" : "Place selected model"))
+            WbSetTool(armed ? WorldBuilderTool.None : WorldBuilderTool.Place);
+        ImGui.EndDisabled();
+        if (_wbModel is not null) ImGui.TextWrapped(Path.GetFileNameWithoutExtension(_wbModel.Replace('\\', '/')));
+        if (armed) ImGui.TextWrapped("Left-click the ground to place. [ and ] rotate; Shift makes smaller turns. Right mouse moves the camera.");
 
         _wbCatalogue ??= WbBuildCatalogue();
         ImGui.SetNextItemWidth(CreatorControlWidth);
-        ImGui.InputText("search##wb-search", _wbSearchBuf, (uint)_wbSearchBuf.Length);
+        ImGui.InputText("Search models##wb-search", _wbSearchBuf, (uint)_wbSearchBuf.Length);
+        ObserveWorldBuilderUiItem("Model search");
+        ImGui.TextDisabled("Try house, tree, table...");
         string q = WbText(_wbSearchBuf);
         if (q != _wbSearchLast)
         {
@@ -215,11 +256,15 @@ public sealed partial class GameLoop
         if (ImGui.BeginListBox("##wb-models", new Vector2(-1f, 150f * CreatorUiScale)))
         {
             foreach (var path in _wbSearchHits)
-                if (ImGui.Selectable(path, path == _wbModel)) { _wbModel = path; _wbCursorGhostSig = null; }
+            {
+                if (ImGui.Selectable($"{Path.GetFileNameWithoutExtension(path.Replace('\\', '/'))}##{path}", path == _wbModel))
+                { _wbModel = path; _wbCursorGhostSig = null; }
+                ObserveWorldBuilderUiItem(Path.GetFileNameWithoutExtension(path.Replace('\\', '/')));
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip(path);
+            }
             ImGui.EndListBox();
         }
-        ImGui.TextDisabled($"{_wbSearchHits.Count} shown of {_wbCatalogue.Count} (WMO roots + World M2s)");
-        ImGui.TextWrapped(_wbModel ?? "(pick a model)");
+        ImGui.TextDisabled($"{_wbSearchHits.Count} results shown of {_wbCatalogue.Count} models");
         ImGui.SetNextItemWidth(CreatorControlWidth);
         ImGui.SliderFloat("Heading", ref _wbYaw, 0f, 360f, "%.0f deg");
         ImGui.SetNextItemWidth(CreatorControlWidth);
@@ -239,77 +284,132 @@ public sealed partial class GameLoop
             ImGui.InputInt("Doodad set", ref _wbDoodadSet);
             _wbDoodadSet = Math.Clamp(_wbDoodadSet, 0, 32);
         }
-        ImGui.TextDisabled("[ ] rotate 15 deg (Shift 1 deg) while the tool is armed.");
+        if (CreatorButton("Reset rotation / height / scale"))
+        { _wbYaw = _wbPitch = _wbRoll = _wbZOffset = 0f; _wbScale = 1f; _wbDoodadSet = 0; }
+        if (_wbToolHint.Length > 0) ImGui.TextWrapped(_wbToolHint);
     }
 
     private void DrawWbListSection()
     {
-        if (_wbState is null || _controller is null) { ImGui.TextDisabled("not loaded"); return; }
+        if (_wbState is null || _wbStateMap != _config.Start.Map || _controller is null) { ImGui.TextDisabled("Loading objects on this map..."); return; }
+        ImGui.TextWrapped("Select a placed building or prop to move, turn, resize or remove it. Changes are saved to its content pack.");
+        ImGui.Checkbox("Show objects from other packs", ref _wbAllPlacementPacks);
         Vector3 me = _controller.Position;
         var near = _wbState.Placements
-            .Where(p => !p.Deleted)
+            .Where(p => !p.Deleted && (_wbAllPlacementPacks || p.PackId == _wbPackId))
             .Select(p => (p, d: Vector2.Distance(new Vector2(p.PosX, p.PosY), new Vector2(me.X, me.Y))))
             .Where(x => x.d < 600f)
             .OrderBy(x => x.d)
             .Take(80)
             .ToList();
-        bool select = _wbTool == WorldBuilderTool.Select;
-        if (ImGui.Checkbox("Select tool (click near a placement)", ref select))
-            WbSetTool(select ? WorldBuilderTool.Select : WorldBuilderTool.None);
+        bool select = _wbTool == WorldBuilderTool.Select && !_wbSpawnArmed;
+        if (CreatorButton(select ? "Stop selecting (Esc)" : "Select an object in the world"))
+            WbSetTool(select ? WorldBuilderTool.None : WorldBuilderTool.Select);
+        if (CreatorButton("Undo last pack edit")) WbUndo();
+        if (near.Count == 0) ImGui.TextWrapped("No pack objects within 600 yards. Place a model first, or move closer to an existing placement.");
+        ImGui.BeginChild("##wb-placed-list", new Vector2(0, 160f * CreatorUiScale), true);
         foreach (var (p, d) in near)
         {
             string packKey = _wbState.Packs.FirstOrDefault(x => x.Id == p.PackId)?.PackKey ?? "?";
             string label = $"#{p.Id} {Path.GetFileNameWithoutExtension(p.ModelPath)}  {d:F0} yd  [{packKey}]{(p.Published ? "" : " *")}";
-            if (ImGui.Selectable(label, p.Id == _wbSelected)) _wbSelected = p.Id;
+            if (ImGui.Selectable(label, p.Id == _wbSelected)) { _wbMoveArmed = false; _wbSelected = p.Id; }
+            ObserveWorldBuilderUiItem($"Object {p.Id}");
         }
-        ImGui.TextDisabled("* = not published yet");
+        ImGui.EndChild();
+        ImGui.TextDisabled("* = saved draft, not published");
 
         if (_wbState.Placements.FirstOrDefault(p => p.Id == _wbSelected && !p.Deleted) is { } sel)
         {
             ImGui.Separator();
-            ImGui.Text($"#{sel.Id} {sel.ModelPath}");
+            ImGui.TextWrapped($"#{sel.Id} {Path.GetFileNameWithoutExtension(sel.ModelPath.Replace('\\', '/'))}");
             ImGui.TextDisabled($"at ({sel.PosX:F1}, {sel.PosY:F1}, {sel.PosZ:F1})  heading {sel.RotY:F0}");
-            float heading = sel.RotY;
+            if (sel.PackId != _wbPackId)
+            {
+                ImGui.TextWrapped("This object belongs to another pack. Select that pack above to edit it.");
+                return;
+            }
+            if (_wbPlacementDraft?.Id != sel.Id)
+            { _wbPlacementDraft = WbCopyPlacement(sel); _wbPlacementDraftBase = WbSignature(sel); }
+            var draft = _wbPlacementDraft;
+            bool stale = _wbPlacementDraftBase != WbSignature(sel);
+            if (stale) ImGui.TextWrapped("This object changed since these fields were loaded. Reset fields to load its current position before saving.");
+            float heading = draft.RotY;
             ImGui.SetNextItemWidth(CreatorControlWidth);
-            if (ImGui.SliderFloat("Heading##sel", ref heading, 0f, 360f, "%.0f deg")) sel.RotY = heading;
-            if (ImGui.IsItemDeactivatedAfterEdit())
-                WbOp($"turn #{sel.Id}", _wbClient.MoveAsync(SuiWebAppUrl, sel));
+            if (ImGui.SliderFloat("Heading##sel", ref heading, 0f, 360f, "%.0f deg")) draft.RotY = heading;
+            float z = draft.PosZ;
+            ImGui.SetNextItemWidth(CreatorControlWidth);
+            if (ImGui.InputFloat("Height##sel", ref z, .1f, 1f)) draft.PosZ = z;
+            if (draft.Kind == "m2")
+            {
+                float scale = draft.Scale;
+                ImGui.SetNextItemWidth(CreatorControlWidth);
+                if (ImGui.SliderFloat("Scale##sel", ref scale, .2f, 6f)) draft.Scale = scale;
+            }
+            ImGui.BeginDisabled(_wbOps.Count > 0 || stale);
+            if (CreatorButton("Save object changes"))
+                WbOp($"edit object #{sel.Id}", _wbClient.MoveAsync(SuiWebAppUrl, WbCopyPlacement(draft)), _ => _wbPlacementDraft = null);
+            ImGui.EndDisabled();
+            ImGui.SameLine();
+            if (CreatorButton("Reset fields")) { _wbPlacementDraft = WbCopyPlacement(sel); _wbPlacementDraftBase = WbSignature(sel); }
             if (CreatorButton(_wbMoveArmed ? "Click the ground..." : "Move (click new spot)")) { _wbMoveArmed = true; WbSetTool(WorldBuilderTool.Select); }
             ImGui.SameLine();
-            if (CreatorButton("Delete")) WbOp($"delete #{sel.Id}", _wbClient.DeleteAsync(SuiWebAppUrl, sel.Id));
-            ImGui.SameLine();
             if (CreatorButton("Go to")) _controller.Teleport(sel.PosX, sel.PosY, sel.PosZ + 30f);
+            if (CreatorButton("Remove object")) WbOp($"remove object #{sel.Id}", _wbClient.DeleteAsync(SuiWebAppUrl, sel.Id));
         }
     }
 
     private void DrawWbPublishSection()
     {
         if (SuiWebAppUrl.Length == 0) return;
+        ImGui.TextWrapped("Save your drafts, then publish the enabled packs to apply them to the game server. Download the finished build to update this client.");
         WbReadMountedBuild();
         var last = _wbStatus?.LastBuild ?? _wbState?.LastBuild;
-        ImGui.TextWrapped($"Server: {(last is null ? "never published" : $"build #{last.BuildId} ({last.Size / 1024} KiB)")}" +
-                          $"   Client {WbPatchName}: {(_wbMountedBuild is { } b ? $"build #{b}" : "not mounted")}");
-        ImGui.Checkbox("Restart mangosd after publish (loads new collision/navmesh)", ref _wbRestartOnPublish);
+        var enabled = _wbState?.Packs.Where(p => p.Enabled).ToList() ?? new();
+        ImGui.TextWrapped("Will publish: " + (enabled.Count == 0 ? "no packs (restore the original world)" : string.Join(", ", enabled.Select(p => p.Name))));
+        if (_wbState?.Packs.FirstOrDefault(p => p.Id == _wbPackId) is { Enabled: false } selected)
+        {
+            ImGui.TextColored(new Vector4(1f, .72f, .3f, 1f), "Your selected pack is draft only and will not be published.");
+            if (CreatorButton("Include this pack in publish"))
+                WbOp($"enable {selected.Name}", _wbClient.SetEnabledAsync(SuiWebAppUrl, selected.Id, true));
+        }
+        ImGui.Separator();
+        ImGui.TextWrapped($"Server: {(last is null ? "never published" : $"build #{last.BuildId}")}. " +
+                          $"This client: {(_wbMountedBuild is { } b ? $"build #{b}" : "original world")}.");
+        ImGui.Checkbox("Restart game server to load the changes", ref _wbRestartOnPublish);
         bool running = _wbStatus?.Running == true;
-        if (!running && CreatorButton("Publish enabled packs"))
+        ImGui.BeginDisabled(running || _wbOps.Count > 0 || _wbStroking || _wbVerifyTask is not null);
+        if (CreatorButton("1. Check drafts")) WbRequestPreflight();
+        if (CreatorButton("2. Publish enabled packs"))
             WbOp("publish", _wbClient.PublishAsync(SuiWebAppUrl, _wbRestartOnPublish), _ => _wbStatusAt = 0);
+        ImGui.EndDisabled();
+        if (_wbVerifyTask is not null) ImGui.TextDisabled("Checking content...");
+        if (_wbVerify is { } report)
+        {
+            ImGui.TextWrapped($"Last check: {report["errors"]} errors, {report["warnings"]} warnings.");
+            if (CreatorButton("View check results")) { _wbAdvancedPage = 2; WbOpenPage("advanced"); }
+        }
         if (last is not null && last.BuildId != _wbMountedBuild && _wbDownloadTask is null && !running)
         {
-            if (!running) ImGui.SameLine();
-            if (CreatorButton($"Download & mount build #{last.BuildId}")) WbStartDownload();
+            if (CreatorButton($"3. Download build #{last.BuildId}")) WbStartDownload();
         }
-        if (_wbDownloadTask is not null) ImGui.TextDisabled("downloading patch-7.MPQ...");
+        else if (last is not null && last.BuildId == _wbMountedBuild) ImGui.TextDisabled("This client has the latest published build.");
+        if (_wbDownloadTask is not null || _wbCollisionTask is not null) ImGui.TextDisabled("Downloading world and collision data...");
 
         if (_wbStatus is { } st && (st.Running || st.Log.Count > 0))
         {
-            ImGui.TextDisabled($"build #{st.BuildId}: {st.Status} - {st.Phase}" +
+            ImGui.TextWrapped($"build #{st.BuildId}: {st.Status} - {st.Phase}" +
                                (st.Error is { } e ? $" - {e}" : ""));
-            if (ImGui.BeginChild("##wb-log", new Vector2(-1f, 140f * CreatorUiScale), true))
+            if (running) ImGui.TextWrapped("You can keep looking around while this builds. Larger terrain changes can take several minutes.");
+            ImGui.Checkbox("Show build details", ref _wbShowHistory);
+            if (_wbShowHistory)
             {
-                foreach (var line in st.Log) ImGui.TextUnformatted(line);
-                if (st.Running) ImGui.SetScrollHereY(1f);
+                if (ImGui.BeginChild("##wb-log", new Vector2(-1f, 140f * CreatorUiScale), true))
+                {
+                    foreach (var line in st.Log) ImGui.TextUnformatted(line);
+                    if (st.Running) ImGui.SetScrollHereY(1f);
+                }
+                ImGui.EndChild();
             }
-            ImGui.EndChild();
         }
     }
 
@@ -320,9 +420,12 @@ public sealed partial class GameLoop
     {
         bool panelOpen = _creatorPanel == CreatorPanel.World;
         if (!panelOpen && _wbTool != WorldBuilderTool.None) WbSetTool(WorldBuilderTool.None);
+        // Preview readiness must not depend on opening the Publish section.
+        WbReadMountedBuild();
         PumpWbTasks();
         if (_wbState is null && _wbStateTask is null && panelOpen && SuiWebAppUrl.Length > 0) WbRequestState();
-        if (_wbState is not null && _config.Start.Map != _wbStateMap && _wbStateTask is null) WbRequestState();
+        if (_wbState is not null && (_config.Start.Map != _wbStateMap || _wbStateIncludePackId != _wbPackId) && _wbStateTask is null)
+            WbRequestState();
 
         WbKeepPreviewApplied();
         WbSyncGhosts();
@@ -330,15 +433,22 @@ public sealed partial class GameLoop
         PumpWbVerify();
         PumpWbQuestCheck();
         WbSyncSpawnPreview();
-        if (_wbTool == WorldBuilderTool.None) { WbSetCursorGhost(null); return; }
-
         var io = ImGui.GetIO();
-        bool overUi = io.WantCaptureMouse;
-        _wbCursor = !overUi && TryPickGround(io.MousePos, out Vector3 hit) ? hit : null;
+        bool overUi = io.WantCaptureMouse || _settingsOpen || _worldLoading;
+        if (panelOpen && !_settingsOpen && !_worldLoading && !io.WantTextInput &&
+            io.KeyCtrl && ImGui.IsKeyPressed(ImGuiKey.Z, false)) WbUndo();
+        if (WbNpcPointerFrame(io, overUi)) return;
+        if (_wbTool == WorldBuilderTool.None) { _wbCursor = null; WbSetCursorGhost(null); return; }
+        Vector3 hit = default;
+        bool picked = !overUi && (_wbTool == WorldBuilderTool.Sculpt
+            ? WbTryPickSculptGround(io.MousePos, out hit)
+            : TryPickGround(io.MousePos, out hit));
+        _wbCursor = picked ? hit : null;
+        _wbToolHint = overUi ? "Move the pointer over the world."
+            : _wbCursor is null ? "Point at nearby ground; move closer if it is beyond reach." : "";
 
         if (!io.WantTextInput)
         {
-            if (io.KeyCtrl && ImGui.IsKeyPressed(ImGuiKey.Z, false)) WbUndo();
             float step = io.KeyShift ? 1f : 15f;
             if (_wbTool == WorldBuilderTool.Sculpt)
             {
@@ -366,10 +476,53 @@ public sealed partial class GameLoop
         if (_wbStroking) WbFinishStroke();
         _wbTool = tool;
         if (tool != WorldBuilderTool.Select) _wbMoveArmed = false;
+        if (tool != WorldBuilderTool.Select) WbCancelNpcPlacement();
         bool reserve = tool != WorldBuilderTool.None;
         if (reserve && !_wbReservedLeft) { _window.LeftButtonReservedForWorldClicks = true; _wbReservedLeft = true; }
         else if (!reserve && _wbReservedLeft) { _window.LeftButtonReservedForWorldClicks = false; _wbReservedLeft = false; }
         if (tool != WorldBuilderTool.Place) WbSetCursorGhost(null);
+    }
+
+    /// <summary>Editing actions own Escape before gameplay menus. A stroke in hand is discarded, not saved.</summary>
+    private bool ConsumeWorldBuilderEscape()
+    {
+        if (!_creatorWorldRequested ||
+            (_wbTool == WorldBuilderTool.None && !_wbStroking && !WbNpcHasActiveAction)) return false;
+        WbCancelStroke();
+        WbCancelNpcPlacement();
+        WbSetTool(WorldBuilderTool.None);
+        _wbCursor = null;
+        _wbToolHint = "";
+        _wbMessage = "Editing action cancelled. Saved changes are kept.";
+        return true;
+    }
+
+    private string WbSculptProblem()
+    {
+        if (SuiWebAppUrl.Length == 0) return "Connect to the web app before sculpting.";
+        if (_wbPackId == 0) return "Choose or create a content pack first.";
+        if (_wbState is null || _wbStateMap != _config.Start.Map || _wbStateIncludePackId != _wbPackId)
+            return "Loading terrain editing data…";
+        if (!_wbState.SurfaceSculptSupported) return "Update the web app before sculpting; it does not support final terrain edits yet.";
+        if (_wbSculptSaveTask is not null || _wbSculptAwaitingState || _wbOps.Count > 0)
+            return "Saving changes; wait before starting another stroke.";
+        if (_wbCursor is { } at && WbStockFor(WorldBuilderLaw.TileOf(at.X, at.Y)) is null)
+            return _wbState.LastBuild?.BuildId != _wbMountedBuild
+                ? "Download the latest build before sculpting this terrain."
+                : "Terrain data is not ready here. Wait for it to load or choose another spot.";
+        return "";
+    }
+
+    private void WbCancelStroke()
+    {
+        _wbStroking = false;
+        var changed = _wbStroke.Keys.ToArray();
+        _wbStroke.Clear();
+        foreach (var key in changed)
+        {
+            _wbDirtyTiles.Add(key);
+            WbApplyTilePreview(key);
+        }
     }
 
     /// <summary>World clicks are swallowed while a World Builder tool is armed (no stray targeting).</summary>
@@ -378,17 +531,37 @@ public sealed partial class GameLoop
 
     // ── sculpt ───────────────────────────────────────────────────────────────
 
+    /// <summary>The terrain brush edits the height field, even below props or a roof.
+    /// Placement keeps the ordinary nearest-surface pick so objects can still sit on floors.</summary>
+    private bool WbTryPickSculptGround(Vector2 pixel, out Vector3 point)
+    {
+        point = default;
+        return _window.Camera.ScreenPointToRay(pixel, _window.FramebufferSize) is { } ray &&
+            TryPickTerrainSurface(ray.Origin, ray.Direction, 250f, out point, out _);
+    }
+
     private void WbSculptFrame(ImGuiIOPtr io, bool overUi)
     {
         double now = ImGui.GetTime();
+        if (_wbStroking && (_wbStrokeMap != _config.Start.Map || _wbStrokePackId != _wbPackId))
+        {
+            if (_wbStrokeMap == _config.Start.Map) WbCancelStroke();
+            else { _wbStroking = false; _wbStroke.Clear(); }
+            _wbMessage = "Stroke cancelled because the map or pack changed.";
+        }
         if (_wbStroking && !ImGui.IsMouseDown(ImGuiMouseButton.Left)) WbFinishStroke();
+        string problem = WbSculptProblem();
+        if (!_wbStroking && problem.Length > 0) _wbToolHint = problem;
         if (!_wbStroking && !overUi && _wbCursor is { } start && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
         {
-            if (_wbPackId == 0) { _wbMessage = "Choose or create a pack first."; return; }
+            if (problem.Length > 0) { _wbMessage = problem; return; }
             _wbStroking = true;
             _wbStroke.Clear();
+            _wbStrokeMap = _config.Start.Map;
+            _wbStrokePackId = _wbPackId;
             _wbFlattenTarget = start.Z;
-            _wbLastDab = now;
+            _wbLastDab = now - Math.Clamp(io.DeltaTime, 1f / 120f, 0.1f);
+            _wbMessage = "Sculpting… Release to save, Escape to discard this stroke.";
         }
         if (_wbStroking && _wbCursor is { } at)
         {
@@ -400,6 +573,7 @@ public sealed partial class GameLoop
             float amount = mode <= WorldBuilderLaw.BrushMode.Lower ? _wbStrength * dt : Math.Clamp(_wbStrength * 0.15f * dt * 10f, 0f, 1f);
             WbDab(new Vector2(at.X, at.Y), mode, amount);
         }
+        else _wbLastDab = now; // Moving across a panel must not accumulate a delayed dab.
         if (_wbDirtyTiles.Count > 0 && now - _wbLastRebuild > 0.12)
         {
             _wbLastRebuild = now;
@@ -410,7 +584,29 @@ public sealed partial class GameLoop
 
     private void WbDab(Vector2 centre, WorldBuilderLaw.BrushMode mode, float amount)
     {
+        if (_wbStateMap != _config.Start.Map || _wbStateIncludePackId != _wbPackId)
+        {
+            _wbToolHint = _wbMessage = "Wait for this pack's terrain editing data to load.";
+            return;
+        }
+        if (_wbState?.SurfaceSculptSupported != true)
+        {
+            _wbToolHint = _wbMessage = "Update the web app before sculpting; it does not support final terrain edits yet.";
+            return;
+        }
         var verts = WorldBuilderLaw.BrushVertices(centre, _wbRadius, _wbHardness);
+        var neighbours = mode == WorldBuilderLaw.BrushMode.Smooth
+            ? verts.ToDictionary(v => (v.col, v.row, v.gridRow, v.gridCol),
+                v => WorldBuilderLaw.NeighbourVertices(v.col, v.row, v.gridRow, v.gridCol))
+            : null;
+        var required = verts.Select(v => (v.col, v.row));
+        if (neighbours is not null) required = required.Concat(neighbours.Values.SelectMany(n => n).Select(v => (v.col, v.row)));
+        if (required.Distinct().Any(key => WbStockFor(key) is null))
+        {
+            _wbToolHint = _wbMessage = "The brush reaches terrain that is not loaded. Move closer or use a smaller radius.";
+            return; // Never deform only one side of a shared tile edge.
+        }
+        var shared = new Dictionary<(int col, int row), float>();
         foreach (var (col, row, gr, gc, w) in verts)
         {
             if (WbStockFor((col, row)) is null) continue;
@@ -418,10 +614,12 @@ public sealed partial class GameLoop
                 _wbStroke[(col, row)] = stroke = new float[WorldBuilderLaw.VertexCount];
             float h = WbHeight(col, row, gr, gc);
             float mean = 0f;
-            if (mode == WorldBuilderLaw.BrushMode.Smooth)
-                mean = (WbHeight(col, row, Math.Max(gr - 1, 0), gc) + WbHeight(col, row, Math.Min(gr + 1, 128), gc) +
-                        WbHeight(col, row, gr, Math.Max(gc - 1, 0)) + WbHeight(col, row, gr, Math.Min(gc + 1, 128))) * 0.25f;
-            stroke[gr * WorldBuilderLaw.Side + gc] += WorldBuilderLaw.Dab(mode, w, amount, h, mean, _wbFlattenTarget);
+            if (neighbours is not null)
+                mean = neighbours[(col, row, gr, gc)].Sum(v => WbHeight(v.col, v.row, v.gridRow, v.gridCol)) * 0.25f;
+            var point = (col * 128 + gc, row * 128 + gr);
+            if (!shared.TryGetValue(point, out float delta))
+                shared[point] = delta = WorldBuilderLaw.Dab(mode, w, amount, h, mean, _wbFlattenTarget);
+            stroke[gr * WorldBuilderLaw.Side + gc] += delta;
             _wbDirtyTiles.Add((col, row));
         }
     }
@@ -442,6 +640,19 @@ public sealed partial class GameLoop
 
     private void WbFinishStroke(string? label = null)
     {
+        if (_wbState?.SurfaceSculptSupported != true)
+        {
+            WbCancelStroke();
+            _wbMessage = "Stroke cancelled: the web app must support final terrain edits before saving.";
+            return;
+        }
+        if (_wbStroking && (_wbStrokePackId != _wbPackId || _wbStrokeMap != _config.Start.Map))
+        {
+            if (_wbStrokeMap == _config.Start.Map) WbCancelStroke();
+            else { _wbStroking = false; _wbStroke.Clear(); }
+            _wbMessage = "Stroke cancelled because the map or pack changed.";
+            return;
+        }
         _wbStroking = false;
         if (_wbStroke.Count == 0) return;
         var tiles = new List<WorldPackClient.SculptTile>();
@@ -449,23 +660,32 @@ public sealed partial class GameLoop
         {
             var t = new WorldPackClient.SculptTile { Col = col, Row = row };
             for (int i = 0; i < deltas.Length; i++)
-                if (MathF.Abs(deltas[i]) > 0.001f) t.Deltas[i] = deltas[i];
+                if (WorldBuilderLaw.SavesDelta(deltas[i])) t.Deltas[i] = deltas[i];
             if (t.Deltas.Count > 0) tiles.Add(t);
         }
-        // Fold the stroke into the local server mirror now; the refresh after the POST confirms it.
-        foreach (var ((col, row), deltas) in _wbStroke)
-        {
-            if (!_wbServerSculpt.TryGetValue((col, row), out var s))
-                _wbServerSculpt[(col, row)] = s = new float[WorldBuilderLaw.VertexCount];
-            for (int i = 0; i < deltas.Length; i++) s[i] += deltas[i];
-            _wbPreviewTiles.Add((col, row));
-            _wbDirtyTiles.Add((col, row));
-        }
+        var touched = _wbStroke.Keys.ToArray();
         _wbStroke.Clear();
+        _wbPendingSculpt.Clear();
+        // Mirror only the exact values sent, so tiny discarded deltas never linger in the preview.
+        foreach (var t in tiles)
+        {
+            var key = (t.Col, t.Row);
+            var deltas = new float[WorldBuilderLaw.VertexCount];
+            foreach (var (i, d) in t.Deltas) deltas[i] = d;
+            _wbPendingSculpt[key] = deltas;
+            if (!_wbServerSculpt.TryGetValue(key, out var s))
+                _wbServerSculpt[key] = s = new float[WorldBuilderLaw.VertexCount];
+            WorldBuilderLaw.ApplyStroke(s, deltas);
+            _wbPreviewTiles.Add(key);
+        }
+        foreach (var key in touched) { _wbDirtyTiles.Add(key); WbApplyTilePreview(key); }
         if (tiles.Count == 0) return;
         int n = tiles.Sum(t => t.Deltas.Count);
+        _wbSculptSaveTask = _wbClient.SculptAsync(SuiWebAppUrl, _wbPackId, _config.Start.Map, label ?? $"{_wbBrush} r{_wbRadius:F0}", tiles);
+        _wbSculptAwaitingState = true;
+        _wbStateTask = null; // A snapshot started before this stroke cannot confirm its save.
         WbOp(label is null ? $"sculpt ({_wbBrush}, {n} vertices)" : $"{label} ({n} vertices)",
-            _wbClient.SculptAsync(SuiWebAppUrl, _wbPackId, _config.Start.Map, label ?? $"{_wbBrush} r{_wbRadius:F0}", tiles));
+            _wbSculptSaveTask);
     }
 
     // ── terrain preview ──────────────────────────────────────────────────────
@@ -497,31 +717,24 @@ public sealed partial class GameLoop
 
     private WbStockTile? WbStockFor((int col, int row) key)
     {
-        if (_wbStock.TryGetValue(key, out var cached)) return cached;
+        if (_wbStateMap != _config.Start.Map) return null;
+        if (_wbStock.TryGetValue(key, out var cached) && cached is not null) return cached;
         WbStockTile? tile = null;
         if (_mpq is not null)
         {
             string path = $"World\\Maps\\{_config.Start.MapName}\\{_config.Start.MapName}_{key.col}_{key.row}.adt";
-            // A pack map (Gilneas 800) has NO stock tile, and a continent tile a pack STAMPED over has the wrong
-            // one (the replaced sea): the base is the mounted patch-7 tile minus the sculpt it was published with
-            // (preview = base + the same sculpt = exactly the published ground: stamp, sculpt, stitch, paths).
-            // "Stamped" = the PUBLISHED manifest says so (patch-7's build.json, always there) or a tile doc does.
-            // 2026-09-27: the docs arrive AFTER the first sculpt state, so a doc-only test took the stock SEA
-            // tile as the base and cached it: Keel Harbor showed flat at each chunk's base height + sculpt, 2-4
-            // yd off the published ground, and tier 2 judged spawns against that ("fixed" two dockhands under it).
+            // Every published tile may contain absolute path/coast shaping, even without a stamp.
+            // Use that finished surface minus the published aggregate. Adding current totals then changes
+            // only pending surface edits while the fixed legacy source contribution cancels exactly.
             bool packStamp = WbTileDoc(_config.Start.Map, key.col, key.row) is not null ||
                              WbPublishedStampedTiles((uint)_config.Start.Map).Contains(key);
-            // A continent tile the docs may still claim: do not cache a stock guess before they have loaded.
             if (!packStamp && _wbDocs is null && _config.Start.Map < 800) return null;
-            var bytes = packStamp ? null : _mpq.ReadFileExcluding(path, WbPatchName);
             float[]? published = null;
-            // Only valid when the mounted patch IS the last publish (its baked sculpt = PublishedSculpt).
             bool mountedIsLatest = _wbMountedBuild is { } mb && mb == _wbState?.LastBuild?.BuildId;
-            if (bytes is null && !mountedIsLatest)
-                Console.WriteLine($"[worldbuilder] preview of {path} waits for the latest patch-7 (download it)");
-            if (bytes is null && mountedIsLatest && _mpq.ReadFile(path) is { } patched)
+            if ((_wbState?.LastBuild is not null || _wbMountedBuild is not null) && !mountedIsLatest) return null;
+            var bytes = mountedIsLatest ? _mpq.ReadFile(path) : packStamp ? null : _mpq.ReadFileExcluding(path, WbPatchName);
+            if (bytes is not null && mountedIsLatest)
             {
-                bytes = patched;
                 published = new float[WorldBuilderLaw.VertexCount];
                 foreach (var t in _wbState?.PublishedSculpt.Where(t => t.Col == key.col && t.Row == key.row) ?? [])
                     foreach (var (i, dz) in t.Deltas)
@@ -553,17 +766,16 @@ public sealed partial class GameLoop
                     }
                 tile = new WbStockTile { Chunks = map };
             }
-            else if (_config.Start.Map >= 800 || packStamp)
-                Console.WriteLine($"[worldbuilder] no preview base for {path}: sculpt on this tile shows only after publish + download");
         }
-        _wbStock[key] = tile;
+        // Missing docs, a pending download or archive mount is transient; do not poison the cache.
+        if (tile is not null) _wbStock[key] = tile;
         return tile;
     }
 
     /// <summary>Rewrite the shared AdtCache instance of a tile to stock + deltas and rebuild its mesh.</summary>
     private void WbApplyTilePreview((int col, int row) key)
     {
-        if (_adts is null || _terrain is null) return;
+        if (_adts is null || _terrain is null || _wbStateMap != _config.Start.Map) return;
         var stock = WbStockFor(key);
         var adt = _adts.Get(key.col, key.row);
         if (stock is null || adt?.Chunks is null) return;
@@ -682,7 +894,8 @@ public sealed partial class GameLoop
 
     private void WbPlaceFrame(ImGuiIOPtr io, bool overUi)
     {
-        if (_wbModel is null || _wbCursor is not { } at) { WbSetCursorGhost(null); return; }
+        if (_wbModel is null) { _wbToolHint = "Choose a building or object to place."; WbSetCursorGhost(null); return; }
+        if (_wbCursor is not { } at) { WbSetCursorGhost(null); return; }
         var world = at + new Vector3(0, 0, _wbZOffset);
         var candidate = new WorldPackClient.Placement
         {
@@ -695,9 +908,12 @@ public sealed partial class GameLoop
             DoodadSet = _wbDoodadSet,
         };
         WbSetCursorGhost(candidate);
+        if (_wbCursorGhostSig is null) _wbToolHint = "Loading the model preview…";
         if (!overUi && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
         {
             if (_wbPackId == 0) { _wbMessage = "Choose or create a pack first."; return; }
+            if (_wbOps.Count > 0) { _wbMessage = "Wait for the current edit to save before placing another object."; return; }
+            if (_wbCursorGhostSig is null) { _wbMessage = "Wait for the model preview before placing it."; return; }
             WbOp($"place {Path.GetFileName(_wbModel)}", _wbClient.PlaceAsync(SuiWebAppUrl, _wbPackId, candidate),
                 r => { if (r.Result?.Placement is { } p) _wbSelected = p.Id; });
         }
@@ -705,24 +921,49 @@ public sealed partial class GameLoop
 
     private void WbSelectFrame(ImGuiIOPtr io, bool overUi)
     {
-        if (overUi || _wbCursor is not { } at || !ImGui.IsMouseClicked(ImGuiMouseButton.Left) || _wbState is null) return;
-        if (WbTrySpawnClick(at)) return;
-        if (_wbMoveArmed && _wbState.Placements.FirstOrDefault(p => p.Id == _wbSelected) is { } sel)
+        if (overUi || _wbCursor is not { } at || _wbState is null) { WbSetCursorGhost(null); return; }
+        if (_wbMoveArmed && !_wbState.Placements.Any(p => p.Id == _wbSelected && !p.Deleted && p.PackId == _wbPackId && p.MapId == _config.Start.Map))
         {
             _wbMoveArmed = false;
-            sel.PosX = at.X; sel.PosY = at.Y; sel.PosZ = at.Z + _wbZOffset;
-            WbOp($"move #{sel.Id}", _wbClient.MoveAsync(SuiWebAppUrl, sel));
+            WbSetCursorGhost(null);
+            _wbMessage = "Move cancelled: select an object owned by the current pack.";
             return;
         }
-        var nearest = _wbState.Placements.Where(p => !p.Deleted)
+        if (_wbMoveArmed && _wbState.Placements.FirstOrDefault(p => p.Id == _wbSelected && !p.Deleted && p.PackId == _wbPackId && p.MapId == _config.Start.Map) is { } sel)
+        {
+            // Never mutate the saved placement before an accepted request; Escape/failure leaves it intact.
+            var moved = WbCopyPlacement(sel);
+            moved.PosX = at.X; moved.PosY = at.Y; moved.PosZ = at.Z + _wbZOffset;
+            WbSetCursorGhost(moved);
+            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && _wbOps.Count == 0 && _wbCursorGhostSig is not null)
+            {
+                _wbMoveArmed = false;
+                WbSetCursorGhost(null);
+                WbOp($"move #{sel.Id}", _wbClient.MoveAsync(SuiWebAppUrl, moved), _ => _wbPlacementDraft = null);
+            }
+            return;
+        }
+        WbSetCursorGhost(null);
+        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Left) || _wbOps.Count > 0) return;
+        if (WbTrySpawnClick(at)) return;
+        var nearest = _wbState.Placements.Where(p => !p.Deleted && p.PackId == _wbPackId)
             .OrderBy(p => Vector3.Distance(new Vector3(p.PosX, p.PosY, p.PosZ), at))
             .FirstOrDefault();
         if (nearest is not null && Vector3.Distance(new Vector3(nearest.PosX, nearest.PosY, nearest.PosZ), at) < 40f)
             _wbSelected = nearest.Id;
+        else _wbMessage = "No object from this pack nearby. Choose it in the object list.";
     }
 
     private static string WbSignature(WorldPackClient.Placement p) =>
         $"{p.ModelPath}|{p.PosX:F2}|{p.PosY:F2}|{p.PosZ:F2}|{p.RotX:F1}|{p.RotY:F1}|{p.RotZ:F1}|{p.Scale:F2}";
+
+    private static WorldPackClient.Placement WbCopyPlacement(WorldPackClient.Placement source) => new()
+    {
+        Id = source.Id, PackId = source.PackId, MapId = source.MapId, Kind = source.Kind, ModelPath = source.ModelPath,
+        PosX = source.PosX, PosY = source.PosY, PosZ = source.PosZ,
+        RotX = source.RotX, RotY = source.RotY, RotZ = source.RotZ, Scale = source.Scale, DoodadSet = source.DoodadSet,
+        Deleted = source.Deleted, Published = source.Published,
+    };
 
     private static Matrix4x4 WbTransform(WorldPackClient.Placement p)
     {
@@ -753,7 +994,7 @@ public sealed partial class GameLoop
     {
         if (p is null)
         {
-            if (_wbCursorGhostSig is not null) WbRemoveGhost(WbCursorGhostKey);
+            WbRemoveGhost(WbCursorGhostKey);
             _wbCursorGhostSig = null;
             return;
         }
@@ -799,8 +1040,17 @@ public sealed partial class GameLoop
 
     private void WbDrawCursorOverlay()
     {
-        if (_wbCursor is not { } at || _terrain is null) return;
         var draw = ImGui.GetForegroundDrawList();
+        var mouse = ImGui.GetIO().MousePos + new Vector2(16f, 18f);
+        if (_wbCursor is not { } at || _terrain is null)
+        {
+            if (!ImGui.GetIO().WantCaptureMouse && _wbToolHint.Length > 0)
+            {
+                draw.AddText(mouse + Vector2.One, 0xE0000000, _wbToolHint);
+                draw.AddText(mouse, 0xFF80D0FF, _wbToolHint);
+            }
+            return;
+        }
         var display = ImGui.GetIO().DisplaySize;
         var cam = _window.Camera;
         uint colour = _wbTool == WorldBuilderTool.Sculpt ? 0xE040D0FFu : 0xE0FFD040u;
@@ -828,8 +1078,8 @@ public sealed partial class GameLoop
         }
         string hint = _wbTool switch
         {
-            WorldBuilderTool.Sculpt => $"{_wbBrush}  r {_wbRadius:F0}  (hold LMB, Shift inverts, [ ] size)",
-            WorldBuilderTool.Place => $"{Path.GetFileNameWithoutExtension(_wbModel ?? "pick a model")}  heading {_wbYaw:F0}  (LMB place, [ ] rotate)",
+            WorldBuilderTool.Sculpt => $"{_wbBrush} · radius {_wbRadius:F0} yd · hold left mouse · Shift reverses · Esc cancels",
+            WorldBuilderTool.Place => $"{Path.GetFileNameWithoutExtension(_wbModel ?? "pick a model")} · left click to place · [ ] rotate · Esc cancels",
             _ => _wbMoveArmed ? "click the new spot"
                 : _wbSpawnArmed ? _wbSpawnMode switch
                 {
@@ -839,7 +1089,8 @@ public sealed partial class GameLoop
                 }
                 : "click near a placement to select it",
         };
-        var mouse = ImGui.GetIO().MousePos + new Vector2(16f, 18f);
+        if (_wbToolHint.Length > 0) hint = _wbToolHint + "  (Esc cancels)";
+        else if (_wbStroking) hint = "Sculpting… Release to save · Esc discards this stroke";
         draw.AddText(mouse + Vector2.One, 0xD0000000, hint);
         draw.AddText(mouse, colour, hint);
     }
@@ -848,9 +1099,10 @@ public sealed partial class GameLoop
 
     private void WbRequestState()
     {
-        if (SuiWebAppUrl.Length == 0 || _wbStateTask is not null) return;
+        if (SuiWebAppUrl.Length == 0 || _wbStateTask is not null || _wbSculptSaveTask is not null) return;
         int map = _config.Start.Map;
-        _wbStateTask = _wbClient.GetStateAsync(SuiWebAppUrl, map, _wbPackId);
+        _wbStateRequestedPackId = _wbPackId;
+        _wbStateTask = _wbClient.GetStateAsync(SuiWebAppUrl, map, _wbStateRequestedPackId);
     }
 
     private void WbOp(string label, Task<WorldPackClient.Reply> task, Action<WorldPackClient.Reply>? then = null)
@@ -864,17 +1116,35 @@ public sealed partial class GameLoop
         _wbMessage = $"saving: {label}...";
     }
 
-    private readonly Queue<Action> _wbPendingThen = new();
+    private readonly System.Collections.Concurrent.ConcurrentQueue<Action> _wbPendingThen = new();
 
     private void WbUndo()
     {
-        if (_wbPackId == 0 || _wbStroking) return;
-        WbOp("undo", _wbClient.UndoAsync(SuiWebAppUrl, _wbPackId));
+        if (_wbPackId == 0 || _wbStroking || _wbSculptSaveTask is not null || _wbSculptAwaitingState || _wbOps.Count > 0) return;
+        WbOp("undo", _wbClient.UndoAsync(SuiWebAppUrl, _wbPackId), _ => { _wbDocsTask = null; WbRequestDocs(); });
+    }
+
+    private void WbResolveSculptSave()
+    {
+        if (_wbSculptSaveTask is not { IsCompleted: true } save) return;
+        _wbSculptSaveTask = null;
+        if (!save.IsCompletedSuccessfully || !save.Result.Success)
+        {
+            // Restore immediately even if the follow-up GET also fails. Only this rejected stroke is removed.
+            foreach (var (key, deltas) in _wbPendingSculpt)
+            {
+                if (_wbServerSculpt.TryGetValue(key, out var current)) WorldBuilderLaw.ApplyStroke(current, deltas, undo: true);
+                _wbDirtyTiles.Add(key);
+            }
+            _wbPendingSculpt.Clear();
+            _wbSculptAwaitingState = false;
+        }
     }
 
     private void PumpWbTasks()
     {
-        while (_wbPendingThen.Count > 0) _wbPendingThen.Dequeue()();
+        WbResolveSculptSave();
+        while (_wbPendingThen.TryDequeue(out var completed)) completed();
 
         bool anyDone = false;
         for (int i = _wbOps.Count - 1; i >= 0; i--)
@@ -883,9 +1153,10 @@ public sealed partial class GameLoop
             if (!task.IsCompleted) continue;
             _wbOps.RemoveAt(i);
             anyDone = true;
-            if (task.IsFaulted || !task.Result.Success)
+            if (!task.IsCompletedSuccessfully || !task.Result.Success)
             {
-                _wbMessage = task.IsFaulted ? $"{label}: {task.Exception?.GetBaseException().Message}" : $"{label}: {task.Result.Error}";
+                _wbMessage = task.IsCanceled ? $"{label}: save cancelled; preview restored."
+                    : task.IsFaulted ? $"{label}: {task.Exception?.GetBaseException().Message}" : $"{label}: {task.Result.Error}";
                 // A script must never lose a rejected op silently (it would run on as if saved).
                 if (WbScriptPath is not null) Console.WriteLine($"[wbscript] ERROR op rejected: {_wbMessage}");
             }
@@ -902,8 +1173,9 @@ public sealed partial class GameLoop
         if (_wbStateTask is { IsCompleted: true } st)
         {
             _wbStateTask = null;
-            if (st.IsFaulted) _wbMessage = "web app: " + st.Exception?.GetBaseException().Message;
+            if (!st.IsCompletedSuccessfully) _wbMessage = "web app: " + (st.Exception?.GetBaseException().Message ?? "refresh cancelled");
             else if (!st.Result.Success) _wbMessage = "web app: " + st.Result.Error;
+            else if (_wbStateRequestedPackId != _wbPackId) WbRequestState();
             else WbAcceptState(st.Result);
         }
 
@@ -940,15 +1212,20 @@ public sealed partial class GameLoop
 
     private void WbAcceptState(WorldPackClient.State s)
     {
+        if (s.MapId != _config.Start.Map) return;
+        if (_wbSculptSaveTask is not null) return; // This GET predates the save acknowledgement.
+        _wbSculptAwaitingState = false;
+        _wbPendingSculpt.Clear();
         bool mapChanged = s.MapId != _wbStateMap;
         _wbState = s;
         _wbStateMap = s.MapId;
+        _wbStateIncludePackId = _wbStateRequestedPackId;
         if (_wbPackId == 0 && s.Packs.Count > 0) _wbPackId = s.Packs[0].Id;
-        if (mapChanged) { _wbStock.Clear(); _wbAppliedTo.Clear(); _wbPreviewTiles.Clear(); }
+        if (mapChanged) { _wbStock.Clear(); _wbAppliedTo.Clear(); _wbPreviewTiles.Clear(); _wbDirtyTiles.Clear(); }
         // A pack map's preview base is derived from the published sculpt: a new publish invalidates it.
         if (s.LastBuild?.BuildId != _wbStockBuild) { _wbStockBuild = s.LastBuild?.BuildId; _wbStock.Clear(); _wbAppliedTo.Clear(); }
 
-        var previous = _wbServerSculpt.Keys.ToHashSet();
+        var previous = mapChanged ? new HashSet<(int, int)>() : _wbServerSculpt.Keys.ToHashSet();
         _wbServerSculpt.Clear();
         foreach (var t in s.Sculpt)
         {

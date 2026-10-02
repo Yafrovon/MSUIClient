@@ -96,6 +96,7 @@ public sealed class AttachedItemRenderer : IDisposable
         public uint Vao, Vbo, Ebo;
         public List<Batch> Batches = [];
         public string Path = "";
+        public ShoulderFitSelection? ShoulderFit;
         public M2Model Source = null!;
         public bool UsesCameraFacingPalette;
 
@@ -121,16 +122,30 @@ public sealed class AttachedItemRenderer : IDisposable
         public byte ItemSheath;
         public uint DisplayId;
         public int EquipmentSlot = -1;
+        // Diagnostic identity is independent of legacy render/effect owner fields.
+        public EquipmentMountIdentity InspectionIdentity;
         public int ItemVisualId;
         public uint[] Enchants = [];
         public string Label = "";
         public bool Visible = true;
+        // The built mount a render snapshot was cloned from, so diagnostics that observe the
+        // drawn clone can match it to the mount list; null on built mounts themselves.
+        internal Mount? SnapshotOrigin;
+
+        internal Mount Snapshot()
+        {
+            var copy = (Mount)MemberwiseClone();
+            copy.SnapshotOrigin = SnapshotOrigin ?? this;
+            return copy;
+        }
     }
 
     public sealed class MountSet
     {
         internal readonly List<Mount> Items = [];
         public int Count => Items.Count;
+        internal readonly List<string> Errors = [];
+        public IReadOnlyList<string> ResolutionErrors => Errors;
     }
 
     private sealed class SharedResources
@@ -159,6 +174,14 @@ public sealed class AttachedItemRenderer : IDisposable
     private Dictionary<string, ItemModel?> Models => _shared.Models;
     private Dictionary<string, Texture?> Textures => _shared.Textures;
     private readonly List<Mount> _mounts = [];
+    private MountSet? _mountSnapshot;
+    private readonly List<string> _resolutionErrors = [];
+    internal IReadOnlyList<string> InspectionErrors => _resolutionErrors;
+    internal IReadOnlyList<Mount> InspectionMounts => _mounts;
+    internal Action<Mount, int, int, Matrix4x4?, string>? InspectionPlacement { get; set; }
+    internal Action<Mount, Batch, Matrix4x4, Matrix4x4[], int>? InspectionMeshDraw { get; set; }
+    internal string? InspectionTexturePath(Texture? texture) => texture is null ? null :
+        Textures.FirstOrDefault(pair => ReferenceEquals(pair.Value, texture)).Key?.Split('|', 2).Last();
     private readonly List<ItemGlowPlacement> _glowPlacements = [];
     private readonly List<CarriedLightPlacement> _carriedLights = [];
     private readonly List<FishingPoleTipPlacement> _fishingPoleTips = [];
@@ -184,14 +207,55 @@ public sealed class AttachedItemRenderer : IDisposable
     public void SetMountVisible(string label, bool visible)
     {
         foreach (var mount in _mounts)
-            if (mount.Label == label) mount.Visible = visible;
+            if (mount.Label == label && mount.Visible != visible)
+            {
+                mount.Visible = visible;
+                _mountSnapshot = null;
+            }
     }
+
+    /// <summary>
+    /// Retain one attachment presentation across a frozen body pose. Models stay shared,
+    /// but visibility belongs to the snapshot; unchanged normal frames reuse this set.
+    /// </summary>
+    public MountSet SnapshotMountSet()
+    {
+        if (_mountSnapshot is not null) return _mountSnapshot;
+        var snapshot = new MountSet();
+        foreach (Mount mount in _mounts) snapshot.Items.Add(mount.Snapshot());
+        snapshot.Errors.AddRange(_resolutionErrors);
+        return _mountSnapshot = snapshot;
+    }
+
     public int DrawnLastFrame { get; private set; }
     public IReadOnlyList<ItemGlowPlacement> GlowPlacements => _glowPlacements;
     public IReadOnlyList<CarriedLightPlacement> CarriedLights => _carriedLights;
     public IReadOnlyList<FishingPoleTipPlacement> FishingPoleTips => _fishingPoleTips;
     public string GlowOwnerKey { get; set; } = "local";
     public byte SheathState { get; set; }
+
+    public HandGrip ResolveHandGrip(M2Model? character)
+        => Enabled ? ResolveHandGrip(character, _mounts, SheathState) : HandGrip.None;
+
+    public static HandGrip ResolveHandGrip(M2Model? character, MountSet? mounts, byte sheathState)
+        => ResolveHandGrip(character, mounts?.Items, sheathState);
+
+    private static HandGrip ResolveHandGrip(M2Model? character, IReadOnlyList<Mount>? mounts, byte sheathState)
+    {
+        if (character is null || mounts is null) return HandGrip.None;
+        HandGrip hands = HandGrip.None;
+        foreach (Mount mount in mounts)
+        {
+            if (!mount.Visible) continue;
+            int id = ResolveAttachment(mount, sheathState);
+            HandGrip hand = HandGripLaw.ForAttachment(id);
+            if (hand == HandGrip.None) continue;
+            M2Attachment? attachment = FindAttachment(character, id);
+            if (attachment is not null && attachment.BoneIndex < character.Bones.Count)
+                hands |= hand;
+        }
+        return hands;
+    }
 
     /// <summary>Matched to the character so a pauldron lights like the shoulder under it.</summary>
     public Vector3 SunDirection { get; set; } = Vector3.Normalize(new Vector3(0.45f, 0.35f, 0.82f));
@@ -296,10 +360,12 @@ public sealed class AttachedItemRenderer : IDisposable
 
     public void Rebuild(CharacterEquipment equipment)
     {
+        _mountSnapshot = null;
         _mounts.Clear();
         if (Shader is null) return;
 
-        BuildMounts(equipment, _mounts);
+        _resolutionErrors.Clear();
+        BuildMounts(equipment, _mounts, _resolutionErrors);
         Console.WriteLine($"[attach] {_mounts.Count} model(s) mounted");
     }
 
@@ -309,6 +375,7 @@ public sealed class AttachedItemRenderer : IDisposable
     /// </summary>
     public void ClearVariantCache()
     {
+        _mountSnapshot = null;
         _mounts.Clear();
         lock (SharedGate)
         {
@@ -326,12 +393,12 @@ public sealed class AttachedItemRenderer : IDisposable
     public MountSet BuildMountSet(CharacterEquipment equipment)
     {
         var result = new MountSet();
-        if (Shader is not null) BuildMounts(equipment, result.Items);
+        if (Shader is not null) BuildMounts(equipment, result.Items, result.Errors);
         Console.WriteLine($"[attach] {result.Count} model(s) mounted");
         return result;
     }
 
-    private void BuildMounts(CharacterEquipment equipment, List<Mount> mounts)
+    private void BuildMounts(CharacterEquipment equipment, List<Mount> mounts, List<string> errors)
     {
 
         foreach (var piece in equipment.Pieces)
@@ -345,9 +412,11 @@ public sealed class AttachedItemRenderer : IDisposable
                 // Shoulders are two files: ModelName1 is the left, ModelName2
                 // the right, and both are needed.
                 AddMount(mounts, piece.Row.ModelName1, piece.Row.ModelTexture1, folder,
-                         AttachShoulderLeft, piece.Name + " (L)");
-                AddMount(mounts, piece.Row.ModelName2, piece.Row.ModelTexture2, folder,
-                         AttachShoulderRight, piece.Name + " (R)");
+                         AttachShoulderLeft, piece.Name + " (L)",
+                         inspectionIdentity: EquipmentMountIdentity.FromPiece(piece), resolutionErrors: errors);
+                AddMount(mounts, piece.Row.ModelName2, string.IsNullOrEmpty(piece.Row.ModelTexture2) ? piece.Row.ModelTexture1 : piece.Row.ModelTexture2, folder,
+                         AttachShoulderRight, piece.Name + " (R)",
+                         inspectionIdentity: EquipmentMountIdentity.FromPiece(piece), resolutionErrors: errors);
                 continue;
             }
 
@@ -355,7 +424,7 @@ public sealed class AttachedItemRenderer : IDisposable
             AddMount(mounts, piece.Row.ModelName1, piece.Row.ModelTexture1, folder,
                      AttachmentFor(piece.InventoryType), piece.Name, heldSlot,
                      piece.InventoryType, piece.Sheath, piece.DisplayId,
-                     piece.EquipmentSlot, unchecked((int)piece.Row.ItemVisualId), piece.Enchants);
+                     piece.EquipmentSlot, unchecked((int)piece.Row.ItemVisualId), piece.Enchants, resolutionErrors: errors);
         }
     }
 
@@ -363,11 +432,20 @@ public sealed class AttachedItemRenderer : IDisposable
         string folder, int attachmentId, string label,
         int heldSlot = -1, int inventoryType = 0, byte itemSheath = 0,
         uint displayId = 0, int equipmentSlot = -1, int itemVisualId = 0,
-        IReadOnlyList<uint>? enchants = null)
+        IReadOnlyList<uint>? enchants = null, EquipmentMountIdentity? inspectionIdentity = null, List<string>? resolutionErrors = null)
     {
         if (string.IsNullOrWhiteSpace(modelName)) return;
 
-        var model = ResolveModel(modelName, textureName, folder);
+        ItemModel? model;
+        try { model = ResolveModel(modelName, textureName, folder,
+            attachmentId == AttachShoulderLeft ? "L" : attachmentId == AttachShoulderRight ? "R" : ""); }
+        catch (InvalidDataException ex)
+        {
+            string error = $"shoulder-fit-resolution:{label}:{RaceGenderCode}:{ex.Message}";
+            resolutionErrors?.Add(error);
+            Console.Error.WriteLine("[attach] " + error);
+            return;
+        }
         if (model is null)
         {
             Console.WriteLine($"[attach] {label}: model '{modelName}' not found under {folder}");
@@ -379,6 +457,7 @@ public sealed class AttachedItemRenderer : IDisposable
             Model = model, AttachmentId = attachmentId, Label = label,
             HeldSlot = heldSlot, InventoryType = inventoryType, ItemSheath = itemSheath,
             DisplayId = displayId, EquipmentSlot = equipmentSlot, ItemVisualId = itemVisualId,
+            InspectionIdentity = inspectionIdentity ?? new EquipmentMountIdentity(displayId, equipmentSlot, inventoryType),
             Enchants = enchants?.ToArray() ?? [],
         });
         int stowedAttachment = heldSlot >= 0
@@ -398,10 +477,9 @@ public sealed class AttachedItemRenderer : IDisposable
     /// candidates cover both, and the first hit is logged so the convention is
     /// learned rather than assumed.
     /// </summary>
-    private ItemModel? ResolveModel(string modelName, string textureName, string folder)
+    private ItemModel? ResolveModel(string modelName, string textureName, string folder, string side)
     {
-        string key = $"{folder}|{modelName}|{textureName}|" +
-            (folder == "Head" ? RaceGenderCode : "");
+        string key = ShoulderFitResolver.CacheKey(_config.ClientDataPath, folder, modelName, textureName, RaceGenderCode, side);
         if (Models.TryGetValue(key, out var cached)) return cached;
 
         string stem = modelName.Replace('/', '\\').TrimStart('\\');
@@ -447,10 +525,26 @@ public sealed class AttachedItemRenderer : IDisposable
             return null;
         }
 
+        ShoulderFitSelection? selected = null;
+        if (folder == "Shoulder")
+        {
+            string skinStem = textureName.EndsWith(".blp", StringComparison.OrdinalIgnoreCase) ? textureName[..^4] : textureName;
+            selected = ShoulderFitResolver.Resolve(found, bytes, m2.Name, RaceGenderCode,
+                $@"Item\ObjectComponents\Shoulder\{skinStem}.blp", side,
+                path => AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, path));
+            if (selected.ManifestPath is not null)
+            {
+                m2 = M2Reader.Parse(selected.Bytes);
+                if (m2 is null || !m2.IsValid) throw new InvalidDataException("Declared shoulder-fit M2 cannot be parsed.");
+                found = selected.Path;
+                Console.WriteLine($"[attach] shoulder-fit body={RaceGenderCode};side={side};selected={found};default={selected.DefaultPath};sha256={selected.Sha256};manifestSha256={selected.ManifestSha256}");
+            }
+        }
         var model = BuildModel(m2, textureName, folder);
         if (model is not null)
         {
             model.Path = found;
+            model.ShoulderFit = selected?.ManifestPath is not null ? selected : null;
             ClassifySteadyWarglaiveBlade(model);
         }
         Models[key] = model;
@@ -644,10 +738,11 @@ public sealed class AttachedItemRenderer : IDisposable
 
     private Texture? ResolveTexturePath(string blpPath)
     {
-        if (Textures.TryGetValue(blpPath, out var cached)) return cached;
+        string key = _config.ClientDataPath + "|" + blpPath;
+        if (Textures.TryGetValue(key, out var cached)) return cached;
 
         var decoded = AdtTerrainReader.ReadBlpPixels(_config.ClientDataPath, blpPath);
-        if (decoded is null) { Textures[blpPath] = null; return null; }
+        if (decoded is null) { Textures[key] = null; return null; }
 
         var (bgra, w, h) = decoded.Value;
 
@@ -658,7 +753,7 @@ public sealed class AttachedItemRenderer : IDisposable
             for (int i = 3; i < bgra.Length; i += 4) if (bgra[i] != 0) bgra[i] = 255;
 
         var texture = Texture.From2D(_gl, bgra, w, h);
-        Textures[blpPath] = texture;
+        Textures[key] = texture;
         return texture;
     }
 
@@ -723,10 +818,15 @@ public sealed class AttachedItemRenderer : IDisposable
         {
             if (!mount.Visible) continue;
             int attachmentId = ResolveAttachment(mount, sheathState);
-            if (attachmentId < 0) continue;
+            if (attachmentId < 0)
+            {
+                InspectionPlacement?.Invoke(mount, attachmentId, -1, null, "hidden-by-sheath");
+                continue;
+            }
             M2Attachment? attachment = FindAttachment(character, attachmentId);
             if (attachment is null)
             {
+                InspectionPlacement?.Invoke(mount, attachmentId, -1, null, "missing-attachment");
                 ReportHeldPlacement(character, mount, sheathState, attachmentId, null,
                     skin.Length, null);
                 continue;
@@ -738,6 +838,8 @@ public sealed class AttachedItemRenderer : IDisposable
                                  boneMatrix * worldInstance;
             ReportHeldPlacement(character, mount, sheathState, attachmentId, attachment,
                 skin.Length, itemRoot);
+            InspectionPlacement?.Invoke(mount, attachmentId, bone, itemRoot,
+                bone >= 0 && bone < skin.Length ? "resolved" : "bone-out-of-range");
             AppendCarriedLights(mount, itemRoot);
             AppendItemModelEffects(mount, itemRoot);
             if (mount.HeldSlot >= 0) AppendGlowPlacements(mount, itemRoot);
@@ -853,6 +955,7 @@ public sealed class AttachedItemRenderer : IDisposable
 
                     _gl.DrawElements(PrimitiveType.Triangles, batch.IndexCount,
                         DrawElementsType.UnsignedShort, (void*)(batch.IndexStart * sizeof(ushort)));
+                    InspectionMeshDraw?.Invoke(mount, batch, worldModel, _itemSkin, itemBoneCount);
                 }
 
                 if (!transparentPass) DrawnLastFrame++;
@@ -925,7 +1028,7 @@ public sealed class AttachedItemRenderer : IDisposable
         }
     }
 
-    private static int ResolveAttachment(Mount mount, byte sheathState)
+    internal static int ResolveAttachment(Mount mount, byte sheathState)
     {
         if (mount.HeldSlot < 0) return mount.AttachmentId;
 
@@ -1039,6 +1142,7 @@ public sealed class AttachedItemRenderer : IDisposable
 
     public void Dispose()
     {
+        _mountSnapshot = null;
         _mounts.Clear();
         lock (SharedGate)
         {

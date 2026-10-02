@@ -183,7 +183,7 @@ public sealed partial class GameLoop
                 case CreatorPanel.Target: DrawCreatorSectionPanel("Target", "Target", 430f, 560f); break;
                 case CreatorPanel.Spells: DrawCreatorSectionPanel("Spells", "Spell Workshop", 500f, 640f); break;
                 case CreatorPanel.XRay: DrawCreatorSectionPanel("XRay", "Collision X-Ray", 460f, 560f); break;
-                case CreatorPanel.World: DrawCreatorSectionPanel("World", "World Builder", 470f, 680f); break;
+                case CreatorPanel.World: DrawCreatorSectionPanel("World", "World Builder", 560f, 820f); break;
             }
         }
         UpdateWorldBuilder();
@@ -763,7 +763,7 @@ public sealed partial class GameLoop
         var cond = _creatorLayoutResetFrames > 0 ? ImGuiCond.Always : ImGuiCond.FirstUseEver;
         ImGui.SetNextWindowPos(new Vector2(8f * s, 64f * s), cond);
         ImGui.SetNextWindowSize(new Vector2(defaultW * cs, defaultH * cs), cond);
-        ImGui.SetNextWindowSizeConstraints(new Vector2(250f * cs, 170f * cs),
+        ImGui.SetNextWindowSizeConstraints(tuneId == "World" ? new Vector2(450f * cs, 520f * cs) : new Vector2(250f * cs, 170f * cs),
             new Vector2(float.MaxValue, float.MaxValue));
         PushCreatorStyle();
         if (!ImGui.Begin($"###creator-{title}", CreatorChromeFlags))
@@ -847,12 +847,31 @@ public sealed partial class GameLoop
     {
         if (!BeginCreatorPanel(title, panelId, defaultW, defaultH)) return;
         float cs = CreatorUiScale;
+        if (panelId == "World" && !GetSectionOpen("World/task-layout-v1", false))
+        {
+            // Migrate the old compact accordion window once. Later manual resizing is retained.
+            var display = ImGui.GetIO().DisplaySize;
+            var size = ImGui.GetWindowSize();
+            ImGui.SetWindowSize(new Vector2(MathF.Max(size.X, MathF.Min(560f * cs, display.X * .45f)),
+                MathF.Max(size.Y, MathF.Min(900f * cs, display.Y - 120f * cs))));
+            ClampCreatorWindowOnScreen();
+            SetSectionOpen("World/task-layout-v1", true);
+        }
 
         if (_creatorEditLayoutPanel == panelId)
             ImGui.TextColored(new Vector4(0.35f, 0.9f, 0.35f, 1f),
                 "MOVE MODE - drag any outlined button to place it");
-        DrawCreatorPanelToolbar(panelId);
+        if (panelId == "World") DrawWbWorkspaceHeader();
+        else DrawCreatorPanelToolbar(panelId);
         BeginCreatorContent();
+
+        if (panelId == "World")
+        {
+            DrawWbWorkspaceBody();
+            EndCreatorContent();
+            EndCreatorPanel();
+            return;
+        }
 
         foreach (string id in OrderedSectionIds(panelId))
         {
@@ -888,6 +907,7 @@ public sealed partial class GameLoop
         int slot = 0;
         foreach (var def in _creatorSectionDefs.ToList())
         {
+            if (def.Panel == "World") continue; // World uses one task page in either layout.
             if (!IsSectionPopped(def.Panel, def.Id)) continue;
             // The Spell Workshop's IDE layout IS the home for every one of its
             // sections and offers no tear-off corner, so a section popped in another
@@ -1126,6 +1146,7 @@ public sealed partial class GameLoop
         if (displaced) ImGui.SetCursorScreenPos(basePos + offset);
 
         bool clicked = _skin?.PanelButton(label, size) ?? ImGui.Button(label, size);
+        ObserveWorldBuilderUiItem(label);
         if (edit)
         {
             clicked = false;   // edit mode: buttons move, they do not fire

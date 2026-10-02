@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Json.Nodes;
 using ImGuiNET;
+using MSUIClient.Engine.UI;
 
 namespace MSUIClient;
 
@@ -21,79 +22,153 @@ namespace MSUIClient;
 // ─────────────────────────────────────────────────────────────────────────────
 public sealed partial class GameLoop
 {
-    private int _wbMapId = 800, _wbMapType, _wbMapPlayers = 5, _wbMapArea = 7001, _wbMapLevel = 30;
+    private int _wbMapId = 800, _wbMapType = 1, _wbMapPlayers = 5, _wbMapArea = 7001, _wbMapLevel = 30;
     private readonly byte[] _wbMapDir = new byte[40];
     private readonly byte[] _wbMapName = new byte[64];
     private readonly byte[] _wbSrcMap = new byte[40];
-    private int _wbSrcCol = 27, _wbSrcRow = 28, _wbSrcW = 4, _wbSrcH = 5, _wbDstCol = 30, _wbDstRow = 30;
+    private int _wbSrcCol = 27, _wbSrcRow = 28, _wbSrcW = 1, _wbSrcH = 1, _wbDstCol = 30, _wbDstRow = 30;
     private bool _wbStampDoodads = true, _wbStampWmos;
     private readonly byte[] _wbSubName = new byte[64];
     private int _wbSubArea = 7002;
     private float _wbSubRadius = 120f;
     private int _wbPortalId = 7001, _wbPortalTargetMap, _wbPortalMinLevel;
     private float _wbPortalRadius = 6f, _wbPortalTx, _wbPortalTy, _wbPortalTz, _wbPortalTo;
-    private bool _wbMapFormInit;
+    private bool _wbMapFormInit, _wbPortalHasTarget;
+    private int _wbMapTeam;
+    private readonly byte[] _wbPortalName = new byte[64];
+
+    private void WbInitMapForm()
+    {
+        if (_wbMapFormInit) return;
+        _wbMapFormInit = true;
+        WbSetBuf(_wbSrcMap, "Azeroth");
+        if (_controller is not null)
+        {
+            (_wbSrcCol, _wbSrcRow) = WorldBuilderLaw.TileOf(_controller.Position.X, _controller.Position.Y);
+            WbSetBuf(_wbSrcMap, _config.Start.MapName);
+        }
+        _wbMapId = (int)WbNextId("map", "mapId", 800);
+        _wbMapArea = (int)WbNextId("dbrow:area_template", "entry", 7000);
+        _wbSubArea = _wbMapArea;
+        _wbPortalId = (int)WbNextId("dbrow:areatrigger_template", "id", 7000);
+    }
+
+    private bool WbIdUsed(string kind, string field, int id) => _wbDocs?.OfType<JsonObject>().Any(d =>
+        (string?)d["kind"] == kind && WbNum(d["body"]?[field]) == id) == true;
 
     private void DrawWbMapsSection()
     {
-        if (!_wbMapFormInit)
-        {
-            _wbMapFormInit = true;
-            WbSetBuf(_wbMapDir, "Gilneas"); WbSetBuf(_wbMapName, "Gilneas"); WbSetBuf(_wbSrcMap, "Azeroth");
-        }
+        if (_wbDocs is null) { if (_wbDocsTask is null) WbRequestDocs(); ImGui.TextDisabled("Loading pack content..."); return; }
+        WbInitMapForm();
         float w = CreatorControlWidth;
-        ImGui.TextDisabled("New map (stamped from stock terrain)");
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Map id (800+)", ref _wbMapId);
-        ImGui.SetNextItemWidth(w); ImGui.InputText("Directory##wb-map", _wbMapDir, (uint)_wbMapDir.Length);
-        ImGui.SetNextItemWidth(w); ImGui.InputText("Name##wb-map", _wbMapName, (uint)_wbMapName.Length);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.Combo("Type", ref _wbMapType, "Continent\0Dungeon (5)\0Raid\0");
-        if (_wbMapType > 0) { ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Player limit", ref _wbMapPlayers); }
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Zone area id (7000+)", ref _wbMapArea);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Zone level", ref _wbMapLevel);
-        ImGui.SetNextItemWidth(w); ImGui.InputText("Stamp from map dir##wb-map", _wbSrcMap, (uint)_wbSrcMap.Length);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Source col", ref _wbSrcCol);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Source row", ref _wbSrcRow);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Tiles wide", ref _wbSrcW);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Tiles tall", ref _wbSrcH);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Place at col", ref _wbDstCol);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Place at row", ref _wbDstRow);
-        ImGui.Checkbox("Keep trees & props", ref _wbStampDoodads); ImGui.SameLine();
-        ImGui.Checkbox("Keep buildings", ref _wbStampWmos);
-        if (_controller is not null)
+        ImGui.TextWrapped("Create a separate dungeon or map from a piece of existing terrain. For land connected to a continent, use Regions. Saved changes appear after publication.");
+        if (ImGui.CollapsingHeader("Create a dungeon or map", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            var (c, r) = MSUIClient.Engine.UI.WorldBuilderLaw.TileOf(_controller.Position.X, _controller.Position.Y);
-            ImGui.TextDisabled($"You stand in {_config.Start.MapName} tile {c},{r}.");
+            ImGui.SetNextItemWidth(w); ImGui.InputText("Name##wb-map", _wbMapName, (uint)_wbMapName.Length);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.Combo("Type", ref _wbMapType, "Outdoor map\0Dungeon\0Raid\0");
+            if (_wbMapType > 0) { ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Player limit", ref _wbMapPlayers, 0); }
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Suggested level", ref _wbMapLevel, 0);
+            ImGui.SetNextItemWidth(w * 0.5f); ImGui.Combo("Territory", ref _wbMapTeam, "Neutral\0Alliance\0Horde\0");
+            WbDrawStampSource();
+            if (ImGui.TreeNode("Advanced map identifiers"))
+            {
+                ImGui.TextWrapped("Allocated automatically. Change these only when coordinating content across packs.");
+                ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Map ID", ref _wbMapId, 0);
+                ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Zone ID", ref _wbMapArea, 0);
+                ImGui.InputText("Directory override", _wbMapDir, (uint)_wbMapDir.Length);
+                ImGui.TreePop();
+            }
+            string name = WbText(_wbMapName).Trim();
+            string dir = WbText(_wbMapDir).Trim();
+            if (dir.Length == 0) dir = WorldMapAuthoringLaw.DirectoryFromName(name);
+            string? problem = name.Length == 0 ? "Give the map a name." : dir.Length == 0 || dir.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '_') ? "Use letters, numbers or underscores for the map directory." :
+                _wbMapId < 800 || _wbMapArea < 7000 ? "Custom map IDs start at 800; zone IDs start at 7000." :
+                _wbMapLevel < 1 || _wbMapLevel > 63 || (_wbMapType > 0 && _wbMapPlayers < 1) ? "Choose a level from 1 to 63 and at least one player." :
+                WbIdUsed("map", "mapId", _wbMapId) || WbIdUsed("dbrow:area_template", "entry", _wbMapArea) ? "That map or zone ID already belongs to saved content. Choose an unused ID." :
+                _wbDocs.OfType<JsonObject>().Any(d => (string?)d["kind"] == "map" && string.Equals((string?)d["body"]?["directory"], dir, StringComparison.OrdinalIgnoreCase)) ? "That map directory already exists. Choose another name." :
+                WorldMapAuthoringLaw.StampProblem(WbText(_wbSrcMap), _wbSrcCol, _wbSrcRow, _wbSrcW, _wbSrcH, _wbDstCol, _wbDstRow);
+            if (problem is not null) ImGui.TextWrapped(problem);
+            ImGui.BeginDisabled(problem is not null || _wbPackId == 0 || _wbOps.Count > 0);
+            if (CreatorButton("Save new map")) WbPost($"map {name}", WbNewMapItems(
+                _wbMapId, dir, name, _wbMapType, _wbMapPlayers, (uint)_wbMapArea, _wbMapLevel,
+                WbText(_wbSrcMap), _wbSrcCol, _wbSrcRow, _wbSrcW, _wbSrcH, _wbDstCol, _wbDstRow, _wbStampDoodads, _wbStampWmos, _wbMapTeam * 2));
+            ImGui.EndDisabled();
         }
-        bool ready = _wbPackId != 0 && WbText(_wbMapDir).Length > 0 && _wbMapId >= 800 && _wbMapArea >= 7000;
-        if (!ready) ImGui.BeginDisabled();
-        if (CreatorButton("Create map")) WbPost($"map {WbText(_wbMapName)} ({_wbMapId})", WbNewMapItems(
-            _wbMapId, WbText(_wbMapDir), WbText(_wbMapName), _wbMapType, _wbMapPlayers, (uint)_wbMapArea, _wbMapLevel,
-            WbText(_wbSrcMap), _wbSrcCol, _wbSrcRow, _wbSrcW, _wbSrcH, _wbDstCol, _wbDstRow, _wbStampDoodads, _wbStampWmos));
-        if (!ready) ImGui.EndDisabled();
+        if (ImGui.CollapsingHeader("Name a place within your map"))
+        {
+            ImGui.TextWrapped("Stand in the place you want to name. Its name will appear as a subzone inside the surrounding zone.");
+            ImGui.SetNextItemWidth(w); ImGui.InputText("Place name", _wbSubName, (uint)_wbSubName.Length);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputFloat("Radius (yards)", ref _wbSubRadius);
+            if (ImGui.TreeNode("Advanced subzone ID")) { ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Area ID", ref _wbSubArea, 0); ImGui.TreePop(); }
+            bool ready = _controller is not null && WbText(_wbSubName).Trim().Length > 0 && _wbSubArea >= 7000 &&
+                !WbIdUsed("dbrow:area_template", "entry", _wbSubArea) && float.IsFinite(_wbSubRadius) && _wbSubRadius > 0;
+            if (!ready) ImGui.TextWrapped("Enter a name and positive radius, and use an unused subzone ID.");
+            ImGui.BeginDisabled(!ready || _wbOps.Count > 0);
+            if (CreatorButton("Save subzone around me")) WbAddSubzone((uint)_wbSubArea, WbText(_wbSubName).Trim(), _controller!.Position, _wbSubRadius);
+            ImGui.EndDisabled();
+        }
+        if (ImGui.CollapsingHeader("Connect two places with a portal"))
+        {
+            ImGui.TextWrapped("First stand at the arrival point and capture it. Then travel to the entrance and save the portal there. Create a second portal for the return journey.");
+            ImGui.SetNextItemWidth(w); ImGui.InputText("Portal name", _wbPortalName, (uint)_wbPortalName.Length);
+            ImGui.BeginDisabled(_controller is null);
+            if (CreatorButton("Use where I stand as the arrival"))
+            {
+                _wbPortalTargetMap = _config.Start.Map;
+                var at = _controller!.Position; _wbPortalTx = at.X; _wbPortalTy = at.Y; _wbPortalTz = at.Z;
+                _wbPortalHasTarget = true;
+            }
+            ImGui.EndDisabled();
+            if (_wbPortalHasTarget) ImGui.TextWrapped(Inv($"Arrival: map {_wbPortalTargetMap}, {_wbPortalTx:F1}, {_wbPortalTy:F1}, {_wbPortalTz:F1}"));
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputFloat("Entrance radius (yards)", ref _wbPortalRadius);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Minimum player level", ref _wbPortalMinLevel, 0);
+            if (ImGui.TreeNode("Advanced portal coordinates and ID"))
+            {
+                ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Trigger ID", ref _wbPortalId, 0);
+                ImGui.SetNextItemWidth(w * 0.6f); bool changed = ImGui.InputInt("Arrival map", ref _wbPortalTargetMap, 0);
+                ImGui.SetNextItemWidth(w * 0.6f); changed |= ImGui.InputFloat("Arrival X", ref _wbPortalTx);
+                ImGui.SetNextItemWidth(w * 0.6f); changed |= ImGui.InputFloat("Arrival Y", ref _wbPortalTy);
+                ImGui.SetNextItemWidth(w * 0.6f); changed |= ImGui.InputFloat("Arrival Z", ref _wbPortalTz);
+                ImGui.SetNextItemWidth(w * 0.6f); changed |= ImGui.InputFloat("Arrival facing", ref _wbPortalTo);
+                if (changed) _wbPortalHasTarget = true;
+                ImGui.TreePop();
+            }
+            bool ready = _controller is not null && _wbPortalHasTarget && _wbPortalTargetMap >= 0 && _wbPortalId >= 7000 &&
+                !WbIdUsed("dbrow:areatrigger_template", "id", _wbPortalId) && WbText(_wbPortalName).Trim().Length > 0 &&
+                float.IsFinite(_wbPortalRadius) && _wbPortalRadius > 0 && float.IsFinite(_wbPortalTx) && float.IsFinite(_wbPortalTy) &&
+                float.IsFinite(_wbPortalTz) && float.IsFinite(_wbPortalTo) && _wbPortalMinLevel is >= 0 and <= 63;
+            if (!ready) ImGui.TextWrapped("Name the portal, capture an arrival, and use a positive radius with an unused trigger ID.");
+            ImGui.BeginDisabled(!ready || _wbOps.Count > 0);
+            if (CreatorButton("Save entrance where I stand")) WbPost($"portal {WbText(_wbPortalName)}", WbPortalItems((uint)_wbPortalId,
+                WbText(_wbPortalName).Trim(), _config.Start.Map, _controller!.Position, _wbPortalRadius, _wbPortalTargetMap,
+                new Vector3(_wbPortalTx, _wbPortalTy, _wbPortalTz), _wbPortalTo, _wbPortalMinLevel));
+            ImGui.EndDisabled();
+        }
+    }
 
-        ImGui.Separator();
-        ImGui.TextDisabled("Subzone around you");
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Area id##wb-sub", ref _wbSubArea);
-        ImGui.SetNextItemWidth(w); ImGui.InputText("Name##wb-sub", _wbSubName, (uint)_wbSubName.Length);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("Radius##wb-sub", ref _wbSubRadius);
-        if (CreatorButton("Add subzone here") && _controller is not null && WbText(_wbSubName).Length > 0)
-            WbAddSubzone((uint)_wbSubArea, WbText(_wbSubName), _controller.Position, _wbSubRadius);
-
-        ImGui.Separator();
-        ImGui.TextDisabled("Portal from where you stand");
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Trigger id (7000+)", ref _wbPortalId);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("Radius##wb-portal", ref _wbPortalRadius);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("To map", ref _wbPortalTargetMap);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("To x", ref _wbPortalTx);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("To y", ref _wbPortalTy);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("To z", ref _wbPortalTz);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("To facing", ref _wbPortalTo);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Min level", ref _wbPortalMinLevel);
-        if (CreatorButton("Create portal here") && _controller is not null)
-            WbPost($"portal {_wbPortalId}", WbPortalItems((uint)_wbPortalId, $"World Pack portal {_wbPortalId}", _config.Start.Map,
-                _controller.Position, _wbPortalRadius, _wbPortalTargetMap, new Vector3(_wbPortalTx, _wbPortalTy, _wbPortalTz),
-                _wbPortalTo, _wbPortalMinLevel));
-        ImGui.TextDisabled("Dungeon = a Dungeon-type map + a portal in + a portal out.");
+    private void WbDrawStampSource()
+    {
+        ImGui.TextWrapped($"Terrain source: {WbText(_wbSrcMap)}, tile {_wbSrcCol}, {_wbSrcRow}. Start with one tile, then extend the selection if needed.");
+        ImGui.BeginDisabled(_controller is null);
+        if (CreatorButton("Copy terrain from where I stand"))
+        {
+            (_wbSrcCol, _wbSrcRow) = WorldBuilderLaw.TileOf(_controller!.Position.X, _controller.Position.Y);
+            WbSetBuf(_wbSrcMap, _config.Start.MapName);
+        }
+        ImGui.EndDisabled();
+        ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f); ImGui.InputInt("Tiles wide", ref _wbSrcW, 0);
+        ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f); ImGui.InputInt("Tiles tall", ref _wbSrcH, 0);
+        ImGui.Checkbox("Include trees and small props", ref _wbStampDoodads);
+        ImGui.Checkbox("Include existing buildings", ref _wbStampWmos);
+        if (ImGui.TreeNode("Advanced source and destination tiles"))
+        {
+            ImGui.InputText("Source directory", _wbSrcMap, (uint)_wbSrcMap.Length);
+            ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f); ImGui.InputInt("Source column", ref _wbSrcCol, 0);
+            ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f); ImGui.InputInt("Source row", ref _wbSrcRow, 0);
+            ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f); ImGui.InputInt("Destination column", ref _wbDstCol, 0);
+            ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f); ImGui.InputInt("Destination row", ref _wbDstRow, 0);
+            ImGui.TreePop();
+        }
     }
 
     private static void WbSetBuf(byte[] buf, string s)
@@ -111,7 +186,7 @@ public sealed partial class GameLoop
 
     /// <summary>Every doc a new map needs (shared by the panel and the zone scripts).</summary>
     internal static JsonArray WbNewMapItems(int mapId, string dir, string name, int type, int players, uint area, int level,
-        string srcDir, int srcCol, int srcRow, int wide, int tall, int dstCol, int dstRow, bool doodads, bool wmos)
+        string srcDir, int srcCol, int srcRow, int wide, int tall, int dstCol, int dstRow, bool doodads, bool wmos, int team = 0)
     {
         var items = new JsonArray
         {
@@ -124,7 +199,7 @@ public sealed partial class GameLoop
                 // Shadowfang Keep art for an instance - better than a black curtain.
                 ["fields"] = new JsonObject { ["1"] = dir, ["2"] = type, ["4"] = name, ["19"] = type == 0 ? 0 : area },
             } },
-            WbAreaDbc(area, (uint)mapId, 0, name, level),
+            WbAreaDbc(area, (uint)mapId, 0, name, level, team),
             new JsonObject { ["kind"] = "dbrow:map_template", ["body"] = new JsonObject
             {
                 ["entry"] = mapId, ["patch"] = 0, ["parent"] = 0, ["map_type"] = type == 0 ? 0 : type == 1 ? 1 : 2,
@@ -132,7 +207,7 @@ public sealed partial class GameLoop
                 ["reset_delay"] = type == 2 ? 7 : 0, ["ghost_entrance_map"] = -1, ["ghost_entrance_x"] = 0, ["ghost_entrance_y"] = 0,
                 ["map_name"] = name, ["script_name"] = "",
             } },
-            WbAreaRow(area, (uint)mapId, 0, name, level),
+            WbAreaRow(area, (uint)mapId, 0, name, level, team),
         };
         for (int x = 0; x < wide; x++)
             for (int y = 0; y < tall; y++)
@@ -147,18 +222,18 @@ public sealed partial class GameLoop
 
     /// <summary>AreaTable.dbc row cloned from Silverpine Forest (130). Explore bits above the stock
     /// maximum (1076) come from the area id so they never collide.</summary>
-    internal static JsonObject WbAreaDbc(uint area, uint map, uint parent, string name, int level) =>
+    internal static JsonObject WbAreaDbc(uint area, uint map, uint parent, string name, int level, int team = 0) =>
         new() { ["kind"] = "dbc:AreaTable", ["key"] = area.ToString(CultureInfo.InvariantCulture), ["body"] = new JsonObject
         {
             ["cloneFrom"] = 130,
-            ["fields"] = new JsonObject { ["1"] = map, ["2"] = parent, ["3"] = WbAreaBit(area), ["10"] = level, ["11"] = name },
+            ["fields"] = new JsonObject { ["1"] = map, ["2"] = parent, ["3"] = WbAreaBit(area), ["10"] = level, ["11"] = name, ["20"] = team },
         } };
 
-    internal static JsonObject WbAreaRow(uint area, uint map, uint parent, string name, int level) =>
+    internal static JsonObject WbAreaRow(uint area, uint map, uint parent, string name, int level, int team = 0) =>
         new() { ["kind"] = "dbrow:area_template", ["body"] = new JsonObject
         {
             ["entry"] = area, ["map_id"] = map, ["zone_id"] = parent, ["explore_flag"] = WbAreaBit(area),
-            ["flags"] = 64, ["area_level"] = level, ["name"] = name, ["team"] = 0, ["liquid_type"] = 0,
+            ["flags"] = 64, ["area_level"] = level, ["name"] = name, ["team"] = team, ["liquid_type"] = 0,
         } };
 
     internal static uint WbAreaBit(uint area) => 1100 + (area - 7000) % 900;
@@ -186,8 +261,9 @@ public sealed partial class GameLoop
             items.Add(new JsonObject { ["kind"] = "tile", ["body"] = copy });
         }
         if (items.Count == 0) { _wbMessage = "No pack tiles of this map near you (subzones are for pack maps)."; return; }
-        items.Add(WbAreaDbc(area, (uint)map, zone, name, _wbMapLevel));
-        items.Add(WbAreaRow(area, (uint)map, zone, name, _wbMapLevel));
+        int team = (int)WbNum(WbDocBodies("dbrow:area_template").FirstOrDefault(a => WbNum(a["entry"]) == zone)?["team"]);
+        items.Add(WbAreaDbc(area, (uint)map, zone, name, _wbMapLevel, team));
+        items.Add(WbAreaRow(area, (uint)map, zone, name, _wbMapLevel, team));
         WbPost($"subzone {name} ({area})", items);
     }
 

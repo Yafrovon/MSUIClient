@@ -61,6 +61,7 @@ public sealed partial class GameLoop
             Console.WriteLine($"[wbscript] world ready; running {WbScriptPath}");
         }
 
+        if (PumpWorldBuilderUiProbe(now)) return;
         if (now < _wbScriptWaitUntil) return;
         if (_wbScriptWaitFor is { } waitFor)
         {
@@ -163,6 +164,12 @@ public sealed partial class GameLoop
         float Z(int i, float x, float y) => a[i].Equals("ground", StringComparison.OrdinalIgnoreCase)
             ? _terrain?.SampleHeight(x, y) ?? throw new InvalidOperationException($"no terrain under ({x}, {y})")
             : F(i);
+
+        if (a[0].StartsWith("ui-", StringComparison.OrdinalIgnoreCase))
+        {
+            RunWorldBuilderUiProbe(a, now);
+            return;
+        }
 
         switch (a[0].ToLowerInvariant())
         {

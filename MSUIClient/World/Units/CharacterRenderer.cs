@@ -307,6 +307,7 @@ public sealed partial class CharacterRenderer : IDisposable
 
     private ItemDisplayTable? _itemDisplay;
     private CharSectionsTable? _charSections;
+    private RaceAppearanceTable? _raceAppearance;
     private CharHairGeosetsTable? _charHairGeosets;
     private CharacterGeosets? _characterGeosets;
 
@@ -337,7 +338,14 @@ public sealed partial class CharacterRenderer : IDisposable
         slot.Type == 2 && slot.Fill == SlotFill.Bound)?.Source ?? "";
 
     /// <summary>Release regenerable attachment assets between unattended item-batch chunks.</summary>
-    public void ClearVariantItemCache() => _attached?.ClearVariantCache();
+    public void ClearVariantItemCache()
+    {
+        _gripMounts = null;
+        _closedHands = HandGrip.None;
+        _gripSheath = 0;
+        _closedHandsOwner = ulong.MaxValue;
+        _attached?.ClearVariantCache();
+    }
 
     private Matrix4x4[] _skin = [];
     private float[] _packed = [];
@@ -367,6 +375,10 @@ public sealed partial class CharacterRenderer : IDisposable
     // The route for the CURRENT play, decided once when the action is armed and never
     // re-evaluated - see CharacterPoseLaw.CommittedLower on why per-frame routing pops the legs.
     private bool _combatActionMasked;
+    private HandGrip _closedHands;
+    private byte _gripSheath;
+    private AttachedItemRenderer.MountSet? _gripMounts;
+    private ulong _closedHandsOwner = ulong.MaxValue;
     private M2Animator.Clip? _rightSheathOverlay;
     private M2Animator.Clip? _leftSheathOverlay;
     private float _sheathOverlayTime;
@@ -570,6 +582,11 @@ public sealed partial class CharacterRenderer : IDisposable
     /// by <see cref="Render"/>; the world locomotion and action clocks remain untouched.
     /// </summary>
     public float? StandPreviewTime { get; set; }
+
+    /// <summary>Explicit offline inspection pose. Null leaves every gameplay path unchanged.</summary>
+    internal (int AnimationId, float TimeSeconds)? InspectionPose { get; set; }
+    internal IEnumerable<(uint Type, string Source, string Fill)> InspectionTextureSlots =>
+        _slots.Select(slot => (slot.Type, slot.Source, slot.Fill.ToString()));
 
     /// <summary>Client-local held Loot-50 pose; locomotion still outranks it.</summary>
     public bool LootKneel { get; set; }
@@ -1138,6 +1155,7 @@ public sealed partial class CharacterRenderer : IDisposable
         string skinPath = "";
         string hairPath = "";
         string facialHairPath = "";
+        string skinExtraPath = "";
         var overlays = new List<(string Path, FaceRegion Region)>();
 
         if (_charSections is not null)
@@ -1145,6 +1163,7 @@ public sealed partial class CharacterRenderer : IDisposable
             var skinRow = _charSections.Find(
                 raceId, sexId, CharSectionsTable.SectionSkin, -1, request.SkinId);
             if (skinRow is not null) skinPath = skinRow.Texture1;
+            skinExtraPath = _charSections.SkinExtraTexture(raceId, sexId, request.SkinId);
 
             var faceRow = _charSections.Find(
                 raceId, sexId, CharSectionsTable.SectionFace, request.FaceId, request.SkinId);
@@ -1231,7 +1250,7 @@ public sealed partial class CharacterRenderer : IDisposable
         {
             byte[] pixels = request.Equipment.Composite(
                 bare.Pixels, bare.Width, bare.Height,
-                path => DecodePixels(path, decodedByPath));
+                path => DecodePixels(path, decodedByPath), _raceAppearance?.HasBareFeet(raceId) == true);
             dressed = new PreparedTextureData
             {
                 Pixels = pixels,
@@ -1252,6 +1271,7 @@ public sealed partial class CharacterRenderer : IDisposable
             {
                 6 => hairPath,
                 7 => facialHairPath,
+                8 => skinExtraPath,
                 _ => "",
             };
 
@@ -1473,7 +1493,8 @@ public sealed partial class CharacterRenderer : IDisposable
         {
             var composited = Equipment.Composite(
                 _baseSkin, _skinWidth, _skinHeight,
-                path => AdtTerrainReader.ReadBlpPixels(_config.ClientDataPath, path));
+                path => AdtTerrainReader.ReadBlpPixels(_config.ClientDataPath, path),
+                _raceAppearance?.HasBareFeet(CharSectionsTable.RaceId(Race)) == true);
 
             var texture = Texture.From2D(_gl, composited, _skinWidth, _skinHeight);
 
@@ -1652,7 +1673,7 @@ public sealed partial class CharacterRenderer : IDisposable
     ///   type 2  OBJECT_SKIN      a cape or item texture; nothing until one is worn
     ///   type 6  CHAR_HAIR        CharSections section 3, by hair style and colour
     ///   type 7  CHAR_FACIAL_HAIR CharSections section 2
-    ///   type 8  SKIN_EXTRA       CharSections section 4, the underwear
+    ///   type 8  SKIN_EXTRA       skin section Texture2, uncomposited mane/tail/hooves
     ///
     /// AND THE FACE IS NOT A SLOT AT ALL. Most races' body skin BLP has no eye
     /// detail whatsoever - the eyes live in a CharSections Face row that gets
@@ -1671,6 +1692,7 @@ public sealed partial class CharacterRenderer : IDisposable
         string skinPath = "";
         string hairPath = "";
         string facialHairPath = "";
+        string skinExtraPath = "";
         // (path, region). CharSections TELLS US which is which - Texture1 is the
         // lower face and Texture2 the upper - and the first version threw that
         // away into a flat list and then tried to infer the region back from
@@ -1682,6 +1704,7 @@ public sealed partial class CharacterRenderer : IDisposable
         {
             var skinRow = _charSections.Find(raceId, sexId, CharSectionsTable.SectionSkin, -1, SkinId);
             if (skinRow is not null) skinPath = skinRow.Texture1;
+            skinExtraPath = _charSections.SkinExtraTexture(raceId, sexId, SkinId);
 
             // Face: matched on face shape AND skin tone. Texture1 is the lower
             // face, Texture2 the upper - and the upper is where the eyes are.
@@ -1825,6 +1848,7 @@ public sealed partial class CharacterRenderer : IDisposable
             {
                 6 => hairPath,
                 7 => facialHairPath,
+                8 => skinExtraPath,
                 _ => "",
             };
 
@@ -2061,6 +2085,8 @@ public sealed partial class CharacterRenderer : IDisposable
 
     private void LoadCharSections()
     {
+        _raceAppearance ??= RaceAppearanceTable.Parse(
+            AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, RaceAppearanceTable.MpqPath));
         if (_charSections is not null) return;
 
         var bytes = AdtTerrainReader.ReadFileFromMpqs(_config.ClientDataPath, CharSectionsTable.MpqPath);
@@ -3316,7 +3342,7 @@ public sealed partial class CharacterRenderer : IDisposable
         // wring the legs off a standing torso, and in Clips nothing consumes it
         // at all, so the feet would shuffle at a body that never turned.
         float strafeOffset = Strafe == StrafeStyle.Clips ? 0f : StrafeBodyOffset(state);
-        bool bodyTurns = Strafe is StrafeStyle.Split or StrafeStyle.WholeBody;
+        bool bodyTurns = InspectionPose is null && (Strafe is StrafeStyle.Split or StrafeStyle.WholeBody);
 
         if (strafeOffset != 0f)
         {
@@ -3863,6 +3889,21 @@ public sealed partial class CharacterRenderer : IDisposable
         _attached?.BeginGlowFrame();
         if (!Enabled || _m2 is null || _shader is null || _pieces.Count == 0) return;
 
+        if (!state.FreezePose || state.Guid != _closedHandsOwner)
+        {
+            _gripSheath = FishingLineLaw.PresentationSheath(SheathState,
+                _combatAction?.AnimationId ?? -1, _spellHold?.AnimationId ?? -1);
+            _gripMounts = _attached?.SnapshotMountSet();
+            _closedHands = _attached?.Enabled == true
+                ? AttachedItemRenderer.ResolveHandGrip(_m2, _gripMounts, _gripSheath)
+                : HandGrip.None;
+            // Presented animation: the offline inspection sample, else the masked upper-body
+            // action, else the full-body clip (which is the cast hold or action when one plays).
+            _closedHands = HandGripLaw.ForPresentedAnimation(_closedHands,
+                InspectionPose?.AnimationId ?? _torsoOverlayForRender?.AnimationId ?? _clip?.AnimationId ?? -1,
+                AnimationDataCatalog.WeaponFlagsFor(_config.ClientDataPath), _gripSheath);
+            _closedHandsOwner = state.Guid;
+        }
         int bones = _animator?.BoneCount ?? 0;
         if (_animator is not null)
         {
@@ -3875,7 +3916,7 @@ public sealed partial class CharacterRenderer : IDisposable
             // Mounted takes the same exit as bind/frozen: the seated pose is authored whole,
             // and twisting its hips against a saddle it is parented to only breaks it.
             _animator.LowerBodyYaw =
-                BindPose || FrozenStandPose || StandPreviewTime is not null || Mounted ||
+                BindPose || FrozenStandPose || StandPreviewTime is not null || InspectionPose is not null || Mounted ||
                 Strafe != StrafeStyle.LowerBody
                     ? 0f
                     : Math.Clamp(_moveYaw, -maxTwist, maxTwist);
@@ -3884,12 +3925,18 @@ public sealed partial class CharacterRenderer : IDisposable
             // lag between aim and whole-body heading; its slower release catch-up is handled
             // by StandingBodyStep, while sparse shuffle shoulders inherit Stand in M2Animator.
             _animator.TorsoYaw = CharacterPoseLaw.TorsoCounterYaw(
-                BindPose || StandPreviewTime is not null || Mounted, FrozenStandPose,
+                BindPose || StandPreviewTime is not null || InspectionPose is not null || Mounted, FrozenStandPose,
                 Strafe == StrafeStyle.Split,
                 state.Moving, ForceAngleDegrees != 0f, TorsoFollow, _moveYaw);
-            if (StandPreviewTime is float standTime)
+            if (InspectionPose is { } inspection)
             {
-                _animator.Evaluate(_animator.Find(0), standTime, _globalTime, _skin);
+                var inspectionClip = _animator.FindOrBake(inspection.AnimationId, includeStaticSequences: true)
+                    ?? throw new InvalidDataException($"inspection-animation-unavailable:{inspection.AnimationId}");
+                _animator.Evaluate(inspectionClip, inspection.TimeSeconds, inspection.TimeSeconds, _skin, _closedHands);
+            }
+            else if (StandPreviewTime is float standTime)
+            {
+                _animator.Evaluate(_animator.Find(0), standTime, _globalTime, _skin, _closedHands);
             }
             else if (BindPose)
             {
@@ -3897,7 +3944,7 @@ public sealed partial class CharacterRenderer : IDisposable
             }
             else if (FrozenStandPose)
             {
-                _animator.Evaluate(_animator.Find(0), 0f, 0f, _skin);
+                _animator.Evaluate(_animator.Find(0), 0f, 0f, _skin, _closedHands);
             }
             else
             {
@@ -3915,7 +3962,7 @@ public sealed partial class CharacterRenderer : IDisposable
                                    _globalTime, _skin,
                                    _combatReaction, _combatReactionTime,
                                    CombatReactionWeight(), _combatReactionMasked,
-                                   CharacterPoseLaw.OneshotOverlayWeight);
+                                   CharacterPoseLaw.OneshotOverlayWeight, _closedHands);
             }
             M2Animator.Pack(_skin, Math.Min(bones, M2Animator.MaxBones), _packed);
         }
@@ -4004,12 +4051,13 @@ public sealed partial class CharacterRenderer : IDisposable
             _attached.FogColor = FogColor;
             _attached.FogStart = FogStart;
             _attached.FogEnd = FogEnd;
-            _attached.SheathState = FishingLineLaw.PresentationSheath(SheathState,
-                _combatAction?.AnimationId ?? -1, _spellHold?.AnimationId ?? -1);
+            _attached.SheathState = _gripSheath;
             _attached.BodyAlpha = bodyAlpha;
             _attached.BodyTint = bodyTint;
         }
-        _attached?.Render(camera, modelTransform, _m2, _skin, state.Guid, _globalTime);
+        if (_attached is not null && _gripMounts is not null)
+            _attached.Render(camera, modelTransform, _m2, _skin, _gripMounts, _gripSheath,
+                state.Guid, InspectionPose?.TimeSeconds ?? _globalTime);
     }
 
     /// <summary>
@@ -4144,6 +4192,10 @@ public sealed partial class CharacterRenderer : IDisposable
     /// </summary>
     private void ResetModelState()
     {
+        _gripMounts = null;
+        _closedHands = HandGrip.None;
+        _gripSheath = 0;
+        _closedHandsOwner = ulong.MaxValue;
         if (_vao != 0) { _gl.DeleteVertexArray(_vao); _vao = 0; }
         if (_vbo != 0) { _gl.DeleteBuffer(_vbo); _vbo = 0; }
         if (_ebo != 0) { _gl.DeleteBuffer(_ebo); _ebo = 0; }

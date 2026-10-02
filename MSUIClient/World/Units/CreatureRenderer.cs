@@ -41,6 +41,7 @@ public sealed partial class CreatureRenderer : IDisposable
     private CreatureModelResolver? _resolver;
     private ItemDisplayTable? _itemDisplay;
     private CharSectionsTable? _charSections;
+    private RaceAppearanceTable? _raceAppearance;
     private CharacterGeosets? _geosets;
     private readonly Dictionary<string, LoadedModel?> _modelCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Appearance?> _appearanceCache = new(StringComparer.OrdinalIgnoreCase);
@@ -205,7 +206,8 @@ public sealed partial class CreatureRenderer : IDisposable
     private readonly record struct TacticalFreezeVisualLatch(
         float EvaluationGlobalTime,
         M2Animator.Clip? Clip, float ClipTime,
-        M2Animator.Clip? TorsoOverlay, float TorsoOverlayTime);
+        M2Animator.Clip? TorsoOverlay, float TorsoOverlayTime, HandGrip ClosedHands,
+        byte HeldSheath, AttachedItemRenderer.MountSet? AttachmentMounts);
 
     /// <summary>Units that completed a model draw this frame, consumed by the shared blob pass.</summary>
     public IReadOnlyList<UnitShadowCaster> ShadowCasters => _shadowCasters;
@@ -532,6 +534,7 @@ public sealed partial class CreatureRenderer : IDisposable
                 var helmBytes = mpq.ReadFile(HelmetGeosetVisTable.MpqPath);
                 var sectionBytes = mpq.ReadFile(CharSectionsTable.MpqPath);
                 _charSections = sectionBytes is null ? null : CharSectionsTable.Parse(sectionBytes);
+                _raceAppearance = RaceAppearanceTable.Parse(mpq.ReadFile(RaceAppearanceTable.MpqPath));
                 _geosets = new CharacterGeosets(
                     hairBytes is null ? null : CharHairGeosetsTable.Parse(hairBytes),
                     facialBytes is null ? null : CharacterFacialHairTable.Parse(facialBytes),
@@ -553,6 +556,7 @@ public sealed partial class CreatureRenderer : IDisposable
         _attachedItems?.BeginGlowFrame();
         DrawnLastFrame = 0;
         PlayersDrawnLastFrame = 0;
+        EquipmentInspection = null;
         AnimatedLastFrame = 0;
         LoadMillisecondsThisFrame = 0;
         LoadsThisFrame = 0;
@@ -705,6 +709,10 @@ public sealed partial class CreatureRenderer : IDisposable
             _shader.Set("uBodyAlpha", bodyAlpha);
             _shader.Set("uBodyTint", bodyTint);
 
+            // Resolve equipment before skinning: the same actual palm occupancy drives
+            // the fingers and the item draw, including the first frame after an equip.
+            var (attachmentMounts, heldSheath, closedHands) = ResolveUnitAttachmentPresentation(e, model, info);
+            _shader.Use();
             int boneCount = 0;
             M2Animator.Clip? pickClip = null;
             if (Animate && model.Animator is not null && model.BoneCount > 0 &&
@@ -873,6 +881,12 @@ public sealed partial class CreatureRenderer : IDisposable
                         _lootKneeling.Contains(e.Guid), out rate);
                     if (!frozen) at += dt * rate;
                 }
+                // A palm the original client would have emptied for the presented animation
+                // keeps that animation's own fingers (HandGripLaw); the freeze latch below
+                // captures the result, and an existing latch replaces it.
+                closedHands = HandGripLaw.ForPresentedAnimation(closedHands,
+                    torsoOverlay?.AnimationId ?? clip?.AnimationId ?? -1,
+                    AnimationDataCatalog.WeaponFlagsFor(_config.ClientDataPath), heldSheath);
                 // Tactical Freeze is stronger than a zero animation rate: retain the exact clip
                 // identity and overlays sampled on the first frozen frame. A later field/spline
                 // packet cannot make the body switch from run/swing/emote to stand while locked.
@@ -885,12 +899,14 @@ public sealed partial class CreatureRenderer : IDisposable
                         torsoOverlay = latch.TorsoOverlay;
                         torsoOverlayTime = latch.TorsoOverlayTime;
                         evaluationGlobalTime = latch.EvaluationGlobalTime;
+                        closedHands = latch.ClosedHands;
                     }
                     else
                     {
                         float freezeStartedAt = EnsureTacticalFreezeStartedAt(e.Guid);
                         _tacticalFreezeVisuals[e.Guid] = new TacticalFreezeVisualLatch(
-                            freezeStartedAt, clip, at, torsoOverlay, torsoOverlayTime);
+                            freezeStartedAt, clip, at, torsoOverlay, torsoOverlayTime, closedHands,
+                            heldSheath, attachmentMounts);
                         evaluationGlobalTime = freezeStartedAt;
                     }
                 }
@@ -908,9 +924,9 @@ public sealed partial class CreatureRenderer : IDisposable
                         model.Animator.EvaluateWithArmOverlays(clip, at, null, 0f, 0f,
                             null, 0f, null, 0f, torsoOverlay, torsoOverlayTime,
                             evaluationGlobalTime, _skin,
-                            torsoOverlayWeight: CharacterPoseLaw.OneshotOverlayWeight);
+                            torsoOverlayWeight: CharacterPoseLaw.OneshotOverlayWeight, closedHands: closedHands);
                     else
-                        model.Animator.Evaluate(clip, at, evaluationGlobalTime, _skin);
+                        model.Animator.Evaluate(clip, at, evaluationGlobalTime, _skin, closedHands);
                     M2Animator.Pack(_skin, boneCount, _packed);
                     _shader.SetVec4Array("uBones", _packed, boneCount * 3);
                     AnimatedLastFrame++;
@@ -963,9 +979,10 @@ public sealed partial class CreatureRenderer : IDisposable
                     ? mount.GroundRadius
                     : GroundShadowRadius(model.HorizontalRadius, scale), respawnAlpha));
 
-            DrawUnitAttachments(camera, e, model, info, m,
+            DrawUnitAttachments(camera, e, model, attachmentMounts, heldSheath, m,
                 boneCount > 0 ? _skin : _bindSkin, applyAuraVisual: true,
                 alphaMultiplier: respawnAlpha);
+            RecordEquipmentInspection(e, info, appearance);
             // The attachment path has its own shader; restore ours before the
             // next streamed unit uploads its model/bone uniforms.
             _gl.Enable(EnableCap.Blend);
@@ -1185,12 +1202,31 @@ public sealed partial class CreatureRenderer : IDisposable
         _attachedItems.FogEnd = FogEnd;
     }
 
-    private void DrawUnitAttachments(Camera camera, WorldEntity entity, LoadedModel model,
-        in CreatureModelInfo info, Matrix4x4 transform, Matrix4x4[] skin,
-        bool applyAuraVisual = false, float alphaMultiplier = 1f)
+    private (AttachedItemRenderer.MountSet? Mounts, byte HeldSheath, HandGrip ClosedHands)
+        ResolveUnitAttachmentPresentation(WorldEntity entity, LoadedModel model, in CreatureModelInfo info)
+    {
+        // The freeze latch retains the exact set, not the mutable per-unit cache holder:
+        // an equipment refresh replaces that holder's Mounts. Frozen fingers and item
+        // placement must read the same occupancy until the existing latch is released.
+        if (TacticalFreezePoseLaw.IsFrozen(entity.Guid) &&
+            _tacticalFreezeVisuals.TryGetValue(entity.Guid, out TacticalFreezeVisualLatch frozen))
+            return (frozen.AttachmentMounts, frozen.HeldSheath, frozen.ClosedHands);
+
+        var mounts = PrepareUnitAttachments(entity, model, info)?.Mounts;
+        byte heldSheath = FishingLineLaw.PresentationSheath(entity.Fields.SheathState,
+            _combatActions.TryGetValue(entity.Guid, out CombatAction action) ? action.AnimationId : -1,
+            _spellHolds.GetValueOrDefault(entity.Guid, -1));
+        HandGrip closedHands = _attachedItems?.Enabled == true
+            ? AttachedItemRenderer.ResolveHandGrip(model.Source, mounts, heldSheath)
+            : HandGrip.None;
+        return (mounts, heldSheath, closedHands);
+    }
+
+    private UnitAttachments? PrepareUnitAttachments(WorldEntity entity, LoadedModel model,
+        in CreatureModelInfo info)
     {
         if (model.Source.Attachments.Count == 0 || _attachedItems is null ||
-            entity.IsPlayer && entity.Fields.HasDisplayTransform) return;
+            entity.IsPlayer && entity.Fields.HasDisplayTransform) return null;
         uint head = info.HasExtended && info.ExtEquipment.Length > 0
             ? info.ExtEquipment[0] : 0;
         uint shoulders = info.HasExtended && info.ExtEquipment.Length > 1
@@ -1229,7 +1265,7 @@ public sealed partial class CreatureRenderer : IDisposable
             uint d0 = entity.Fields.VirtualItemDisplay(0);
             uint d1 = entity.Fields.VirtualItemDisplay(1);
             uint d2 = entity.Fields.VirtualItemDisplay(2);
-            if ((head | shoulders | d0 | d1 | d2) == 0) return;
+            if ((head | shoulders | d0 | d1 | d2) == 0) return null;
             if (head != 0)
                 equipment.Add("NPC head", head, CharacterEquipment.Slot.Head);
             if (shoulders != 0)
@@ -1242,7 +1278,7 @@ public sealed partial class CreatureRenderer : IDisposable
                 $"{d1}:{entity.Fields.VirtualItemInfo(1)}:{entity.Fields.VirtualItemSheath(1)}|" +
                 $"{d2}:{entity.Fields.VirtualItemInfo(2)}:{entity.Fields.VirtualItemSheath(2)}";
         }
-        if (equipment.Pieces.Count == 0) return;
+        if (equipment.Pieces.Count == 0) return null;
 
         if (!_unitAttachments.TryGetValue(entity.Guid, out UnitAttachments? state))
         {
@@ -1257,17 +1293,21 @@ public sealed partial class CreatureRenderer : IDisposable
             state.Signature = signature;
         }
         state.LastSeenAt = _globalTime;
+        return state;
+    }
+
+    private void DrawUnitAttachments(Camera camera, WorldEntity entity, LoadedModel model,
+        AttachedItemRenderer.MountSet? mounts, byte heldSheath, Matrix4x4 transform, Matrix4x4[] skin,
+        bool applyAuraVisual = false, float alphaMultiplier = 1f)
+    {
+        if (mounts is null || _attachedItems is null) return;
         _attachedItems.BodyAlpha = applyAuraVisual
             ? entity.AuraVisual.Alpha * Math.Clamp(alphaMultiplier, 0f, 1f)
             : 1f;
         _attachedItems.BodyTint = applyAuraVisual ? entity.AuraVisual.Tint : Vector3.One;
         _attachedItems.GlowOwnerKey = $"unit:{entity.Guid:X16}";
         _attachedItems.InteriorLight = _currentInteriorLight;
-        byte heldSheath = FishingLineLaw.PresentationSheath(entity.Fields.SheathState,
-            _combatActions.TryGetValue(entity.Guid, out CombatAction fishingAction)
-                ? fishingAction.AnimationId : -1,
-            _spellHolds.GetValueOrDefault(entity.Guid, -1));
-        _attachedItems.Render(camera, transform, model.Source, skin, state.Mounts,
+        _attachedItems.Render(camera, transform, model.Source, skin, mounts,
             heldSheath, entity.Guid, _globalTime);
     }
 
@@ -1451,6 +1491,8 @@ public sealed partial class CreatureRenderer : IDisposable
         _shader.Set("uBakedLightScale", BakedLightScale);
         ApplyAttachmentAtmosphere();
 
+        var (attachmentMounts, heldSheath, closedHands) = ResolveUnitAttachmentPresentation(entity, model, info);
+        _shader.Use(); // Preparing a newly equipped item may bind its own shader.
         int boneCount = 0;
         int portraitSequence = -1;
         if (model.Animator is not null && model.BoneCount > 0)
@@ -1461,7 +1503,7 @@ public sealed partial class CreatureRenderer : IDisposable
             portraitSequence = clip?.SequenceIndex ?? -1;
             boneCount = Math.Min(model.BoneCount, M2Animator.MaxBones);
             float animationTime = MathF.Max(0f, standAnimationTime);
-            model.Animator.Evaluate(clip, animationTime, animationTime, _skin);
+            model.Animator.Evaluate(clip, animationTime, animationTime, _skin, closedHands);
             M2Animator.Pack(_skin, boneCount, _packed);
             _shader.SetVec4Array("uBones", _packed, boneCount * 3);
         }
@@ -1486,7 +1528,7 @@ public sealed partial class CreatureRenderer : IDisposable
         _gl.BindVertexArray(0);
         _gl.DepthMask(true);
         _lifecycle?.NoteFirstDraw(entity.Guid);
-        DrawUnitAttachments(camera, entity, model, info, transform,
+        DrawUnitAttachments(camera, entity, model, attachmentMounts, heldSheath, transform,
             boneCount > 0 ? _skin : _bindSkin);
         return true;
     }
@@ -2150,12 +2192,14 @@ public sealed partial class CreatureRenderer : IDisposable
             if (batch.SubmeshIndex >= m2.Submeshes.Count) continue;
             int geosetId = m2.Submeshes[batch.SubmeshIndex].Id;
             PreparedTexture? preparedTexture = null;
+            uint textureType = 0;
             if (batch.TextureIndex < m2.TextureLookup.Count)
             {
                 int textureIndex = m2.TextureLookup[batch.TextureIndex];
                 if (textureIndex >= 0 && textureIndex < m2.Textures.Count)
                 {
                     M2TextureRef reference = m2.Textures[textureIndex];
+                    textureType = reference.Type;
                     bool liveCharacterComposite = info.IsPlayerAppearance;
                     if (bareHead is not null &&
                         (liveCharacterComposite ? reference.Type == 1
@@ -2189,7 +2233,7 @@ public sealed partial class CreatureRenderer : IDisposable
                 }
             }
             if (preparedTexture is not null) carriedTexture = preparedTexture;
-            else preparedTexture = carriedTexture;
+            else if (textureType != 8) preparedTexture = carriedTexture;
             prepared.Textures.Add(preparedTexture);
         }
         return prepared;
@@ -2371,7 +2415,7 @@ public sealed partial class CreatureRenderer : IDisposable
                                 reference.Type, reference.Filename, modelDir, info);
                             texture = LoadTexture(candidates, out _);
                             if (texture is not null) carriedTexture = texture;
-                            else texture = carriedTexture;
+                            else if (reference.Type != 8) texture = carriedTexture;
                         }
                     }
                 }
@@ -2412,6 +2456,8 @@ public sealed partial class CreatureRenderer : IDisposable
                 return NpcHairTextureCandidates(info);
             case 7 when info.IsPlayerAppearance:
                 return NpcFacialHairTextureCandidates(info);
+            case 8:
+                return NpcSkinExtraTextureCandidates(info);
             default:
                 if (info.Textures.Length > 0 && !string.IsNullOrEmpty(info.Textures[0]))
                     return new[] { UnderDir(modelDir, info.Textures[0]) };
@@ -2452,6 +2498,14 @@ public sealed partial class CreatureRenderer : IDisposable
                 1, (int)info.ExtHairColor);
         if (row is null || row.Texture1.Length == 0) return Array.Empty<string>();
         return CharacterTextureCandidates(row.Texture1, info.ExtRace, info.ExtSex).ToArray();
+    }
+
+    private IReadOnlyList<string> NpcSkinExtraTextureCandidates(in CreatureModelInfo info)
+    {
+        if (!info.HasExtended || _charSections is null) return Array.Empty<string>();
+        string declared = _charSections.SkinExtraTexture(info.ExtRace, info.ExtSex, (int)info.ExtSkin);
+        return declared.Length == 0 ? Array.Empty<string>()
+            : CharacterTextureCandidates(declared, info.ExtRace, info.ExtSex).ToArray();
     }
 
     private IReadOnlyList<string> NpcFacialHairTextureCandidates(in CreatureModelInfo info)
@@ -2599,7 +2653,7 @@ public sealed partial class CreatureRenderer : IDisposable
         {
             CharacterEquipment equipment = BuildAppearanceEquipment(info);
             atlas = equipment.Composite(atlas, atlasWidth, atlasHeight,
-                DecodeEquipmentTexture);
+                DecodeEquipmentTexture, _raceAppearance?.HasBareFeet(raceId) == true);
         }
 
         return new PreparedTexture

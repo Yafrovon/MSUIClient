@@ -11,6 +11,8 @@ internal static class WorldBuilderClinicalChecks
 {
     public static void Run()
     {
+        WorldBuilderInteractionChecks.Run();
+        WorldBuilderQuestAuthoringChecks.Run();
         // Coordinates: Northshire Abbey sits in Azeroth_32_48, and the tile/vertex mapping round-trips.
         var (col, row) = WorldBuilderLaw.TileOf(-8914f, -135f);
         Check(col == 32 && row == 48, $"TileOf(Northshire) = {col},{row}, expected 32,48");
@@ -196,7 +198,7 @@ internal static class WorldBuilderClinicalChecks
               !WorldBuilderLaw.TryParseWorldMapOutline("{", out _, out _),
             "outline import refuses stock area IDs, path escapes, nonfinite coordinates and malformed JSON");
         string region = SourceText.Read(Path.Combine(root, "MSUIClient", "GameLoop", "CreatorMode", "GameLoop.Creator.WorldBuilder.Region.cs"));
-        Check(region.Contains("Load world-map outline", StringComparison.Ordinal) &&
+        Check(region.Contains("WbLoadWorldMapOutline()", StringComparison.Ordinal) &&
               region.Contains("WorldBuilderLaw.TryParseWorldMapOutline(", StringComparison.Ordinal) &&
               region.Contains("[\"kind\"] = \"worldmap\"", StringComparison.Ordinal),
             "world-map outline import is available in Creator Mode and saves through the audited content API");

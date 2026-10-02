@@ -24,66 +24,99 @@ public sealed partial class GameLoop
     private float _wbStitchBand = 120f, _wbCarveWidth = 12f, _wbCarveFalloff = 18f;
     private readonly byte[] _wbTileDrop = new byte[128];
     private readonly List<Vector3> _wbCarvePoints = new();
+    private int _wbCarveMap = -1;
     private readonly byte[] _wbCarveName = new byte[48];
     private readonly byte[] _wbWorldMapOutlinePath = new byte[1024];
     private string _wbWorldMapOutlineSummary = "";
 
     private void DrawWbRegionSection()
     {
+        if (_wbDocs is null) { if (_wbDocsTask is null) WbRequestDocs(); ImGui.TextDisabled("Loading pack content..."); return; }
+        WbInitMapForm();
         float w = CreatorControlWidth;
         int map = _config.Start.Map;
-        ImGui.TextDisabled($"Move this pack's region (from map {map})");
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("To map##wb-region", ref _wbRegionToMap);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Shift cols (+east)", ref _wbRegionDCol);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputInt("Shift rows (+south)", ref _wbRegionDRow);
-        if (CreatorButton("Move region")) WbRelocate(map, _wbRegionToMap, _wbRegionDCol, _wbRegionDRow);
-
-        ImGui.Separator();
-        ImGui.TextDisabled("Stamp onto this continent (seamless land; uses the Maps & dungeons stamp fields)");
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("Stitch band (yd)", ref _wbStitchBand);
-        bool continent = map is 0 or 1;
-        if (!continent) ImGui.BeginDisabled();
-        if (CreatorButton("Stamp here"))
-            WbPost($"stamp {WbText(_wbSrcMap)} {_wbSrcCol},{_wbSrcRow} x{_wbSrcW}x{_wbSrcH} onto map {map} at {_wbDstCol},{_wbDstRow}",
-                WbStampItems(map, WbText(_wbSrcMap), _wbSrcCol, _wbSrcRow, _wbSrcW, _wbSrcH, _wbDstCol, _wbDstRow,
-                    _wbStampDoodads, _wbStampWmos, (uint)_wbMapArea, _wbStitchBand));
-        if (!continent) ImGui.EndDisabled();
-
-        ImGui.Separator();
-        ImGui.TextDisabled("World map coastline and hover highlight");
-        ImGui.SetNextItemWidth(w);
-        ImGui.InputText("Outline JSON file", _wbWorldMapOutlinePath, (uint)_wbWorldMapOutlinePath.Length);
-        if (CreatorButton("Load world-map outline")) WbLoadWorldMapOutline();
-        if (_wbWorldMapOutlineSummary.Length > 0) ImGui.TextWrapped(_wbWorldMapOutlineSummary);
-
-        ImGui.Separator();
-        if (_controller is not null)
+        ImGui.TextWrapped("Add connected terrain to an existing continent, or shape a route through your pack's land. Save records the edit; publication builds the ground and its walking paths.");
+        if (ImGui.CollapsingHeader("Add terrain to this continent"))
         {
-            var (col, row) = WorldBuilderLaw.TileOf(_controller.Position.X, _controller.Position.Y);
-            var tile = WbTileDoc(map, col, row);
-            ImGui.TextDisabled(tile is null ? $"Tile {col},{row}: not a pack tile" :
-                $"Tile {col},{row} <- {(string?)tile["sourceMap"]} {(int?)tile["sourceCol"]},{(int?)tile["sourceRow"]}, stitch {(double?)tile["stitch"] ?? 0:F0} yd");
-            if (tile is not null)
-            {
-                if (CreatorButton("Stitch this tile")) WbTileSet(map, col, row, "stitch", _wbStitchBand.ToString(CultureInfo.InvariantCulture));
-                ImGui.SetNextItemWidth(w); ImGui.InputText("Drop buildings (file names, comma)", _wbTileDrop, (uint)_wbTileDrop.Length);
-                if (CreatorButton("Drop them") && WbText(_wbTileDrop).Length > 0) WbTileSet(map, col, row, "dropWmos", WbText(_wbTileDrop));
-            }
+            WbDrawStampSource();
+            ImGui.TextWrapped($"Destination: tile {_wbDstCol}, {_wbDstRow} on the current map.");
+            ImGui.BeginDisabled(_controller is null);
+            if (CreatorButton("Place the terrain at my current tile"))
+                (_wbDstCol, _wbDstRow) = WorldBuilderLaw.TileOf(_controller!.Position.X, _controller.Position.Y);
+            ImGui.EndDisabled();
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputFloat("Blend into neighbours (yards)", ref _wbStitchBand);
+            ImGui.TextWrapped("The selection replaces those tiles while this pack is enabled. Buildings and terrain can be edited after publication.");
+            string? problem = map is not (0 or 1) ? "Connected regions are available on the Eastern Kingdoms and Kalimdor. Use Maps for separate dungeons." :
+                !float.IsFinite(_wbStitchBand) || _wbStitchBand < 0 ? "Choose a non-negative blend distance." :
+                WorldMapAuthoringLaw.StampProblem(WbText(_wbSrcMap), _wbSrcCol, _wbSrcRow, _wbSrcW, _wbSrcH, _wbDstCol, _wbDstRow);
+            if (problem is not null) ImGui.TextWrapped(problem);
+            ImGui.BeginDisabled(problem is not null || _wbOps.Count > 0);
+            if (CreatorButton("Save terrain selection"))
+                WbPost($"terrain from {WbText(_wbSrcMap)} to map {map}",
+                    WbStampItems(map, WbText(_wbSrcMap), _wbSrcCol, _wbSrcRow, _wbSrcW, _wbSrcH, _wbDstCol, _wbDstRow,
+                        _wbStampDoodads, _wbStampWmos, 0, _wbStitchBand));
+            ImGui.EndDisabled();
         }
-
-        ImGui.Separator();
-        ImGui.TextDisabled($"Carve a path ({_wbCarvePoints.Count} point(s)) - a pass, a land bridge, a road");
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("Width##wb-carve", ref _wbCarveWidth);
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputFloat("Falloff##wb-carve", ref _wbCarveFalloff);
-        if (CreatorButton("Add point here") && _controller is not null) _wbCarvePoints.Add(_controller.Position);
-        ImGui.SameLine();
-        if (CreatorButton("Clear points")) _wbCarvePoints.Clear();
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(w * 0.5f); ImGui.InputText("Path name", _wbCarveName, (uint)_wbCarveName.Length);
-        if (CreatorButton("Save path") && _wbCarvePoints.Count >= 2 && WbText(_wbCarveName).Length > 0)
+        if (ImGui.CollapsingHeader("Create a path or mountain pass", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            WbPostPath(WbText(_wbCarveName), _wbCarvePoints.ToList(), _wbCarveWidth, _wbCarveFalloff);
-            _wbMessage = "path saved - it grades the ground on the next publish (verifier G13 walks it)";
+            ImGui.TextWrapped("Walk along the intended route and add points. Their heights define the road, so place points at the height players should walk. The edges blend into the surrounding ground.");
+            ImGui.SetNextItemWidth(w); ImGui.InputText("Path name", _wbCarveName, (uint)_wbCarveName.Length);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputFloat("Path width (yards)", ref _wbCarveWidth);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputFloat("Edge blending (yards)", ref _wbCarveFalloff);
+            ImGui.TextDisabled($"{_wbCarvePoints.Count} points recorded" + (_wbCarveMap >= 0 ? $" on map {_wbCarveMap}" : ""));
+            bool sameMap = _wbCarvePoints.Count == 0 || _wbCarveMap == map;
+            if (!sameMap) ImGui.TextWrapped("Return to the path's map to add points, or clear the points to start a new path here.");
+            ImGui.BeginDisabled(_controller is null || !sameMap);
+            if (CreatorButton("Add point where I stand"))
+            {
+                _wbCarveMap = map;
+                var at = _controller!.Position;
+                if (_wbCarvePoints.Count == 0 || Vector2.Distance(new(at.X, at.Y), new(_wbCarvePoints[^1].X, _wbCarvePoints[^1].Y)) >= 0.1f)
+                    _wbCarvePoints.Add(at);
+                else _wbMessage = "Move away from the previous point before adding another.";
+            }
+            ImGui.EndDisabled();
+            ImGui.BeginDisabled(_wbCarvePoints.Count == 0);
+            if (CreatorButton("Remove last point")) _wbCarvePoints.RemoveAt(_wbCarvePoints.Count - 1);
+            if (CreatorButton("Clear path points")) _wbCarvePoints.Clear();
+            ImGui.EndDisabled();
+            string? problem = WorldMapAuthoringLaw.PathProblem(WbText(_wbCarveName), _wbCarvePoints, _wbCarveWidth, _wbCarveFalloff);
+            if (problem is not null) ImGui.TextWrapped(problem);
+            ImGui.BeginDisabled(problem is not null || !sameMap || _wbOps.Count > 0);
+            if (CreatorButton("Save path")) WbPostPath(WbText(_wbCarveName).Trim(), _wbCarvePoints.ToList(), _wbCarveWidth, _wbCarveFalloff);
+            ImGui.EndDisabled();
+        }
+        if (ImGui.CollapsingHeader("Advanced region tools"))
+        {
+            ImGui.TextWrapped("Move every piece of this pack on the current map: terrain, placements and content. One column or row is about 533 yards. Review the destination before saving.");
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Destination map", ref _wbRegionToMap, 0);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Columns to move (+east)", ref _wbRegionDCol, 0);
+            ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputInt("Rows to move (+south)", ref _wbRegionDRow, 0);
+            ImGui.BeginDisabled(_wbRegionToMap < 0 || (_wbRegionToMap == map && _wbRegionDCol == 0 && _wbRegionDRow == 0) || _wbOps.Count > 0);
+            if (CreatorButton("Move pack region")) WbRelocate(map, _wbRegionToMap, _wbRegionDCol, _wbRegionDRow);
+            ImGui.EndDisabled();
+            ImGui.Separator();
+            ImGui.TextWrapped("Import a traced coastline for the continent map's zone name and hover highlight.");
+            ImGui.SetNextItemWidth(w); ImGui.InputText("Outline JSON file", _wbWorldMapOutlinePath, (uint)_wbWorldMapOutlinePath.Length);
+            if (CreatorButton("Import world-map outline")) WbLoadWorldMapOutline();
+            if (_wbWorldMapOutlineSummary.Length > 0) ImGui.TextWrapped(_wbWorldMapOutlineSummary);
+            if (_controller is not null)
+            {
+                var (col, row) = WorldBuilderLaw.TileOf(_controller.Position.X, _controller.Position.Y);
+                var tile = WbTileDoc(map, col, row);
+                ImGui.Separator();
+                ImGui.TextWrapped(tile is null ? $"Tile {col}, {row} is not part of this pack." : $"Edit this pack's tile {col}, {row}.");
+                if (tile is not null)
+                {
+                    ImGui.SetNextItemWidth(w * 0.6f); ImGui.InputFloat("Tile edge blend (yards)", ref _wbStitchBand);
+                    ImGui.BeginDisabled(!float.IsFinite(_wbStitchBand) || _wbStitchBand < 0);
+                    if (CreatorButton("Save tile blending")) WbTileSet(map, col, row, "stitch", _wbStitchBand.ToString(CultureInfo.InvariantCulture));
+                    ImGui.EndDisabled();
+                    ImGui.SetNextItemWidth(w); ImGui.InputText("Building filenames to remove", _wbTileDrop, (uint)_wbTileDrop.Length);
+                    ImGui.TextWrapped("Separate exact source filenames with commas. This removes source buildings when the tile is rebuilt.");
+                    if (CreatorButton("Remove named source buildings") && WbText(_wbTileDrop).Length > 0) WbTileSet(map, col, row, "dropWmos", WbText(_wbTileDrop));
+                }
+            }
         }
     }
 
@@ -134,7 +167,7 @@ public sealed partial class GameLoop
     }
 
     private JsonObject? WbTileDoc(int map, int col, int row) =>
-        _wbDocs?.OfType<JsonObject>().FirstOrDefault(d => (string?)d["kind"] == "tile" && d["body"] is JsonObject b &&
+        _wbDocs?.OfType<JsonObject>().FirstOrDefault(d => (string?)d["kind"] == "tile" && (int?)d["packId"] == _wbPackId && d["body"] is JsonObject b &&
             (int?)b["map"] == map && (int?)b["col"] == col && (int?)b["row"] == row)?["body"] as JsonObject;
 
     /// <summary>Set one field of a pack tile doc: stitch (yd), dropWmos (comma names, merged), keepDoodads/keepWmos
@@ -180,6 +213,7 @@ public sealed partial class GameLoop
     /// </summary>
     private void WbPostPath(string name, IReadOnlyList<Vector3> points, float width, float falloff)
     {
+        if (WorldMapAuthoringLaw.PathProblem(name, points, width, falloff) is { } problem) { _wbMessage = problem; return; }
         var pts = new JsonArray();
         foreach (var p in points) pts.Add(new JsonArray(Math.Round(p.X, 2), Math.Round(p.Y, 2), Math.Round(p.Z, 2)));
         var body = new JsonObject { ["map"] = _config.Start.Map, ["points"] = pts, ["width"] = width, ["falloff"] = falloff };

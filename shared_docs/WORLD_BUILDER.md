@@ -71,6 +71,9 @@ Rules:
   undone_by, audit_id)` — kind ∈ sculpt, place, move, delete, map, npc, …
 - `wp_sculpt(pack_id, map_id, tile_x, tile_y, vertex_index, height_delta)` — V9 129×129 per ADT
   (`tile_x` = ADT file column = world-grid X of `{map}_{x}_{y}.adt`).
+- `wp_sculpt_surface` — the same sparse grid, applied to the finished terrain after source sculpt,
+  stitching, coast shaping and paths. New human/script strokes send `surface: true`; old requests and
+  old undo payloads retain source-layer semantics. `State.surfaceSculptSupported` gates the new client.
 - `wp_placement(id, pack_id, map_id, kind wmo|m2, model_path, pos_x, pos_y, pos_z (WORLD coords),
   rot_x, rot_y, rot_z (degrees), scale (m2 only), doodad_set, deleted)`; MODF/MDDF uniqueId =
   `7_000_000 + id`.
@@ -81,12 +84,43 @@ conversion to ADT placement space happens once, in the web app's ADT writer.
 
 ## 4. Client (Creator Mode → World Builder)
 
-- Panel `CreatorPanel.World` with sections: Packs, Sculpt, Place, Placements, Publish.
+- Panel `CreatorPanel.World` has task pages: Terrain, Buildings, NPCs, Quests, Publish and More.
+  The pack selector, active action and save status stay above the scrollable form.
 - Sculpt: raise/lower/smooth/flatten brushes on the V9 grid; the live preview mutates the cached
   ADT heights, rebuilds that tile's mesh and height grid; strokes are sent as ops on mouse-up.
-- Place: WMO/M2 catalogue from the MPQ listfiles; ghost via `AddDynamic`; click to place; gizmo
-  move/rotate; the placement list with delete; Ctrl+Z = server undo of the last own op.
+- Place: WMO/M2 catalogue from the MPQ listfiles; ghost via `AddDynamic`; click to place/move,
+  explicit rotation/height/scale fields and remove; Ctrl+Z = server undo of the last pack op.
 - Publish: POST, poll status, download `patch-7.MPQ` into `GameData\Data`, hot-mount.
+
+### Human workflow
+
+Open **Creator Mode → World**. Choose a pack at the top, or use **Packs...** to create one.
+Pack drafts are separate from the running world. The pack's Enabled setting chooses whether it is included
+in the next server-wide publish; disabling it also needs a publish to restore the previous world.
+
+| Task | How to use it |
+|---|---|
+| Terrain | Choose Raise, Lower, Smooth or Flatten, then **Start sculpting**. Drag on the ground; releasing saves one stroke. Shift reverses Raise/Lower; brackets resize the brush. Flatten takes the starting height. The readiness message explains missing terrain or server support. |
+| Buildings | Search for a model, select it and choose **Place selected model**. Click the ground; brackets rotate the preview. **Edit placed objects** opens the selected object's move, height, heading, scale and remove controls. Save fields explicitly. |
+| Existing town NPC | Open **NPCs** and click its visible model, or use **Find / change NPC**. Edit name/title, appearance, services or equipment/greeting. **Save this NPC in pack** makes a version for that spawn only; later **Save NPC changes** edits that same version. The stock shared template stays intact. |
+| New NPC / placer | **New NPC**, name/look/roles, then **Create NPC**. **Also place it where I stand** is optional. Under **Place NPCs**, select a pack NPC and Single NPC, Linked group or Patrol route. Choose **Start placing** (or **Start route** for patrols), then click ground. A patrol needs at least two points and **Save patrol**. |
+| Quests | Select or create a quest; fill Story and level, Quest giver and return, Objectives and optional Rewards/chain. Pick NPCs/items by name. Save, read the quest's check results and reopen it to continue editing. Unsaved quest drafts survive switching quests/packs within the session. |
+| Publish | Save open forms, check the listed enabled packs, choose **1. Check drafts**, then **2. Publish enabled packs**. After success choose **3. Download build** to update this client's terrain and collision. |
+| Larger areas | **More** contains Maps and dungeons, Regions and paths, Check world content and Pack data. Region relocation moves paths and continent outlines with the terrain; regions containing NPC patrol routes currently refuse relocation explicitly. |
+
+**Escape cancels the active tool before opening the menu**, including while a model search has focus.
+An unfinished stroke or patrol route is discarded; already saved edits remain. **Ctrl+Z** and the Undo buttons
+reverse the selected pack's last saved operation, including an edit from another task page. Text-field Undo remains
+with the text field. Cancelling an object move leaves its saved position intact.
+
+NPC previews show static spawn positions, not live movement. Use **NPC view options → Refresh nearby NPCs**
+after moving to another area. Stock NPCs with scripts, custom AI names, EventAI or original-entry quest objectives can be inspected
+but cannot yet be imported; the form explains why. Imported stock spawns keep their original pose and route;
+authored pack spawns can be moved. Other entry-sensitive server systems may need separate compatibility work.
+Selecting another NPC, New NPC or another pack discards unsaved NPC form edits; a failed save retains the draft.
+An NPC with a saved version in another pack must be edited in that pack, even when that pack is disabled.
+The message names the pack to choose in the selector. A rejected selection keeps the previous form visible;
+check the form's NPC name before saving.
 
 ## 5. Content packs beyond terrain (Phase 2)
 
@@ -120,10 +154,28 @@ land connection. Coastal source props and abandoned terrain holes are removed, e
 from the destination baseline, and untouched baseline surfaces keep their original normals. The graded access
 path is applied afterward. Only the declared tiles participate; the polygon is pack data, not client gameplay code.
 
-**The safety law:** a pack only ADDS rows in reserved ranges — templates, quests, texts, loot, gossip
+**The safety law:** ordinary `dbrow:` documents only ADD rows in reserved ranges — templates, quests, texts, loot, gossip
 7,000,000+; spawn guids 1,500,000-7,999,999 (vanilla spawn guids are 24-bit; mangosd starts its runtime counter above the highest DB guid and SHUTS DOWN when it overflows - 70,000,000 did exactly that on 2026-09-26); map ids 800+; area and area-trigger ids 7,000+ (AreaTable
-explore bits 1100+, the stock max is 1076). It never edits a stock row, so disabling a pack is a plain
-delete and cannot damage vanilla data (`WorldPackContent.Tables` holds the key columns + floors).
+explore bits 1100+, the stock max is 1076). These documents never overwrite a stock row
+(`WorldPackContent.Tables` holds the key columns + floors).
+
+**Existing NPC editing (owner request, 2026-09-28):** a separate `npc-replacement` document may redirect
+one existing stock spawn to a reserved template owned by that pack. The template and its editable services
+are copied; the original shared template is untouched. `wp_npc_baseline` durably records the original,
+observed and pending entries before the world spawn changes. The update compares the observed entry,
+refuses an outside edit, and is recoverable across interrupted publishes. Disable or remove the document
+and publish to restore the original entry before deleting the pack template. Two enabled packs cannot
+replace the same spawn. Reserved NPCs may retain links to positive stock quest IDs; relationships between
+two stock IDs remain outside ordinary pack ownership. All authoring still goes through audited, undoable
+Content operations. Read-only nearby/detail endpoints supply offline Creator previews and forms.
+
+**Human editor contract (2026-09-28):** World has task pages for Terrain, Buildings, NPCs, Quests, Publish
+and additional map/region/check tools. The chosen pack, active action and save feedback stay visible.
+Escape cancels the current world-editing action before the menu; cancelling an unfinished stroke restores
+its preview, while Undo reverses an already saved operation. New strokes must affect the final rendered
+terrain after generation, including shaped coasts and paths. Saving NPC, quest and object forms is explicit;
+publishing is a separate server-wide action. Offline NPCs must be visible and selectable without a live
+server session, including existing town vendors. A form must preserve data it does not expose.
 
 Client tools (World panel sections): **NPC Creator** (look from any creature, name/title, level,
 faction, rank, role flags incl. vendor/trainer/innkeeper/repair/banker, vendor list, trainer spell
@@ -608,6 +660,42 @@ Lessons that created checks (2026-09-26, Gilneas build #7):
   Evidence: `scratch/worldbuilder/build37-{status,verify}.json`, `logs/mapfix-tier2-build37.log`,
   `logs/dock-recheck-build37.log`, `dock-forward-build37.png`, `dock-return-build37.png`, `gilneas-hover-build37.png`,
   `dock-bevel-fit-plan.json` and `dock-bevel-fit-apply-journal.json`.
+
+- 2026-09-28 (human editor pass): **World Builder now has task pages and explicit editing actions.** The pack,
+  active tool and save feedback stay visible; Terrain, Buildings, NPCs, Quests and Publish replace the long
+  stack of unrelated open sections. More holds maps, regions, checks and raw pack data. The window migrates an
+  old undersized layout once and respects later resizing. Numeric fields show their values without cramped
+  step buttons; object names are readable, with full model paths available as tooltips.
+  Escape cancels tools even from a focused search field; unsaved strokes and patrols disappear, object moves
+  leave the saved pose intact, and Ctrl+Z works after cancelling. Undo labels explicitly say "last pack edit".
+  Sculpt now loads its published baseline without visiting Publish, starts on the first click, picks terrain
+  rather than roofs, waits for every required tile, and rolls back failed saves. A separate final-surface layer
+  preserves human strokes after coastline/path generation; legacy source-layer operations keep their meaning.
+  Empty-layer output matches 31 build37 ADTs byte-for-byte, and a brush proof matches 67 outer and 76 inner
+  vertices within 0.00000114yd. A real pointer-created stroke stayed at 9.50068yd after build38 download.
+  Offline NPCs are visible and selectable. Editing a supported stock NPC clones its full template/services
+  into a pack and redirects only the selected spawn at publication, with durable restore ownership. Shared
+  vendor/trainer lists, equipment, hidden fields, stock quest links and gossip are preserved. Scripted/AI and
+  original-entry quest-objective NPCs explain their current import limits. Pack NPC edits keep their ID.
+  Quest editing preserves hidden data, supports named choices and multiple objectives/givers, validates the
+  draft, and retains unsaved per-quest/per-pack work. The human QA reopened and edited the same quest ID.
+  Maps use neutral defaults and allocated IDs; region relocation carries paths and world-map polygons and
+  refuses unsupported patrol relocation before making changes.
+  The temporary human-tools-qa pack passed build38 with 0 verifier errors and 6 existing warnings. Final
+  pointer-driven editor QA passed; the live vendor run passed 40 steps with 0 failures, showing the renamed
+  Godric at GUID79952 with all eight original shop items. Published comparison passed 29/29: stock template
+  and other packs unchanged, only that spawn redirected. Gilnwar returned alive and grounded to Duskhaven,
+  GM/input off; no party operations or purchases. Earlier exploratory camera/scroll failures remain in their
+  logs and are not counted as clean runs. Pack 4 was then disabled and build #39 restored the original world
+  (0 errors, 6 existing warnings). Restoration comparison passed 23/23; the client remounted #39 and measured
+  the original 6.99955 yd terrain height. Lower, Smooth and Flatten changed preview terrain in the expected
+  direction and cancelled exactly, leaving saved terrain unchanged. Smooth's tile-edge neighbor sampling was
+  corrected and a planar-slope regression added. Final numeric-field layout was visually checked in the client.
+  Source validation: web WorldPack/GradedPath 121 tests, NPC authoring 19 checks, WorldBuilder/ImGui/shared-docs
+  checks and normal Debug/Release builds. Usage and current limits are in §4. No commits or pushes.
+  Evidence: `scratch/worldbuilder/logs/human-tools-{initial,round2,round3,round4,vendor-published}.log`,
+  `build38-human-status.json`, `surface-{zero,stroke}-proof-comparison.json`, and `npc-roundtrip/*-report.json`.
+  **The continent highlight's bright border is still pending the owner's requested subtle-fill refinement.**
 
 ## 9. Building a zone — the playbook (humans AND agents)
 

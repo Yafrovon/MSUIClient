@@ -141,6 +141,7 @@ public sealed class M2Animator
     }
 
     private readonly M2Model _m2;
+    private readonly HandGripPose _handGripPose;
     private readonly int _boneCount;
 
     private readonly short[] _parent;
@@ -259,6 +260,7 @@ public sealed class M2Animator
     private M2Animator(M2Model m2)
     {
         _m2 = m2;
+        _handGripPose = new HandGripPose(m2);
         _boneCount = m2.Bones.Count;
 
         _parent = new short[_boneCount];
@@ -700,8 +702,9 @@ public sealed class M2Animator
     /// cheapest possible way to separate a placement problem from an animation
     /// problem.
     /// </summary>
-    public void Evaluate(Clip? clip, float timeSeconds, float globalTimeSeconds, Matrix4x4[] skin)
-        => Evaluate(clip, timeSeconds, null, 0f, 0f, globalTimeSeconds, skin);
+    public void Evaluate(Clip? clip, float timeSeconds, float globalTimeSeconds, Matrix4x4[] skin,
+                         HandGrip closedHands = HandGrip.None)
+        => Evaluate(clip, timeSeconds, null, 0f, 0f, globalTimeSeconds, skin, closedHands);
 
     /// <summary>
     /// The same, cross-fading OUT of <paramref name="previous"/>.
@@ -727,9 +730,10 @@ public sealed class M2Animator
     /// </summary>
     public void Evaluate(Clip? clip, float timeSeconds,
                          Clip? previous, float previousTimeSeconds, float previousWeight,
-                         float globalTimeSeconds, Matrix4x4[] skin)
+                         float globalTimeSeconds, Matrix4x4[] skin, HandGrip closedHands = HandGrip.None)
         => EvaluateWithArmOverlays(clip, timeSeconds, previous, previousTimeSeconds,
-            previousWeight, null, 0f, null, 0f, null, 0f, globalTimeSeconds, skin);
+            previousWeight, null, 0f, null, 0f, null, 0f, globalTimeSeconds, skin,
+            closedHands: closedHands);
 
     /// <summary>
     /// Evaluate the live base pose and replace only keyed channels inside the requested arm
@@ -762,7 +766,7 @@ public sealed class M2Animator
                          float globalTimeSeconds, Matrix4x4[] skin,
                          Clip? reactionOverlay = null, float reactionOverlayTime = 0f,
                          float reactionWeight = 0f, bool reactionMasked = true,
-                         float torsoOverlayWeight = 1f)
+                         float torsoOverlayWeight = 1f, HandGrip closedHands = HandGrip.None)
     {
         if (skin.Length < _boneCount)
             throw new ArgumentException($"skin array holds {skin.Length}, need {_boneCount}", nameof(skin));
@@ -866,6 +870,9 @@ public sealed class M2Animator
                 if (TrySampleGlobal(bone.Scale, globalTimeSeconds, out Vector3 globalScale))
                     scale = globalScale;
             }
+
+            // A held item curls only its hand's fingers over the final live pose.
+            _handGripPose.Apply(i, closedHands, ref rotation);
 
             var local = Matrix4x4.CreateScale(scale)
                       * Matrix4x4.CreateFromQuaternion(rotation)
@@ -1240,6 +1247,7 @@ public sealed class M2Animator
         11 => "ShuffleLeft",
         12 => "ShuffleRight",
         13 => "WalkBackwards",
+        15 => "HandsClosed",
         16 => "AttackUnarmed",
         17 => "Attack1H",
         18 => "Attack2H",

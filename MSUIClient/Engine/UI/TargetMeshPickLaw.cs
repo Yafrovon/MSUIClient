@@ -106,7 +106,8 @@ public static class TargetMeshPickLaw
         return (toCenter - direction * along).LengthSquared() <= radius * radius;
     }
 
-    private static void SkinVertex(in M2Vertex vertex, IReadOnlyList<Matrix4x4>? skin,
+    /// <summary>Shared CPU mirror of the native shader, also used by opt-in equipment geometry evidence.</summary>
+    public static void SkinVertex(in M2Vertex vertex, IReadOnlyList<Matrix4x4>? skin,
         out Vector3 point, out Vector3 normal)
     {
         Vector3 basePoint = new(vertex.PosX, vertex.PosY, vertex.PosZ);

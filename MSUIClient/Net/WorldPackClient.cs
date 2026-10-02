@@ -22,6 +22,12 @@ public sealed class WorldPackClient
 
     public string Operator { get; set; } = Environment.MachineName;
 
+    public Task<string> NpcsNearAsync(string baseUrl, int mapId, float x, float y, float radius = 180f) =>
+        _http.GetStringAsync(U(baseUrl, FormattableString.Invariant($"NpcsNear?mapId={mapId}&x={x}&y={y}&radius={radius}")));
+
+    public Task<string> NpcAsync(string baseUrl, uint entry) =>
+        _http.GetStringAsync(U(baseUrl, $"Npc?entry={entry}"));
+
     // ── DTOs (camelCase on the wire) ─────────────────────────────────────────
 
     public sealed class Pack
@@ -76,6 +82,7 @@ public sealed class WorldPackClient
         public string? Error { get; set; }
         public int MapId { get; set; }
         public List<Pack> Packs { get; set; } = new();
+        public bool SurfaceSculptSupported { get; set; }
         public List<Placement> Placements { get; set; } = new();
         public List<SculptTile> Sculpt { get; set; } = new();
         public List<SculptTile> PublishedSculpt { get; set; } = new();
@@ -150,7 +157,7 @@ public sealed class WorldPackClient
         PostAsync(baseUrl, "SetEnabled", new { packId, enabled, @operator = Operator });
 
     public Task<Reply> SculptAsync(string baseUrl, int packId, int mapId, string label, IEnumerable<SculptTile> tiles) =>
-        PostAsync(baseUrl, "Sculpt", new { packId, mapId, label, tiles, @operator = Operator });
+        PostAsync(baseUrl, "Sculpt", new { packId, mapId, label, tiles, surface = true, @operator = Operator });
 
     public Task<Reply> PlaceAsync(string baseUrl, int packId, Placement p) =>
         PostAsync(baseUrl, "Place", new

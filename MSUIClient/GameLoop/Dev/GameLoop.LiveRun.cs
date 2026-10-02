@@ -951,6 +951,7 @@ public sealed partial class GameLoop
                 case "pet-gesture": Log(RunLivePetGesture(line), line); break;
                 case "pvp-state": Log(RunLivePvpState(line), line); break;
                 case "pose": Log(RunLivePose(line), line); break;
+                case "equipment": Log(InspectLiveEquipment(line), line); break;
                 case "unit-state": Log(InspectLiveUnitState(line), line); break;
                 case "combat-text": Log(InspectLiveCombatText(line), line); break;
                 case "audit-mail": Log(RunLiveMailAudit(line), line); break;

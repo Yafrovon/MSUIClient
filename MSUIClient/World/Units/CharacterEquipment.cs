@@ -87,6 +87,7 @@ public sealed class CharacterEquipment
 
     private readonly List<Piece> _pieces = [];
     public IReadOnlyList<Piece> Pieces => _pieces;
+    internal List<(int Region, string Declared, string? Resolved)> InspectionBodyTextures { get; } = [];
 
     public void Clear() => _pieces.Clear();
 
@@ -186,7 +187,7 @@ public sealed class CharacterEquipment
     ///
     /// Returns a new BGRA buffer; the base is not modified.
     /// </summary>
-    public byte[] Composite(byte[] baseSkin, int width, int height, Func<string, (byte[] bgra, int w, int h)?> load)
+    public byte[] Composite(byte[] baseSkin, int width, int height, Func<string, (byte[] bgra, int w, int h)?> load, bool bareFeet)
     {
         var canvas = (byte[])baseSkin.Clone();
 
@@ -205,6 +206,9 @@ public sealed class CharacterEquipment
 
             for (int slot = 0; slot < SlotRegions.Length; slot++)
             {
+                // ChrRaces bare-foot bodies retain the skin/hoof atlas region. Boot cuffs
+                // still paint LegLower (slot 6); only FootTexture (slot 7) is suppressed.
+                if (bareFeet && slot == 7) continue;
                 string partial = piece.Row.BodyTextures[slot];
                 if (partial.Length == 0) continue;
 
@@ -296,11 +300,13 @@ public sealed class CharacterEquipment
             if (_reportedConvention.Add(folder))
                 Console.WriteLine($"[equip] {folder} resolves as: {candidate}");
 
+            InspectionBodyTextures.Add((slot, partial, candidate));
             _textureCache[key] = image;
             return image;
         }
 
         Console.WriteLine($"[equip] slot {slot} texture '{partial}' not found - tried: {string.Join("  ", candidates)}");
+        InspectionBodyTextures.Add((slot, partial, null));
         _textureCache[key] = null;
         return null;
     }

@@ -306,7 +306,14 @@ public static partial class Program
                 MSUIClient.Engine.UI.FontObjectLaw.DefaultBakePairs());
         }
 
-        using var window = new ClientWindow(config, background: liveRun?.Background == true)
+        if (variantBatch?.Axis == "equipment")
+        {
+            config.Server.Enabled = false;
+            config.Server.AutoConnect = false;
+            config.Window.VSync = false;
+        }
+
+        using var window = new ClientWindow(config, background: liveRun?.Background == true || variantBatch?.Axis == "equipment")
         {
             UiFontPath = uiFontPath,
             UiFontSize = MSUIClient.Engine.UI.UiFont.SizeFor(config.Window.UiScale),
@@ -682,7 +689,7 @@ public sealed partial class GameLoop : IDisposable
         _variantBatchOptions = variantBatch;
         _movementSuiteOptions = movementSuite;
         _liveRunOptions = liveRun;
-        if (liveRun is not null)
+        if (liveRun is not null || WbScriptPath is not null)
             window.GuiInputFactory = input => LiveGuiInputProxy.Wrap(input,
                 () => _liveGuiPointer ?? new Vector2(-1000, -1000), () => _liveGuiDown,
                 () => _liveGuiRightDown);

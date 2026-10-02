@@ -1,6 +1,45 @@
-# World Builder / Gilneas - handoff (updated 2026-09-28: map/terrain fix accepted on build #37)
+# World Builder / Gilneas - handoff (updated 2026-09-28: human editor pass)
 
-**The continent map AND actual terrain correction are published and verified. Dungeon work remains deferred.**
+**Human editor pass verified.** World now has task navigation, explicit start/cancel, corrected sculpt persistence,
+visible/selectable offline NPCs, scoped editing of existing stock spawns, and data-preserving NPC/quest forms.
+Usage and current import limits are in WORLD_BUILDER.md §4. Dungeon work remains deferred.
+
+**Current publication is build #39: 0 verifier errors, 6 existing warnings.** The temporary `human-tools-qa`
+pack (ID 4) is disabled. Original packs 1-3 remain enabled and unchanged. Build #38 published a real mouse-created
+stroke, a Godric vendor edit and a quest; build #39 restored the original world. The test draft remains available
+for evidence and is not active content. Placement 16 and extra NPC spawn 1500155 were removed/undone; no patrol
+was saved. Do not enable this QA pack as part of ordinary release work.
+
+- Sculpt stayed exactly 9.50068 yd after build #38 download and returned to 6.99955 yd on mounted build #39. Lower,
+  Smooth and Flatten then changed real preview terrain in the expected direction; Escape while holding the
+  mouse restored every sample exactly and left saved terrain unchanged. Smooth now samples across tile edges;
+  a planar-slope edge/corner regression guards against introducing creases.
+- Live vendor protocol: 40 steps, 0 failures. Godric's original spawn 79952 used clone 7000313 with the edited name
+  and all 8 original shop items; Escape closed the merchant without opening the menu. Published data comparison
+  passed 29/29. Restoration passed 23/23: exact original spawn/template/equipment/services, clone absent from
+  live data, disabled draft retained and every other pack unchanged.
+- Actual pointer QA covered placement, move cancellation, Undo/removal, NPC selection/edit/reopen, NPC placement
+  and Undo, patrol cancellation, quest creation/reopen/edit, checks/publication/download. Round4 and final brush
+  assertions pass. The optional final NPC probe expected stock1213 while pack3 was selected and hit the intended
+  ownership guard for the retained pack4 draft; this is not counted as a passing assertion. Guidance now names
+  the owning pack and its draft-only state. Earlier exploratory camera/scroll failures remain in their logs.
+  The corrected ownership probe passed with zero failures: explicit selection of the named pack reopened
+  clone 7000313, and obsolete guidance cleared. Log: `logs/human-tools-npc-ownership-final.log`.
+
+Normal Debug/Release outputs include the final Smooth correction and readable numeric fields. WorldBuilder,
+ImGui policy and shared-docs checks pass; web WorldPack/GradedPath 121 tests and NPC authoring 19 checks pass.
+The empty surface layer reproduces 31 ADTs byte-for-byte; the brush proof matches 67 outer and 76 inner vertices
+within 0.00000114 yd. Evidence under `scratch/worldbuilder/`: `build{38,39}-human-status.json`,
+`logs/human-tools-{round4,final,vendor-published}.log`, `surface-{zero,stroke}-proof-comparison.json`, and
+`npc-roundtrip/*-report.json`. Build #39 mounted SHA1: `7997afbb08acc40dde83ae5069c91d15f3418568`.
+
+Final World Builder web deploy was 01:42:35 local, backup `auto-20260928T014203`, including the stock quest-objective
+import guard. The concurrent Forge task owns patch-4 and its subsequent deployments; preserve its work and
+coordinate client use/restarts with task `01a0e651-7324-77d2-9882-88ae61adcfa1`. Patch-4 remained unchanged during
+this round. No commits, pushes, branches, direct SQL writes or worldstate restores were performed.
+All World Builder QA clients exited normally with injected input released. No WorldPack build is running.
+
+**Previous completed work: the continent map and actual terrain correction were published and verified on #37.**
 Gilneas now fits Blizzard's painted peninsula below Silverpine, with the continent art intact, an open bay,
 and its own real hover glow/name. Towns/camps moved with the land and the fixed Greymane entrance is walkable.
 **Build #37: 0 verifier errors, 6 existing warnings. Final live run: 96 steps, 0 failures.**
@@ -41,7 +80,7 @@ building a zone). History lives there, not here.
 | Dungeon | **Deferred.** Greymane Fortress (map 801), its existing party and encounter content are outside the current map test | historical SuperUI run: 11/11 pulls, all three bosses, 0 deaths |
 | Holes | Obsolete coastal holes healed; no Gilneas walk-off failures in actual client collision | 111 targets checked; focused six-target recheck after harbor NPC correction; only existing Northshire warning remains |
 | Minimaps | Regenerated from final ground/water; zone mosaic draws 35 tiles and was visually reviewed | build #37 G11 + live mosaic; inherited stock stripe/dark-water art is noted below |
-| **Continent world map** | **Verified live.** Painted continent preserved; Gilneas glows and its name appears on hover; bay stays open | G16; 25 ownership/name/GL-highlight probes pass; final `scratch/worldbuilder/gilneas-hover-build37.png` |
+| **Continent world map** | **Function verified live; visual refinement requested.** Painted continent preserved; hover/name work and bay stays open. Owner wants a subtle filled highlight without the bright border; that styling is still pending. | G16; 25 ownership/name/GL-highlight probes pass; final `scratch/worldbuilder/gilneas-hover-build37.png` |
 | Authoring data | Nine migration requests, NPC correction 139, dock Moves 140/141 and final ramp Move 142 succeeded through audited APIs | frozen `map-fit-plan*`, `dock-fit*`, `dock-bevel-fit*` plans/journals; final `docs-build37.json` / `state-build37.json`; never replay the original migration |
 | Publish | **Build #37 succeeded: 0 errors, 6 existing placement warnings.** G9 36 tiles / 0 cracks / 0 normal drift; G17 883,498 terrain samples and 308,772 exterior water cells / 0 failures; all 72 overworld combatants walkable | `scratch/worldbuilder/build37-status.json`, `build37-verify.json`; client SHA1 `feaaea5693f748f0c92664d9f6153385f59b24c5` |
 

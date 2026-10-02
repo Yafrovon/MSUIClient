@@ -41,6 +41,7 @@ public sealed class PlayerRenderer : IDisposable
     private Shader? _shader;
     private ItemDisplayTable? _itemDisplay;
     private CharSectionsTable? _charSections;
+    private RaceAppearanceTable? _raceAppearance;
     private CharacterGeosets? _geosets;
     private AttachedItemRenderer? _attachedItems;
 
@@ -167,6 +168,7 @@ public sealed class PlayerRenderer : IDisposable
             _itemDisplay = idBytes is null ? null : ItemDisplayTable.Parse(idBytes);
             var sectionBytes = mpq.ReadFile(CharSectionsTable.MpqPath);
             _charSections = sectionBytes is null ? null : CharSectionsTable.Parse(sectionBytes);
+            _raceAppearance = RaceAppearanceTable.Parse(mpq.ReadFile(RaceAppearanceTable.MpqPath));
             var hairBytes = mpq.ReadFile(CharHairGeosetsTable.MpqPath);
             var facialBytes = mpq.ReadFile(CharacterFacialHairTable.MpqPath);
             var helmBytes = mpq.ReadFile(HelmetGeosetVisTable.MpqPath);
@@ -286,7 +288,9 @@ public sealed class PlayerRenderer : IDisposable
             int boneCount = 0;
             if (wantAnimate)
             {
-                boneCount = AnimateUnit(e, model, dt);
+                boneCount = AnimateUnit(e, model, dt, _attachedItems?.Enabled == true
+                    ? AttachedItemRenderer.ResolveHandGrip(model.Source, appearance.Mounts, e.Fields.SheathState)
+                    : HandGrip.None);
                 if (boneCount > 0)
                 {
                     M2Animator.Pack(_skin, boneCount, _packed);
@@ -339,7 +343,7 @@ public sealed class PlayerRenderer : IDisposable
 
     // ── animation ────────────────────────────────────────────────────────────
 
-    private int AnimateUnit(WorldEntity e, LoadedModel model, float dt)
+    private int AnimateUnit(WorldEntity e, LoadedModel model, float dt, HandGrip closedHands)
     {
         string unit = $"player:{e.Guid:X16}";
         if (!_animTime.TryGetValue(e.Guid, out float at)) at = InitialPhase(e.Guid);
@@ -380,7 +384,9 @@ public sealed class PlayerRenderer : IDisposable
 
         if (clip is null) return 0;
         int boneCount = Math.Min(model.BoneCount, M2Animator.MaxBones);
-        model.Animator!.Evaluate(clip, at, _globalTime, _skin);
+        closedHands = HandGripLaw.ForPresentedAnimation(closedHands, clip.AnimationId,
+            AnimationDataCatalog.WeaponFlagsFor(_config.ClientDataPath), e.Fields.SheathState);
+        model.Animator!.Evaluate(clip, at, _globalTime, _skin, closedHands);
         return boneCount;
     }
 
@@ -944,6 +950,7 @@ public sealed class PlayerRenderer : IDisposable
 
         // Hair (type 6) texture and the cloak's cape (type 2) texture.
         PreparedTexture? hairTex = BuildHairTexture(race, gender, hairStyle, hairColor);
+        PreparedTexture? skinExtraTex = BuildSkinExtraTexture(race, gender, skin);
         PreparedTexture? capeTex = BuildCapeTexture(equipment, gender);
 
         // Geosets.
@@ -975,11 +982,12 @@ public sealed class PlayerRenderer : IDisposable
                 1 => atlas,                                   // CHAR_SKIN body/face -> dressed atlas
                 2 => capeTex,                                 // OBJECT_SKIN -> the cloak's cape texture
                 6 => hairTex,                                 // CHAR_HAIR
+                8 => skinExtraTex,                            // uncomposited Skin.Texture2
                 _ when embedded.Length > 0 => LoadPrepared(embedded),
                 _ => null,
             };
             if (tex is not null) carried = tex;
-            else tex = carried;
+            else if (type != 8) tex = carried;
             prep.BatchTextures.Add(tex);
         }
         return prep;
@@ -1047,7 +1055,7 @@ public sealed class PlayerRenderer : IDisposable
         byte[] dressed;
         try
         {
-            dressed = equipment.Composite(atlas, w, h, LoadForComposite);
+            dressed = equipment.Composite(atlas, w, h, LoadForComposite, _raceAppearance?.HasBareFeet(race) == true);
         }
         catch (Exception ex)
         {
@@ -1068,6 +1076,15 @@ public sealed class PlayerRenderer : IDisposable
         if (bytes is null) return null;
         try { byte[] px = BlpDecoder.GetPixels(bytes, 0, out int w, out int h); return (px, w, h); }
         catch { return null; }
+    }
+
+    private PreparedTexture? BuildSkinExtraTexture(byte race, byte gender, byte skin)
+    {
+        string declared = _charSections?.SkinExtraTexture(race, gender, skin) ?? "";
+        if (declared.Length == 0) return null;
+        foreach (string candidate in CharacterTextureCandidates(declared, race, gender))
+            if (LoadPrepared(candidate) is { } texture) return texture;
+        return null;
     }
 
     private PreparedTexture? BuildHairTexture(byte race, byte gender, byte hairStyle, byte hairColor)
