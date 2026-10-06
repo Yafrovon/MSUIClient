@@ -1747,6 +1747,7 @@ public sealed partial class GameLoop : IDisposable
         UpdateHudEditInput(typing);
         UpdateAutorunBinding(typing);
         UpdateStandStateBinding(typing);
+        UpdateKartItemBinding(typing);
         UpdateFollowTargetBinding(typing);
         UpdateChatBindings(typing);
         UpdateCameraZoomBindings(typing);

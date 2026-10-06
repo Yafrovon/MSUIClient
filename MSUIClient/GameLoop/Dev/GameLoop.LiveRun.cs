@@ -233,6 +233,7 @@ public sealed partial class GameLoop
             else if (now >= _liveCreateDeadline) { Log(false, _liveCreateLine + " timeout"); _liveCreateDeadline = 0; _liveStep++; }
             else return;
         }
+        if (AdvanceLiveDrive(now)) return;   // WoW Karting drive / drive-through (GameLoop.LiveRun.Karting.cs)
         if (_liveWalkTarget is { } walkTo && _controller is not null)
         {
             var here = new Vector2(_controller.Position.X, _controller.Position.Y);
@@ -454,6 +455,15 @@ public sealed partial class GameLoop
                     break;
                 }
                 case "wait-grounded": _liveWaitGroundedUntil = now + double.Parse(p[1], CultureInfo.InvariantCulture); return;
+                case "kart-assert": LiveKartAssert(line); break;
+                case "drive": StartLiveDrive(line, through: false, now); return;
+                case "drive-through": StartLiveDrive(line, through: true, now); return;
+                // record-crossings <name>: frame bursts (1.5 s before, 6 s after) around every portal crossing
+                // and world switch, dumps/frames/<name>-NN-<why>/ (GameLoop.FrameRecorder.cs).
+                case "roof-scan": LiveRoofScan(line); break;
+                // record-now <why>: start a frame burst here (needs record-crossings armed first).
+                case "record-now": NoteFrameRecorderEvent(p.Length > 1 ? p[1] : "manual"); Log(true, line); break;
+                case "record-crossings": StartFrameRecorder(p.Length > 1 ? p[1] : "run"); Log(true, line); break;
                 // char-create <name> <race> <class> <gender>: create a character on this account from the character
                 // select screen (run with --character-select) through the same CMSG_CHAR_CREATE the glue screen sends.
                 case "char-create":

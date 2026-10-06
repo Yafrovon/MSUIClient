@@ -214,6 +214,7 @@ public sealed partial class GameLoop
             DrawPlayerPowerBars();
             DrawSwingTimer();
             DrawThreatMeter();
+            DrawKartingHud();
             DrawTargetFrame();
             DrawPetFrameAndActionBar();
             DrawStanceBar();

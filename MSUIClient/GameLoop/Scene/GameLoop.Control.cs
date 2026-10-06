@@ -327,6 +327,7 @@ public sealed partial class GameLoop
         ResetPartyGiverQuests();
         ResetPartyLead();
         ResetThreatMeter();
+        ResetKarting();
         ResetCompanions();
         ResetPartyQuestActs();
         PurgeSuiSnapshot();

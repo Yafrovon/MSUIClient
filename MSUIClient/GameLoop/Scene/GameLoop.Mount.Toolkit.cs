@@ -59,7 +59,12 @@ public sealed partial class GameLoop
         GameSettings.MountTuneSetting? tune = FindMountTune(displayId);
         float rate = MathF.Max(0.05f, Settings.Mounts.AnimationRate);
         if (tune is null)
-            return MountTuning.Neutral with { AnimationRate = rate };
+            return MountTuning.Neutral with
+            {
+                AnimationRate = rate,
+                MountOffset = BakedMountOriginCorrection(displayId),
+                HiddenSubmeshes = BuiltInDriverSubmeshes(displayId),
+            };
 
         return new MountTuning(
             SeatOffset: new Vector3(tune.SeatForward, tune.SeatUp, tune.SeatRight),
@@ -67,7 +72,50 @@ public sealed partial class GameLoop
             RiderScale: tune.RiderScale,
             MountOffset: new Vector3(tune.MountForward, tune.MountUp, tune.MountRight),
             MountScale: tune.MountScale,
-            AnimationRate: rate);
+            AnimationRate: rate,
+            HiddenSubmeshes: BuiltInDriverSubmeshes(displayId));
+    }
+
+    /// <summary>
+    /// The NPC driver modelled into a vehicle steed, hidden so the rider IS the driver (WoW Karting:
+    /// the Mirage Raceway cars as real mounts). Submesh indices of each model's view 0, read from the
+    /// archives (GoblinRocketCar.m2: submesh 2 is the 770-vertex goblin at the seat; GnomeRocketCar.m2:
+    /// submesh 4 is the gnome body and 5-10 its hair/ear/beard geosets 1301/702/701/1/401/1501).
+    /// </summary>
+    private static readonly Dictionary<int, HashSet<int>> BuiltInDrivers = new()
+    {
+        [10318] = [2],
+        [2490] = [4, 5, 6, 7, 8, 9, 10],
+    };
+
+    private static IReadOnlySet<int>? BuiltInDriverSubmeshes(int displayId) =>
+        BuiltInDrivers.TryGetValue(displayId, out HashSet<int>? hidden) ? hidden : null;
+
+    /// <summary>
+    /// The per-display offset table SYSTEM_MOUNTS.md §7 asks for, applied when the user has no tune
+    /// of their own. The Mirage Raceway rocket cars bake a constant root-bone translation into every
+    /// sequence (GoblinRocketCar: (-3.16, 0, 0.89)), so as real mounts (WoW Karting,
+    /// shared_docs/WOW_KARTING.md) they would draw yards away from every rider - the player, other
+    /// players and racing bots alike. Only these displays are corrected, and by the model's OWN
+    /// measured root translation (the toolkit's "Cancel baked offset", horizontal part only), not by a constant: the two
+    /// cars are authored differently (a shared constant put the gnome car beside its rider).
+    /// </summary>
+    private static readonly HashSet<int> BakedOriginMountDisplays = [10318, 2490];   // Goblin / Gnome Rocket Car
+    private readonly Dictionary<int, Vector3> _bakedOriginCorrections = new();
+
+    private Vector3 BakedMountOriginCorrection(int displayId)
+    {
+        if (!BakedOriginMountDisplays.Contains(displayId)) return Vector3.Zero;
+        if (_bakedOriginCorrections.TryGetValue(displayId, out Vector3 known)) return known;
+        // Measurable once the model is resident; until then (a frame or two) draw it uncorrected.
+        if (_creatures is null || !_creatures.TryMeasureMountOrigin(displayId, out Vector3 drift))
+            return Vector3.Zero;
+        // Horizontal only: the root's vertical part (render Y, 0.89 on the goblin car) is the lift that stands
+        // the car on its wheels - cancelling it sank the body a yard into the ground (owner, 2026-10-04).
+        Vector3 correction = new(-drift.X, 0f, -drift.Z);
+        _bakedOriginCorrections[displayId] = correction;
+        Console.WriteLine($"[mount] display {displayId}: cancelling baked root offset ({drift.X:F2}, {drift.Y:F2}, {drift.Z:F2})");
+        return correction;
     }
 
     private GameSettings.MountTuneSetting? FindMountTune(int displayId)

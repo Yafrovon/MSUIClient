@@ -112,6 +112,15 @@ public sealed class TerrainRenderer : IDisposable
     public const float GridSize = 533.33333f;
 
     public int TileCount => _tiles.Count;
+
+    /// <summary>Frame-recorder probe: is this renderer still drawing with live GL objects?</summary>
+    public string GlProbe()
+    {
+        uint program = _shader?.Handle ?? 0;
+        uint tex = _tiles.Values.FirstOrDefault()?.Textures?.TilesetHandle ?? 0;
+        return $"prog={program}/{(program != 0 && _gl.IsProgram(program) ? "ok" : "DEAD")} " +
+               $"tex={tex}/{(tex != 0 && _gl.IsTexture(tex) ? "ok" : "DEAD")} id={GetHashCode():X}";
+    }
     public int PendingPreloads => _preloads.Count;
     /// <summary>
     /// True when <see cref="UnloadAll"/> can reclaim every queued terrain
@@ -969,7 +978,8 @@ public sealed class TerrainRenderer : IDisposable
         _shader.Set("uStageCentre", Stage is { } stage ? stage.Centre - camera.Position : Vector3.Zero);
         _shader.Set("uStageRadius", Stage?.Radius ?? 0f);
         _shader.Set("uStageHalfHeight", Stage?.HalfHeight ?? 0f);
-        PartySight?.Apply(_shader, camera.Position);
+        if (PartySight is { } partySight) partySight.Apply(_shader, camera.Position);
+        else PartySightPass.BindInactive(_shader);
         _shader.Set("uCameraPos", Vector3.Zero);
         // Normalised HERE, not per pixel. The shader used to call normalize() on
         // this every fragment — on a uniform, over a surface that covers most of

@@ -151,6 +151,8 @@ public sealed class WmoRenderer : IDisposable
         // group picker (the GPU copy can't be read back cheaply). Positions only.
         public Vector3[] PickPositions = [];
         public int[] PickIndices = [];
+        // PickIndices minus the collision-only faces (MOPY material 0xFF): what is actually drawn.
+        public int[] RenderedPickIndices = [];
 
         // The exact walking-collision face set for this group (MOPY DETAIL
         // excluded), retained for the camera's current-room down ray. AABBs are
@@ -538,6 +540,18 @@ public sealed class WmoRenderer : IDisposable
     /// timestamps paired with a reset/frozen preview clock make every new WMO
     /// remain at alpha zero forever.
     /// </summary>
+    /// <summary>
+    /// Record every placement already resident as opaque. A Real Portals prepared world is built with
+    /// AppearFade off, so it remembers none of its keys; switched on at promotion, the first tile crossing
+    /// (a full ring rebuild) then saw the whole visible world as new and faded it all in from nothing - every
+    /// tree vanishing seconds after a crossing (WoW Karting frame bursts, 2026-10-04).
+    /// </summary>
+    public void MarkPlacedOpaque()
+    {
+        foreach (string key in _placed)
+            if (_appearStartByKey.Count < AppearKeyCap) _appearStartByKey.TryAdd(key, 0f);
+    }
+
     public void BeginOpaqueWorldEpoch(float nowSeconds = 0f)
     {
         _appearStartByKey.Clear();
@@ -3993,6 +4007,7 @@ public sealed class WmoRenderer : IDisposable
             VertexCount = group.Vertices.Count,
             PickPositions = BuildPickPositions(group),
             PickIndices = [.. group.Indices.Select(i => (int)i)],
+            RenderedPickIndices = BuildRenderedIndices(group),
         };
         mesh.Attach(_gl);
 
@@ -4716,7 +4731,8 @@ public sealed class WmoRenderer : IDisposable
         _shader.Set("uStageRadius", Stage?.Radius ?? 0f);
         _shader.Set("uStageHalfHeight", Stage?.HalfHeight ?? 0f);
         SetSightUniforms(camera.Position);
-        PartySight?.Apply(_shader, camera.Position);
+        if (PartySight is { } partySight) partySight.Apply(_shader, camera.Position);
+        else PartySightPass.BindInactive(_shader);
         _shader.Set("uSunDirection", SunDirection);
         _shader.Set("uSunColor", SunColor);
         _shader.Set("uSunIntensity", SunIntensity);
@@ -5127,6 +5143,17 @@ public sealed class WmoRenderer : IDisposable
     public readonly record struct InstanceSummary(
         string Root, float Distance, int Groups, int Drawn, int Shells, bool CameraInside);
 
+    private static int[] BuildRenderedIndices(WmoGroupData group)
+    {
+        var list = new List<int>(group.Indices.Count);
+        for (int t = 0; t * 3 + 2 < group.Indices.Count; t++)
+        {
+            if (t < group.TriMaterials.Count && group.TriMaterials[t].materialId == 0xFF) continue;
+            list.Add(group.Indices[t * 3]); list.Add(group.Indices[t * 3 + 1]); list.Add(group.Indices[t * 3 + 2]);
+        }
+        return list.ToArray();
+    }
+
     private static Vector3[] BuildPickPositions(WmoGroupData group)
     {
         var arr = new Vector3[group.Vertices.Count];
@@ -5175,6 +5202,31 @@ public sealed class WmoRenderer : IDisposable
             }
         }
         return tris;
+    }
+
+    /// <summary>
+    /// Nearest hit on the RENDERED WMO triangles (what is on screen), or null. The collision world is the
+    /// server's vmaps and carries invisible collision-only surfaces - e.g. the planes Blizzard laid over
+    /// Stormwind's roofs - so a roof survey must ask the render mesh too (WoW Karting rooftops, 2026-10-04).
+    /// </summary>
+    public float? RaycastRendered(Vector3 rayOrigin, Vector3 rayDir, float maxDistance)
+    {
+        float best = maxDistance;
+        bool hit = false;
+        foreach (var instance in _instances)
+        {
+            if (!Matrix4x4.Invert(instance.Transform, out var inv)) continue;
+            var lo = Vector3.Transform(rayOrigin, inv);
+            var ld = Vector3.TransformNormal(rayDir, inv);
+            foreach (var g in instance.Model.Groups)
+            {
+                if (!RayHitsBox(lo, ld, g.LocalMin, g.LocalMax, out _)) continue;
+                if (!NearestTriangle(lo, ld, g.PickPositions, g.RenderedPickIndices, out float t) || t >= best) continue;
+                best = t;
+                hit = true;
+            }
+        }
+        return hit ? best : null;
     }
 
     public List<GroupHit> PickGroups(Camera camera, Vector3 rayOrigin, Vector3 rayDir, int max = 14)

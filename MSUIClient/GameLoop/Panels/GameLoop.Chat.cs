@@ -1381,6 +1381,9 @@ public sealed partial class GameLoop
             // MSUI: the HUD layout editor (PLAN_21), also Options -> Interface -> Edit HUD layout.
             case "/editui" or "/edithud" or "/hudlayout":
                 ToggleHudEditMode(); return true;
+            // MSUI: WoW Karting (shared_docs/WOW_KARTING.md) - join/leave/start the kart race.
+            case "/kart" or "/race":
+                return HandleKartSlash(args);
             case "/quit" or "/exit":
                 RequestLogout(quitting: true); return true;
             case "/inspect":

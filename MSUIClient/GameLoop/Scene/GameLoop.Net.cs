@@ -99,6 +99,7 @@ public sealed partial class GameLoop
     private void InitNet(GL gl)
     {
         _gl = gl;
+        Engine.GlDebugOutput.EnableIfRequested(gl);
 
         EnsureLoginProfilesInitialized();
         ApplyActiveLoginProfiles(applyLaunchMode: true);
@@ -511,9 +512,11 @@ public sealed partial class GameLoop
                 _window.Camera.EffectiveDistance = _window.Camera.Distance;
                 Console.WriteLine($"[net] map change {previousMapId} -> {enter.Map}: " +
                                   $"content switched to {destinationMap.Directory}");
+                NoteFrameRecorderEvent($"world-load-{enter.Map}");
             }
             else if (changingMaps)
             {
+                _lastWorldSwitchAt = RealPortalNow();
                 _window.Camera.EffectiveDistance = _window.Camera.Distance;
                 Console.WriteLine($"[net] map change {previousMapId} -> {enter.Map}: " +
                                   "adopted prepared renderer/collision bundle");
@@ -1223,6 +1226,9 @@ public sealed partial class GameLoop
                         break;
                     case Op.SMSG_SUI_THREAT:
                         ApplySuiThreat(body);
+                        break;
+                    case Op.SMSG_SUI_KART:
+                        ApplySuiKart(body);
                         break;
                     case Op.MSG_QUEST_PUSH_RESULT:
                         ApplyQuestPushResult(body);
@@ -3729,6 +3735,7 @@ public sealed partial class GameLoop
     {
         _glueAdd?.Flush(ImGui.GetIO().DisplaySize, onTop: true);
         FinishGameplayDump();
+        CaptureFrameRecorder();
         FinishPainterlyComparisonCapture();
         FinishUiParityCapture();
         FinishBagContainmentCapture();

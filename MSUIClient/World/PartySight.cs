@@ -679,16 +679,34 @@ public sealed class PartySightPass : IDisposable
     }
 
     /// <summary>
+    /// The party-sight sampler units and an inactive verdict, for a world shader drawn WITHOUT a pass. A renderer
+    /// with no PartySight must still call this: left at their default unit 0 the samplerCube and sampler2Ds
+    /// collide with the shader's own unit-0 texture and the driver REJECTS every draw (GL_INVALID_OPERATION
+    /// "program texture usage"). A Real Portals prepared world is built without a pass, so after a crossing the
+    /// whole ground silently stopped drawing (WoW Karting, 2026-10-04: "floor gone").
+    /// </summary>
+    public static void BindInactive(Shader shader)
+    {
+        BindSamplerUnits(shader);
+        shader.Set("uPartySightActive", 0);
+    }
+
+    private static void BindSamplerUnits(Shader shader)
+    {
+        shader.Set("uPartySightCube", CubeUnit);
+        shader.Set("uPartySeenDepth", SeenUnit);
+        shader.Set("uPartyPlainDepth", PlainUnit);
+        shader.Set("uPartySeenDilated", SeenDilatedUnit);
+    }
+
+    /// <summary>
     /// Bind the verdict for a world shader (terrain / wmo / doodad) that is already in use.
     /// The sampler units are set every time, active or not: a samplerCube and a sampler2D
     /// left on the default unit 0 together is a GL error at draw time.
     /// </summary>
     public void Apply(Shader shader, Vector3 cameraPosition)
     {
-        shader.Set("uPartySightCube", CubeUnit);
-        shader.Set("uPartySeenDepth", SeenUnit);
-        shader.Set("uPartyPlainDepth", PlainUnit);
-        shader.Set("uPartySeenDilated", SeenDilatedUnit);
+        BindSamplerUnits(shader);
         shader.Set("uPartySightActive", Active ? 1 : 0);
         if (!Active) return;
         shader.Set("uPartySightEye", Eye - cameraPosition);

@@ -1,0 +1,370 @@
+{
+ "name": "Azeroth Circuit",
+ "laps": 2,
+ "speed": 21,
+ "notes": "v2 (owner, 2026-10-04: 2 laps, shorter, bursty, more portals, literal jumps, Stormwind rooftops). Lap = Mirage Raceway start straight -> launch ramp into a portal -> Stormwind's outer wall walkway over the Valley of Heroes (roof-scan + roofpath.py, visible surfaces only) -> off the wall end into a mid-air portal -> Elwynn road -> crest ramp into a portal -> Westfall cobblestone road (trace-road WestFallCobbleStone) -> portal back to the raceway. v1 (the long Deadwind circuit) is course-v1.json.",
+ "start": {
+  "map": 1,
+  "line": [
+   -6250,
+   -3890
+  ],
+  "facing": 0.0,
+  "grid": [
+   [
+    -6275,
+    -3880
+   ],
+   [
+    -6275,
+    -3900
+   ],
+   [
+    -6290,
+    -3880
+   ],
+   [
+    -6290,
+    -3900
+   ],
+   [
+    -6305,
+    -3880
+   ],
+   [
+    -6305,
+    -3900
+   ],
+   [
+    -6320,
+    -3880
+   ],
+   [
+    -6320,
+    -3900
+   ]
+  ]
+ },
+ "legs": [
+  {
+   "name": "Mirage Raceway",
+   "map": 1,
+   "route": [
+    [
+     -6385,
+     -3895
+    ],
+    [
+     -6250,
+     -3890
+    ],
+    [
+     -6170,
+     -3890
+    ],
+    [
+     -6080,
+     -3890
+    ]
+   ],
+   "checkpoints": [
+    [
+     -6250,
+     -3890,
+     45
+    ]
+   ],
+   "ramp": {
+    "name": "raceway-launch",
+    "points": [
+     [
+      -6170,
+      -3890,
+      -59.7
+     ],
+     [
+      -6080,
+      -3890,
+      -38.0
+     ]
+    ],
+    "width": 16,
+    "falloff": 6,
+    "note": "lip at x -6072 (width/2 past the end point); the portal stands 2 yd past the lip - 10 yd out, a launched kart had already dropped under the window (2026-10-04)"
+   },
+   "portal": {
+    "x": -6070,
+    "y": -3890,
+    "z": -40.0,
+    "o": 0.0,
+    "to": 1,
+    "name": "Portal to Stormwind"
+   },
+   "arrive": [
+    -6385,
+    -3895,
+    0,
+    0.0
+   ]
+  },
+  {
+   "name": "Stormwind Wall",
+   "map": 0,
+   "route": [
+    [
+     -8994.0,
+     343.5,
+     120.4
+    ],
+    [
+     -9016.5,
+     372.0,
+     120.4
+    ],
+    [
+     -9019.5,
+     379.5,
+     120.4
+    ],
+    [
+     -9019.5,
+     390.0,
+     120.4
+    ],
+    [
+     -9026.0,
+     397.0,
+     120.4
+    ],
+    [
+     -9024.0,
+     402.0,
+     120.4
+    ],
+    [
+     -9021.5,
+     406.4,
+     120.4
+    ]
+   ],
+   "checkpoints": [
+    [
+     -9016.5,
+     372,
+     25
+    ]
+   ],
+   "routeSource": "roof-scan sw-00 + roofpath.py (visible WMO surfaces only; Stormwind's roofs carry invisible collision planes)",
+   "portal": {
+    "x": -9016.4,
+    "y": 410.2,
+    "z": 116.0,
+    "o": 0.6435,
+    "to": 2,
+    "name": "Portal to Elwynn Forest"
+   },
+   "arrive": [
+    -8994.0,
+    343.5,
+    120.4,
+    2.24
+   ],
+   "jumps": [
+    6
+   ],
+   "note": "The wall runs into the mountain past (-8975, 320) (terrain 131..188 over a z-120 walkway): the leg starts mid-wall heading south-west and leaves over the NORTH-WEST edge (no parapet; valley floor ~77) into a portal 5 yd out. Route point 6 is the edge: racers jump there (jumps = route indices)."
+  },
+  {
+   "name": "Elwynn Road",
+   "map": 0,
+   "route": [
+    [
+     -9510,
+     16
+    ],
+    [
+     -9539,
+     -23
+    ],
+    [
+     -9552,
+     -92
+    ],
+    [
+     -9549,
+     -124
+    ],
+    [
+     -9561,
+     -147
+    ],
+    [
+     -9581,
+     -165
+    ],
+    [
+     -9578,
+     -172
+    ],
+    [
+     -9587,
+     -202
+    ],
+    [
+     -9613,
+     -256
+    ],
+    [
+     -9609,
+     -261
+    ],
+    [
+     -9617,
+     -284
+    ],
+    [
+     -9617,
+     -292
+    ],
+    [
+     -9618,
+     -322
+    ]
+   ],
+   "checkpoints": [
+    [
+     -9561,
+     -147,
+     40
+    ]
+   ],
+   "ramp": {
+    "name": "elwynn-crest",
+    "points": [
+     [
+      -9617,
+      -292,
+      57.6
+     ],
+     [
+      -9618,
+      -322,
+      63.6
+     ]
+    ],
+    "width": 12,
+    "falloff": 5,
+    "note": "lip at y -328 (width/2 past the end); the portal hangs 9 yd past it"
+   },
+   "portal": {
+    "x": -9618,
+    "y": -331,
+    "z": 61.0,
+    "o": 4.679,
+    "to": 3,
+    "name": "Portal to Westfall"
+   },
+   "arrive": [
+    -9510,
+    16,
+    0,
+    4.07
+   ]
+  },
+  {
+   "name": "Westfall Road",
+   "map": 0,
+   "route": [
+    [
+     -9880,
+     976
+    ],
+    [
+     -9932,
+     996
+    ],
+    [
+     -9952,
+     1002
+    ],
+    [
+     -9976,
+     1000
+    ],
+    [
+     -10020,
+     982
+    ],
+    [
+     -10046,
+     988
+    ],
+    [
+     -10070,
+     1004
+    ],
+    [
+     -10088,
+     1006
+    ],
+    [
+     -10106,
+     992
+    ],
+    [
+     -10122,
+     988
+    ],
+    [
+     -10142,
+     988
+    ],
+    [
+     -10152,
+     990
+    ],
+    [
+     -10196,
+     988
+    ],
+    [
+     -10238,
+     996
+    ],
+    [
+     -10258,
+     994
+    ]
+   ],
+   "checkpoints": [
+    [
+     -10070,
+     1004,
+     40
+    ]
+   ],
+   "routeSource": "kart-course.py trace-road 0 -9880 975 -10260 1000 WestFallCobbleStone (0 yd off the painted road)",
+   "portal": {
+    "x": -10266,
+    "y": 993,
+    "o": 3.241,
+    "to": 0,
+    "name": "Portal to the Mirage Raceway"
+   },
+   "arrive": [
+    -9880,
+    976,
+    0,
+    2.775
+   ]
+  }
+ ],
+ "marshal": {
+  "name": "Zippa Sparkcog",
+  "title": "Kart Race Marshal",
+  "x": -6255,
+  "y": -3862,
+  "o": 4.712,
+  "greeting": "Welcome to the Mirage Raceway, $c! Grab a kart and I'll put you on the grid. Three laps of the finest track in Azeroth - and I do mean ALL of Azeroth. Watch the portals."
+ }
+}

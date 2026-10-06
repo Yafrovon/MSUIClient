@@ -346,6 +346,8 @@ public sealed partial class CreatureRenderer : IDisposable
         public Texture? Tex;
         public int Blend;
         public int GeosetId;
+        // Index into the model's submeshes: a mount may hide the NPC driver built into it (MountTuning).
+        public int SubmeshIndex;
         public bool TwoSided;
         // M2 material flags the reference honours per texture unit. An elemental's fire
         // body is UNLIT (flag 0x1): it draws at full texture brightness however dark the
@@ -387,6 +389,7 @@ public sealed partial class CreatureRenderer : IDisposable
             Tex = tex,
             Blend = material?.BlendingMode ?? 0,
             GeosetId = submesh.Id,
+            SubmeshIndex = batch.SubmeshIndex,
             TwoSided = material?.TwoSided ?? false,
             Unlit = material?.Unlit ?? false,
             Unfogged = material?.Unfogged ?? false,

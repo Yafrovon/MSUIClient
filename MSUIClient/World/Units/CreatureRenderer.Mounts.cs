@@ -56,7 +56,10 @@ public readonly record struct MountTuning(
     float RiderScale,
     Vector3 MountOffset,
     float MountScale,
-    float AnimationRate)
+    float AnimationRate,
+    // Submeshes of the steed NOT drawn: a vehicle model with its own NPC driver built in (the Mirage
+    // Raceway rocket cars) would otherwise seat the player behind a second driver. Null draws all.
+    IReadOnlySet<int>? HiddenSubmeshes = null)
 {
     public static readonly MountTuning Neutral =
         new(Vector3.Zero, Vector3.Zero, 1f, Vector3.Zero, 1f, 1f);
@@ -368,6 +371,7 @@ public sealed partial class CreatureRenderer
         {
             DrawBatch b = model.Batches[batchIndex];
             if (filter && !appearance.VisibleGeosets!.Contains(b.GeosetId)) continue;
+            if (tune.HiddenSubmeshes?.Contains(b.SubmeshIndex) == true) continue;
 
             ApplyBatchCulling(b, ref cullingOn);
             if (!BindBatchMaterial(b, model.Source, pickClip?.SequenceIndex ?? -1,

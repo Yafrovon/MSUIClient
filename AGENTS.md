@@ -59,6 +59,9 @@ touching the code:
 - `shared_docs/WORLD_BUILDER_HANDOFF.md` — the CURRENT World Builder / Gilneas state (rewritten 2026-09-27 night): what is
   built and verified, copy-paste commands for every task (tools/worldpack/: launch-wb/launch-live, generators, navmesh
   planner, make-group), the open items in order and the uncommitted change list.
+- `shared_docs/WOW_KARTING.md` — WoW Karting (owner mission 2026-10-04): Mirage Raceway carts as real server mounts,
+  permanent public Real Portals, an Azeroth circuit with bot racers and MK64 items, all in the opt-in `wow-karting`
+  World Content Pack: decisions, architecture, phases and the as-built log.
 - `shared_docs/EQUIPMENT_CAPTURE.md` — deterministic weapon/armor capture with the production character renderer, body/view/pose matrix, asset hashes and offline-vs-live acceptance limits (added 2026-09-28).
 - `CODE_STRUCTURE_LAW.md` (repo root) — where a `.cs` file goes and how it is named.
 

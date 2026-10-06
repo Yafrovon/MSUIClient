@@ -82,9 +82,25 @@ public static class PortalPrewarmLaw
         hint.PreviewMapId <= int.MaxValue &&
         Finite(hint.PreviewPosition) &&
         float.IsFinite(hint.PreviewOrientation) &&
-        TryGetMapping(hint.SummonSpellId, out PortalPrewarmMapping mapping) &&
-        mapping.PortalEntry == hint.PortalEntry &&
-        mapping.TeleportSpellId == hint.TeleportSpellId;
+        (IsPlacedPackPortal(hint) ||
+         TryGetMapping(hint.SummonSpellId, out PortalPrewarmMapping mapping) &&
+         mapping.PortalEntry == hint.PortalEntry &&
+         mapping.TeleportSpellId == hint.TeleportSpellId);
+
+    /// <summary>World Content Pack templates (MangosSuperUI WorldPackContent.TemplateBase).</summary>
+    public const uint PackPortalEntryBase = 7_000_000;
+
+    /// <summary>
+    /// A PLACED public World Content Pack portal (WoW Karting, shared_docs/WOW_KARTING.md): no summon
+    /// spell, a pack template entry and a pack teleport spell. The core accepts the same identity
+    /// (SuiPortal::IsPublicPackPortal); it never joins the six-row cast-prewarm catalog.
+    /// </summary>
+    public static bool IsPackPortalIdentity(uint portalEntry, uint teleportSpellId) =>
+        portalEntry >= PackPortalEntryBase &&
+        teleportSpellId is >= Formats.SpellCatalog.PackSpellIdBase and < Formats.SpellCatalog.PackSpellIdCeiling;
+
+    private static bool IsPlacedPackPortal(in PortalPrewarmHint hint) =>
+        hint.SummonSpellId == 0 && IsPackPortalIdentity(hint.PortalEntry, hint.TeleportSpellId);
 
     /// <summary>
     /// Require one valid row for every stock summon spell. Catalog row order is
@@ -136,8 +152,14 @@ public static class PortalPrewarmLaw
         out PortalPrewarmHint hint)
     {
         hint = default;
-        if (!descriptor.IsValid ||
-            !TryGetMapping(
+        if (!descriptor.IsValid) return false;
+        if (IsPackPortalIdentity(descriptor.PortalEntry, descriptor.TeleportSpellId))
+        {
+            hint = new PortalPrewarmHint(0, descriptor.PortalEntry, descriptor.TeleportSpellId,
+                descriptor.PreviewMapId, descriptor.PreviewPosition, descriptor.PreviewOrientation);
+            return IsValid(hint);
+        }
+        if (!TryGetMapping(
                 descriptor.PortalEntry,
                 descriptor.TeleportSpellId,
                 out PortalPrewarmMapping mapping))

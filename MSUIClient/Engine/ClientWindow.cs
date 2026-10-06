@@ -137,6 +137,14 @@ public sealed class ClientWindow : IDisposable
     /// monitor's own video mode and hides the taskbar; this keeps window chrome and just grows to
     /// fill the screen). Ignored while <see cref="Fullscreen"/> is on - that state wins, and this
     /// flag is simply what windowed mode returns to once Fullscreen is turned back off.</summary>
+    /// <summary>Un-minimize (no focus steal intended): a minimized window renders nothing, so evidence
+    /// capture (the frame recorder) restores it first.</summary>
+    public void RestoreIfMinimized()
+    {
+        if (_window is not null && _window.WindowState == WindowState.Minimized)
+            _window.WindowState = WindowState.Normal;
+    }
+
     public bool Maximized
     {
         get => _window is not null

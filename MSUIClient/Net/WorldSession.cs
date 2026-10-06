@@ -432,6 +432,11 @@ public sealed class WorldSession : IDisposable
     public void SuiThreat(ulong creature, int rows) =>
         SendPacket((ushort)Op.CMSG_SUI_THREAT, ThreatMeterWire.BuildRequest(creature, rows));
 
+    /// <summary>WoW Karting v1: join/leave/start/query the kart race. Only sent once the control-ACK
+    /// trailer advertised capability 15 (<see cref="KartingWire"/>).</summary>
+    public void SuiKart(KartingWire.Action action, uint param = 0) =>
+        SendPacket((ushort)Op.CMSG_SUI_KART, KartingWire.BuildRequest(action, param));
+
     public void SuiPartyLead(byte action, ulong subject) =>
         SendPacket((ushort)Op.CMSG_SUI_PARTY_LEAD,
             PartyLeadWire.BuildPartyLeadBody(action, subject));

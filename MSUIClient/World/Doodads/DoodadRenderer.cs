@@ -793,6 +793,18 @@ public sealed partial class DoodadRenderer : IDisposable
     /// clear them so historic active-world timestamps cannot hold candidate
     /// doodads permanently transparent.
     /// </summary>
+    /// <summary>
+    /// Record every placement already resident as opaque. A Real Portals prepared world is built with
+    /// AppearFade off, so it remembers none of its keys; switched on at promotion, the first tile crossing
+    /// (a full ring rebuild) then saw the whole visible world as new and faded it all in from nothing - every
+    /// tree vanishing seconds after a crossing (WoW Karting frame bursts, 2026-10-04).
+    /// </summary>
+    public void MarkPlacedOpaque()
+    {
+        foreach (string key in _placed)
+            if (_appearStartByKey.Count < AppearKeyCap) _appearStartByKey.TryAdd(key, 0f);
+    }
+
     public void BeginOpaqueWorldEpoch(float nowSeconds = 0f)
     {
         _appearStartByKey.Clear();
@@ -3013,7 +3025,8 @@ public sealed partial class DoodadRenderer : IDisposable
         _shader.Set("uCutRect", Cut?.RelativeRect(camera.Position) ?? Vector4.Zero);
         _shader.Set("uCutZ", Cut?.RelativeZ(camera.Position) ?? 0f);
         SetSightUniforms(camera.Position);
-        PartySight?.Apply(_shader, camera.Position);
+        if (PartySight is { } partySight) partySight.Apply(_shader, camera.Position);
+        else PartySightPass.BindInactive(_shader);
         // uUseInstancing is set per pass below (1 for RenderInstanced, 0 for the
         // per-instance GameObject-pose pass), not once for the whole frame.
         _shader.Set("uCameraPos", Vector3.Zero);

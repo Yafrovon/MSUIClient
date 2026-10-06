@@ -122,7 +122,7 @@ run "grep -q 'SMSG_SUI_COMMANDER_RAID *= 875' $G/Server/Protocol/Opcodes_1_12_1.
 run "grep -q 'CMSG_SUI_THREAT *= 876' $G/Server/Protocol/Opcodes_1_12_1.h" || fail "5.1 threat-meter request drifted from 876"
 run "grep -q 'SMSG_SUI_THREAT *= 877' $G/Server/Protocol/Opcodes_1_12_1.h" || fail "5.1 threat-meter reply drifted from 877"
 run "grep -q 'CAPABILITY_THREAT_METER_V1 = 1u << 14' $G/SuperUiContent/SuiWorld/Bridge/SuiPortal.h" || fail "5.1 threat-meter capability is not bit 14"
-run "grep -q 'NUM_MSG_TYPES *= 878' $G/Server/Protocol/Opcodes_1_12_1.h" || fail "5.1 NUM_MSG_TYPES is not 878"
+run "grep -q 'NUM_MSG_TYPES *= 880' $G/Server/Protocol/Opcodes_1_12_1.h" || fail "5.1 NUM_MSG_TYPES is not 880"
 run "! grep -q 'NUM_MSG_TYPES.*868' docs/SUI_WIRE_PROTOCOL.md" || fail "5.1 wire docs still advertise stale NUM_MSG_TYPES 868"
 run "grep -q 'CAPABILITY_TACTICAL_FREEZE_V1 = 1u << 12' $G/SuperUiContent/SuiWorld/Bridge/SuiPortal.h" || fail "5.1 tactical capability is not bit 12"
 run "grep -q 'constexpr uint8 WIRE_VERSION = 1' $TH" || fail "5.1 tactical bodies lost explicit version 1"

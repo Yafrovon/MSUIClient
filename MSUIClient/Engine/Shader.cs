@@ -114,6 +114,8 @@ public sealed class Shader : IDisposable
         return handle;
     }
 
+    public uint Handle => _handle;
+
     public void Use() => _gl.UseProgram(_handle);
 
     private int Location(string name)

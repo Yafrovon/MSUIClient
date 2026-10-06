@@ -724,6 +724,8 @@ public enum Op : ushort
     SMSG_SUI_COMMANDER_RAID      = 0x036B,
     CMSG_SUI_THREAT              = 0x036C, // capability 14, ThreatMeterWire
     SMSG_SUI_THREAT              = 0x036D,
+    CMSG_SUI_KART                = 0x036E, // capability 15, KartingWire (WoW Karting)
+    SMSG_SUI_KART                = 0x036F,
     CMSG_SUI_TACTICAL_FREEZE      = 0x0366, // decimal 870
     SMSG_SUI_TACTICAL_FREEZE      = 0x0367, // decimal 871
     CMSG_SUI_TACTICAL_QUEUE       = 0x0368, // decimal 872

@@ -12,7 +12,7 @@ public sealed partial class GameLoop
     // Core GameObjectInfo::GetInteractionDistance permits the fishing cast's
     // distant bobber. Cursor/channel ownership and server ownership still apply.
     private float GameObjectUseDistance(WorldEntity go) => go.GameObjectType == 17
-        ? 100f : IsStockPortalEntry(go.Entry)
+        ? 100f : IsRealPortalEntry(go.Entry)
             ? MagePortalClickInteractDistance : GameObjectInteractDistance;
     private ulong _gameObjectGuid;
     private uint _gameObjectAnimation;
@@ -253,7 +253,7 @@ public sealed partial class GameLoop
                         // Arm only after a READY portal's ordinary authoritative use
                         // was successfully queued. Proximity, clicks on other objects,
                         // and failed sends retain the normal loading-screen path.
-                        if (sent && IsStockPortalEntry(go.Entry))
+                        if (sent && IsRealPortalEntry(go.Entry))
                             ArmRealPortalHandoffAfterSuccessfulUse(guid);
                     }
                 }

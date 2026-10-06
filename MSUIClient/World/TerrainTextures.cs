@@ -95,6 +95,7 @@ public sealed class TerrainTextures : IDisposable
     private Texture? _shadowArray;
 
     public int TextureCount => _tileset?.Layers ?? 0;
+    public uint TilesetHandle => _tileset?.Handle ?? 0;
     public bool Ready => _tileset is not null && _alphaArray is not null && _shadowArray is not null;
     public IReadOnlyList<string> TextureNames { get; private set; } = [];
 

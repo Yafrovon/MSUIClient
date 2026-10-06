@@ -71,7 +71,15 @@ public sealed partial class GameLoop
         public int CrossingArmedSide;
         public double LastCrossingUseAt = double.NegativeInfinity;
         public bool UnreadyCrossingLogged;
+        public double UnreadyHoldSince = double.NaN;
     }
+
+    /// <summary>
+    /// How long a crossing may wait at an unready window before it takes the ordinary authoritative
+    /// use (the loading curtain). A kart reaches a portal at 21 yd/s (WoW Karting): an unbounded hold
+    /// turned a slow or failed destination load into a wall in the road.
+    /// </summary>
+    private const double RealPortalUnreadyHoldSeconds = 0.75;
 
     private sealed class RealPortalCastPrewarm
     {
@@ -81,6 +89,9 @@ public sealed partial class GameLoop
         public double ExpiresAt;
         public bool SpellGoObserved;
         public ulong PortalGuid;
+        // WoW Karting: a race prewarms the NEXT leg's placed pack portal (no cast, no summoner): it binds to the
+        // first object with the hint's entry (GameLoop.Karting.cs BeginKartPortalPrewarm).
+        public bool Placed;
     }
 
     private readonly Dictionary<ulong, RealPortalVisual> _realPortals = [];
@@ -233,7 +244,13 @@ public sealed partial class GameLoop
 
         foreach (WorldEntity entity in _entities.Entities.Values)
         {
-            if (!IsPredictedMagePortal(entity)) continue;
+            if (!IsPredictedMagePortal(entity))
+            {
+                // A pack portal is recognised from its template, which arrives asynchronously.
+                if (entity.IsGameObject && entity.Entry >= PackPortalTemplateBase)
+                    RequireGameObjectTemplate(entity);
+                continue;
+            }
 
             bool tracked = _realPortals.TryGetValue(
                 entity.Guid, out RealPortalVisual? portal);
@@ -321,10 +338,12 @@ public sealed partial class GameLoop
             }
             portal.PresentationRelevant = presentationRelevant;
 
-            if (_realPortalCastPrewarm is { PortalGuid: 0, SpellGoObserved: true } cast &&
+            if (_realPortalCastPrewarm is { PortalGuid: 0 } cast &&
                 entity.Entry == cast.Hint.PortalEntry &&
-                entity.Fields.GameObjectCreatedBy == cast.CasterGuid &&
-                !cast.ExistingPortalGuids.Contains(entity.Guid))
+                (cast.Placed ||
+                 cast.SpellGoObserved &&
+                 entity.Fields.GameObjectCreatedBy == cast.CasterGuid &&
+                 !cast.ExistingPortalGuids.Contains(entity.Guid)))
             {
                 cast.PortalGuid = entity.Guid;
                 Console.WriteLine(
@@ -905,7 +924,14 @@ public sealed partial class GameLoop
                 continue;
 
             bool previewReady = portal.ReadyConfirmed && now < portal.ReadyLeaseExpiresAt;
-            if (_realPortalProtocolAvailable && !previewReady)
+            // The hold clock belongs to one approach: a stale stamp from an earlier one restarts it.
+            if (!previewReady && (double.IsNaN(portal.UnreadyHoldSince) || now - portal.UnreadyHoldSince > 3.0))
+                portal.UnreadyHoldSince = now;
+            // An AIRBORNE body (a kart jumping off a ramp into the window) is never held: pinned to the plane it
+            // falls out of the window during the hold and the crossing is lost (2026-10-04 live, raceway jump).
+            bool holdExpired = portal.LoadFailed || _controller.Grounded != true ||
+                now - portal.UnreadyHoldSince >= RealPortalUnreadyHoldSeconds;
+            if (_realPortalProtocolAvailable && !previewReady && !holdExpired)
             {
                 // A capable server promised the prepared path, so do not let a
                 // source-world movement packet escape beyond an unready film.
@@ -921,6 +947,7 @@ public sealed partial class GameLoop
             }
 
             portal.UnreadyCrossingLogged = false;
+            portal.UnreadyHoldSince = double.NaN;
             if (!UseGameObject(portal.Guid))
             {
                 // Keep the player on the side from which the failed use was
@@ -933,9 +960,11 @@ public sealed partial class GameLoop
 
             portal.CrossingArmedSide = 0;
             portal.LastCrossingUseAt = now;
+            NoteFrameRecorderEvent($"portal-{portal.Entry}");
             Console.WriteLine(
                 $"[real-portals] crossed 0x{portal.Guid:X}; sent authoritative GAMEOBJ_USE" +
-                (_realPortalProtocolAvailable ? " after READY" : " through compatibility fallback"));
+                (!_realPortalProtocolAvailable ? " through compatibility fallback"
+                    : previewReady ? " after READY" : " after an unready hold (loading curtain)"));
             return;
         }
     }
@@ -1297,14 +1326,17 @@ public sealed partial class GameLoop
         destination.Terrain.TextureScale = sourceTerrain.TextureScale;
         destination.Terrain.AuthoredShadowStrength = sourceTerrain.AuthoredShadowStrength;
         destination.Terrain.ChunkCulling = sourceTerrain.ChunkCulling;
+        destination.Terrain.PartySight = sourceTerrain.PartySight;
 
         WmoRenderer wmo = destination.Wmo;
+        wmo.PartySight = sourceWmo.PartySight;
         wmo.Enabled = sourceWmo.Enabled;
         wmo.FrustumCulling = sourceWmo.FrustumCulling;
         wmo.UseDistanceLodShells = sourceWmo.UseDistanceLodShells;
         wmo.SuppressDistanceLodShells = sourceWmo.SuppressDistanceLodShells;
         wmo.AppearFade = sourceWmo.AppearFade;
         wmo.AppearFadeSeconds = sourceWmo.AppearFadeSeconds;
+        wmo.MarkPlacedOpaque();
         wmo.InsideInstanceMargin = sourceWmo.InsideInstanceMargin;
         wmo.DumpLargeWmoGroups = sourceWmo.DumpLargeWmoGroups;
         wmo.InteriorCullDistance = sourceWmo.InteriorCullDistance;
@@ -1327,6 +1359,7 @@ public sealed partial class GameLoop
 
         if (sourceDoodads is null || destination.Doodads is null) return;
         DoodadRenderer doodads = destination.Doodads;
+        doodads.PartySight = sourceDoodads.PartySight;
         doodads.Enabled = sourceDoodads.Enabled;
         doodads.FrustumCulling = sourceDoodads.FrustumCulling;
         doodads.DemandStreaming = sourceDoodads.DemandStreaming;
@@ -1338,6 +1371,7 @@ public sealed partial class GameLoop
         doodads.InteriorLighting = sourceDoodads.InteriorLighting;
         doodads.AppearFade = sourceDoodads.AppearFade;
         doodads.AppearFadeSeconds = sourceDoodads.AppearFadeSeconds;
+        doodads.MarkPlacedOpaque();
         doodads.CollisionBasisIndex = sourceDoodads.CollisionBasisIndex;
     }
 
@@ -1426,6 +1460,18 @@ public sealed partial class GameLoop
             return;
 
         portal.PreparePending = false;
+        // A PLACED warm (WoW Karting pushes the next leg's destination at GO) is denied only by distance: a
+        // kart at 21 yd/s reaches the preload radius on the client before the server's last known position
+        // does (owner, 2026-10-04: "went through the portal, glitching, floor gone" - the denial discarded a
+        // minute-old warm and the 5 s retry left under two seconds to load Elwynn cold). Keep the warm and
+        // ask again in half a second; the server's answer, not this guess, still decides the crossing.
+        if (packet.Result == PortalDescriptorResult.Denied &&
+            _realPortalCastPrewarm is { Placed: true } placedWarm && placedWarm.PortalGuid == packet.PortalGuid)
+        {
+            portal.NextPrepareAt = now + 0.5;
+            Console.WriteLine($"[real-portals] descriptor Denied for placed 0x{packet.PortalGuid:X}; keeping the warm, retrying");
+            return;
+        }
         if (packet.Result != PortalDescriptorResult.Ok)
         {
             portal.NextPrepareAt = now +
@@ -1784,24 +1830,45 @@ public sealed partial class GameLoop
         left.PortalEntry == right.PortalEntry &&
         left.TeleportSpellId == right.TeleportSpellId;
 
-    private static bool IsPredictedMagePortal(WorldEntity entity) =>
+    private bool IsPredictedMagePortal(WorldEntity entity) =>
         // These six template entries are the stock Mage teleport portals. Do not
         // make their immediate presentation depend on GAMEOBJECT_TYPE_ID being
         // present in the sparse create snapshot; the asynchronously fetched
         // template still rejects any contradictory type/spell before protocol IO.
-        entity.IsGameObject && IsStockPortalEntry(entity.Entry);
+        // A pack portal has no fixed entry, so it waits for its template.
+        entity.IsGameObject && IsRealPortalEntry(entity.Entry);
 
-    private static bool IsStockPortalTemplate(uint entry, GameObjectTemplate template) =>
+    private bool IsStockPortalTemplate(uint entry, GameObjectTemplate template) =>
         template.Type == 22 && template.Data.Length > 0 &&
         IsStockPortalUsePair(entry, unchecked((uint)template.Data[0]));
 
     private static bool IsStockPortalEntry(uint entry) => entry is
         176296 or 176497 or 176498 or 176499 or 176500 or 176501;
 
+    /// <summary>World Content Pack templates (MangosSuperUI WorldPackContent.TemplateBase).</summary>
+    private const uint PackPortalTemplateBase = 7_000_000;
+
+    /// <summary>A stock Mage portal, or a PUBLIC pack portal (shared_docs/WOW_KARTING.md §2).</summary>
+    private bool IsRealPortalEntry(uint entry) => IsStockPortalEntry(entry) || IsPackPortalEntry(entry);
+
+    /// <summary>
+    /// A pack portal is a placed type-22 spellcaster (entry 7,000,000+) whose spell is a pack teleport
+    /// spell [38,000, 40,000). The core accepts the same shape (SuiPortal IsRealPortalPair); its
+    /// descriptor stays the authority for the destination.
+    /// </summary>
+    private bool IsPackPortalEntry(uint entry) =>
+        entry >= PackPortalTemplateBase && _gameObjectTemplates.TryGetValue(entry, out GameObjectTemplate? t) &&
+        t.Type == 22 && t.Data.Length > 0 && IsPackPortalSpell(unchecked((uint)t.Data[0]));
+
+    private static bool IsPackPortalSpell(uint spellId) =>
+        spellId is >= SpellCatalog.PackSpellIdBase and < SpellCatalog.PackSpellIdCeiling;
+
     // gameobject_template.data0 contains the spell cast when the portal GO is
     // used. These are not the Mage's 356x self-teleport spells.
-    private static bool IsStockPortalUsePair(uint entry, uint spellId) => entry switch
+    private bool IsStockPortalUsePair(uint entry, uint spellId) => entry switch
     {
+        >= PackPortalTemplateBase => IsPackPortalEntry(entry) &&
+            unchecked((uint)_gameObjectTemplates[entry].Data[0]) == spellId,
         176296 => spellId == 17334, // Stormwind
         176497 => spellId == 17607, // Ironforge
         176498 => spellId == 17608, // Darnassus

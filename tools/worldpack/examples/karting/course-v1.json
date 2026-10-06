@@ -1,0 +1,449 @@
+{
+  "name": "Azeroth Circuit",
+  "laps": 3,
+  "speed": 21,
+  "notes": "Lap = Mirage Raceway (start/finish on the west straight, jump ramp off the east straight) -> Elwynn road -> Deadwind Pass road, off the ravine lip near Karazhan -> back to the raceway. Routes traced on the minimap (kart-course.py trace/draw); raceway centreline from the track groove (heights).",
+  "start": {
+    "map": 1,
+    "line": [
+      -6250,
+      -3890
+    ],
+    "facing": 0.0,
+    "grid": [
+      [
+        -6275,
+        -3880
+      ],
+      [
+        -6275,
+        -3900
+      ],
+      [
+        -6290,
+        -3880
+      ],
+      [
+        -6290,
+        -3900
+      ],
+      [
+        -6305,
+        -3880
+      ],
+      [
+        -6305,
+        -3900
+      ],
+      [
+        -6320,
+        -3880
+      ],
+      [
+        -6320,
+        -3900
+      ]
+    ]
+  },
+  "legs": [
+    {
+      "name": "Mirage Raceway",
+      "map": 1,
+      "route": [
+        [
+          -6385,
+          -3895
+        ],
+        [
+          -6250,
+          -3890
+        ],
+        [
+          -6040,
+          -3890
+        ],
+        [
+          -5940,
+          -3845
+        ],
+        [
+          -5860,
+          -3778
+        ],
+        [
+          -5790,
+          -3770
+        ],
+        [
+          -5720,
+          -3785
+        ],
+        [
+          -5662,
+          -3830
+        ],
+        [
+          -5643,
+          -3900
+        ],
+        [
+          -5635,
+          -4000
+        ],
+        [
+          -5660,
+          -4100
+        ],
+        [
+          -5720,
+          -4170
+        ],
+        [
+          -5800,
+          -4198
+        ],
+        [
+          -6000,
+          -4198
+        ],
+        [
+          -6200,
+          -4198
+        ],
+        [
+          -6290,
+          -4198
+        ],
+        [
+          -6392,
+          -4198
+        ],
+        [
+          -6404,
+          -4198
+        ]
+      ],
+      "checkpoints": [
+        [
+          -6250,
+          -3890,
+          45
+        ],
+        [
+          -5635,
+          -4000,
+          50
+        ],
+        [
+          -6000,
+          -4198,
+          45
+        ]
+      ],
+      "ramp": {
+        "name": "raceway-jump",
+        "points": [
+          [
+            -6290,
+            -4198,
+            -61.5
+          ],
+          [
+            -6392,
+            -4198,
+            -38.0
+          ]
+        ],
+        "width": 16,
+        "falloff": 6,
+        "note": "a graded path keeps full height within width/2 of its END too: the lip is 8 yd past the last point (-6400), the ground is stock again 6 yd later"
+      },
+      "portal": {
+        "x": -6402,
+        "y": -4198,
+        "z": -40.0,
+        "o": 3.1416,
+        "to": 1,
+        "name": "Portal to Elwynn Forest"
+      },
+      "arrive": [
+        -6385,
+        -3895,
+        0,
+        0.0
+      ]
+    },
+    {
+      "name": "Elwynn Road",
+      "map": 0,
+      "route": [
+        [
+          -9510,
+          16
+        ],
+        [
+          -9539,
+          -23
+        ],
+        [
+          -9552,
+          -92
+        ],
+        [
+          -9549,
+          -124
+        ],
+        [
+          -9561,
+          -147
+        ],
+        [
+          -9581,
+          -165
+        ],
+        [
+          -9578,
+          -172
+        ],
+        [
+          -9587,
+          -202
+        ],
+        [
+          -9613,
+          -256
+        ],
+        [
+          -9609,
+          -261
+        ],
+        [
+          -9617,
+          -284
+        ],
+        [
+          -9618,
+          -418
+        ],
+        [
+          -9590,
+          -469
+        ],
+        [
+          -9590,
+          -496
+        ],
+        [
+          -9615,
+          -536
+        ],
+        [
+          -9625,
+          -634
+        ],
+        [
+          -9642,
+          -665
+        ],
+        [
+          -9656,
+          -735
+        ],
+        [
+          -9652,
+          -787
+        ],
+        [
+          -9631,
+          -820
+        ],
+        [
+          -9615,
+          -830
+        ],
+        [
+          -9610,
+          -846
+        ],
+        [
+          -9587,
+          -864
+        ],
+        [
+          -9581,
+          -902
+        ]
+      ],
+      "checkpoints": [
+        [
+          -9618,
+          -418,
+          45
+        ],
+        [
+          -9656,
+          -735,
+          45
+        ]
+      ],
+      "portal": {
+        "x": -9578,
+        "y": -925,
+        "o": 4.869,
+        "to": 2,
+        "name": "Portal to Deadwind Pass"
+      },
+      "arrive": [
+        -9510,
+        16,
+        0,
+        4.07
+      ]
+    },
+    {
+      "name": "Deadwind Pass",
+      "map": 0,
+      "route": [
+        [
+          -10458,
+          -1562
+        ],
+        [
+          -10460,
+          -1610
+        ],
+        [
+          -10464,
+          -1620
+        ],
+        [
+          -10462,
+          -1646
+        ],
+        [
+          -10466,
+          -1680
+        ],
+        [
+          -10460,
+          -1710
+        ],
+        [
+          -10464,
+          -1732
+        ],
+        [
+          -10492,
+          -1744
+        ],
+        [
+          -10532,
+          -1750
+        ],
+        [
+          -10548,
+          -1756
+        ],
+        [
+          -10568,
+          -1816
+        ],
+        [
+          -10570,
+          -1876
+        ],
+        [
+          -10586,
+          -1894
+        ],
+        [
+          -10630,
+          -1914
+        ],
+        [
+          -10668,
+          -1912
+        ],
+        [
+          -10686,
+          -1892
+        ],
+        [
+          -10692,
+          -1852
+        ],
+        [
+          -10714,
+          -1840
+        ],
+        [
+          -10738,
+          -1838
+        ],
+        [
+          -10794,
+          -1852
+        ],
+        [
+          -10822,
+          -1858
+        ],
+        [
+          -10856,
+          -1898
+        ],
+        [
+          -10864,
+          -1918
+        ],
+        [
+          -10878,
+          -1930
+        ]
+      ],
+      "checkpoints": [
+        [
+          -10568,
+          -1816,
+          45
+        ],
+        [
+          -10738,
+          -1838,
+          45
+        ]
+      ],
+      "routeSource": "kart-course.py trace-road (the painted DeadwindPassShale road layer), then the deadwind-jump lane to the lip",
+      "portal": {
+        "x": -10882,
+        "y": -1933,
+        "o": 3.85,
+        "to": 0,
+        "name": "Portal to the Mirage Raceway"
+      },
+      "arrive": [
+        -10458,
+        -1562,
+        0,
+        4.712
+      ],
+      "lanes": [
+        {
+          "name": "deadwind-lane-c",
+          "from": 20,
+          "to": 22,
+          "note": "a tree + roots standing on the painted road at (-10842,-1886)"
+        }
+      ],
+      "openItem": "the ravine-lip jump at (-10899,-1968): the kart stops at (-10898,-1959) every run although props, gameobjects, WMOs and server terrain are clear there (2026-10-04) - client collision probe needed before it returns"
+    }
+  ],
+  "marshal": {
+    "name": "Zippa Sparkcog",
+    "title": "Kart Race Marshal",
+    "x": -6255,
+    "y": -3862,
+    "o": 4.712,
+    "greeting": "Welcome to the Mirage Raceway, $c! Grab a kart and I'll put you on the grid. Three laps of the finest track in Azeroth - and I do mean ALL of Azeroth. Watch the portals."
+  }
+}

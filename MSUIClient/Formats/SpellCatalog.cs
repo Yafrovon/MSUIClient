@@ -72,6 +72,10 @@ public readonly record struct SpellReagent(uint ItemId, uint Count);
 public sealed class SpellCatalog
 {
     public const string SpellPath = @"DBFilesClient\Spell.dbc";
+    /// <summary>World Content Pack spell rows (MangosSuperUI WorldPackContent.PackRowsPath("Spell")).</summary>
+    public const string PackSpellPath = @"WorldPacks\Spell.dbc";
+    /// <summary>The pack spell range, [38,000, 40,000) (MangosSuperUI WorldPackContent.SpellIdBase).</summary>
+    public const uint PackSpellIdBase = 38_000, PackSpellIdCeiling = 40_000;
     public const string IconPath = @"DBFilesClient\SpellIcon.dbc";
     public const string RangePath = @"DBFilesClient\SpellRange.dbc";
     public const string RadiusPath = @"DBFilesClient\SpellRadius.dbc";
@@ -157,9 +161,9 @@ public sealed class SpellCatalog
     {
         byte[]? spellBytes = mpq.ReadFile(SpellPath);
         byte[]? iconBytes = mpq.ReadFile(IconPath);
-        DbcFile? spells = spellBytes is null ? null : DbcFile.Parse(spellBytes);
+        DbcFile? stockSpells = spellBytes is null ? null : DbcFile.Parse(spellBytes);
         DbcFile? icons = iconBytes is null ? null : DbcFile.Parse(iconBytes);
-        if (spells is null || icons is null || spells.FieldCount < 173 || icons.FieldCount < 2)
+        if (stockSpells is null || icons is null || stockSpells.FieldCount < 173 || icons.FieldCount < 2)
             return null;
 
         var iconMap = new Dictionary<uint, string>();
@@ -221,10 +225,18 @@ public sealed class SpellCatalog
             }
         }
 
+        // World Content Pack spells (kart mounts, portal teleports) arrive as a ROWS-ONLY Spell.dbc in
+        // patch-7: a whole Spell.dbc there would hide patch-3's custom spells (MPQ resolves whole files).
+        var sources = new List<DbcFile> { stockSpells };
+        if (Parse(mpq, PackSpellPath) is { FieldCount: >= 173 } packSpells)
+            sources.Add(packSpells);
+        foreach (DbcFile spells in sources)
         for (int row = 0; row < spells.RecordCount; row++)
         {
             uint id = spells.GetUInt(row, 0);
             if (id == 0) continue;
+            if (!ReferenceEquals(spells, stockSpells) && id is < PackSpellIdBase or >= PackSpellIdCeiling)
+                continue;
             if (spells.GetUInt(row, 61) == 39 && spells.GetInt(row, 106) > 0)
                 result._declaredLanguages[id] = (uint)spells.GetInt(row, 106);
             iconMap.TryGetValue(spells.GetUInt(row, 117), out string? icon);

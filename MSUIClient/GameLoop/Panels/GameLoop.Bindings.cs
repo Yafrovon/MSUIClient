@@ -76,6 +76,8 @@ public sealed partial class GameLoop
         // is up and the body's MoveForward..StrafeRight otherwise; the scheme law that decides
         // whether Left/Right turn or sidestep is unchanged.
         RtsMoveForward, RtsMoveBackward, RtsTurnLeft, RtsTurnRight, RtsStrafeLeft, RtsStrafeRight,
+        // WoW Karting (shared_docs/WOW_KARTING.md): fire/drop the held MK64 item (hold Move Backward to throw behind).
+        KartUseItem,
         // Developer Tool Commands
         DevToggleOverlay, DevReloadVantage, DevDumpScene, DevGameplayDump, DevPainterlyComparison,
         // Debug Tool Commands
@@ -277,6 +279,7 @@ public sealed partial class GameLoop
         ("RTS Controls", GameBinding.RtsTurnRight, "Camera Right", Key.D),
         ("RTS Controls", GameBinding.RtsStrafeLeft, "Camera Sidestep Left", Key.Q),
         ("RTS Controls", GameBinding.RtsStrafeRight, "Camera Sidestep Right", Key.E),
+        ("Karting", GameBinding.KartUseItem, "Use Kart Item", Key.F),
         ("CRPG Controls", GameBinding.CrpgTakeControl, "Take Direct Control", Key.Unknown),
         ("CRPG Controls", GameBinding.CrpgCycleControlNext, "Control Next Character", Key.Unknown),
         ("CRPG Controls", GameBinding.CrpgCycleControlPrevious, "Control Previous Character", Key.Unknown),

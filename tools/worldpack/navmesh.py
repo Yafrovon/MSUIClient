@@ -147,6 +147,83 @@ class Nav:
         return m
 
 
+def route(nav, waypoints, pad=60.0):
+    """A walkable route through WoW (x, y) waypoints on the main component: A* over the 1-yd raster with a
+    clearance cost (keep to the middle of a road, off cliff lips), then simplified only where the straight cut
+    stays on walkable ground. WoW Karting lays its legs with it (shared_docs/WOW_KARTING.md)."""
+    import heapq
+    xs, ys = [p[0] for p in waypoints], [p[1] for p in waypoints]
+    x0, x1, y0, y1 = int(min(xs) - pad), int(max(xs) + pad), int(min(ys) - pad), int(max(ys) + pad)
+    m = nav.mask(x0, x1, y0, y1)
+    H, W = len(m), len(m[0])
+    # clearance: yards to the nearest unwalkable cell (two-pass chamfer), capped
+    INF = 99
+    c = [[0 if not m[i][j] else INF for j in range(W)] for i in range(H)]
+    for i in range(H):
+        for j in range(W):
+            if c[i][j]:
+                c[i][j] = min(c[i][j], (c[i - 1][j] + 1) if i else 1, (c[i][j - 1] + 1) if j else 1)
+    for i in range(H - 1, -1, -1):
+        for j in range(W - 1, -1, -1):
+            if c[i][j]:
+                c[i][j] = min(c[i][j], (c[i + 1][j] + 1) if i + 1 < H else 1, (c[i][j + 1] + 1) if j + 1 < W else 1)
+
+    def snap(x, y):
+        gi, gj = int(x - x0), int(y - y0)
+        best = None
+        for r in range(0, 40):
+            for di in range(-r, r + 1):
+                for dj in range(-r, r + 1):
+                    if max(abs(di), abs(dj)) != r:
+                        continue
+                    i, j = gi + di, gj + dj
+                    if 0 <= i < H and 0 <= j < W and m[i][j] and (best is None or c[i][j] > c[best[0]][best[1]]):
+                        best = (i, j)
+            if best and r >= 3:
+                return best
+        if best is None:
+            raise SystemExit(f'no walkable ground within 40 yd of ({x}, {y})')
+        return best
+
+    def astar(s, g):
+        dist, prev, heap = {s: 0.0}, {}, [(0.0, s)]
+        while heap:
+            f, p = heapq.heappop(heap)
+            if p == g:
+                break
+            for di, dj, k in ((1, 0, 1), (-1, 0, 1), (0, 1, 1), (0, -1, 1), (1, 1, 1.414), (1, -1, 1.414), (-1, 1, 1.414), (-1, -1, 1.414)):
+                q = (p[0] + di, p[1] + dj)
+                if not (0 <= q[0] < H and 0 <= q[1] < W) or not m[q[0]][q[1]]:
+                    continue
+                nd = dist[p] + k * (1 + 3.0 / min(c[q[0]][q[1]], 8))
+                if nd < dist.get(q, 1e18):
+                    dist[q], prev[q] = nd, p
+                    heapq.heappush(heap, (nd + math.dist(q, g), q))
+        if g not in prev and g != s:
+            raise SystemExit(f'no walkable path between {s} and {g} (different components?)')
+        path = [g]
+        while path[-1] != s:
+            path.append(prev[path[-1]])
+        return path[::-1]
+
+    def clear(a, b):
+        n = int(math.dist(a, b)) + 1
+        return all(c[int(round(a[0] + (b[0] - a[0]) * t / n))][int(round(a[1] + (b[1] - a[1]) * t / n))] >= 3 for t in range(n + 1))
+
+    cells = [snap(x, y) for x, y in waypoints]
+    full = [cells[0]]
+    for a, b in zip(cells, cells[1:]):
+        full += astar(a, b)[1:]
+    out, i = [full[0]], 0
+    while i < len(full) - 1:
+        j = len(full) - 1
+        while j > i + 1 and (not clear(full[i], full[j]) or math.dist(full[i], full[j]) > 80):
+            j -= 1
+        out.append(full[j])
+        i = j
+    return [[x0 + p[0] + 0.5, y0 + p[1] + 0.5] for p in out]
+
+
 def fetch(mapid, cells):
     cache = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'scratch', 'mmaps-cache', str(mapid))   # git-ignored
     os.makedirs(cache, exist_ok=True)
@@ -180,6 +257,8 @@ def main():
             open6 = sum(m[dx + 7][dy + 7] for dx, dy in cells6) / len(cells6)
             where = 'MAIN' if c[0] == nav.main else f'ISLAND {nav.area[c[0]]:.0f} sq yd'
             print(f'{name:>20} ({x},{y}): {where:<22} h={c[1]:.1f} open6={open6:.2f}')
+    elif cmd == 'route':
+        print(json.dumps(route(nav, json.loads(rest[1]), float(opt('--pad', '60')))))
     elif cmd == 'draw':
         from PIL import Image, ImageDraw
         out, xN, xS, yW, yE = rest[1], *map(float, rest[2:6])
