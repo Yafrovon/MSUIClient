@@ -3,10 +3,11 @@ namespace MSUIClient.Formats;
 // ─────────────────────────────────────────────────────────────────────────────
 // The creator-mode creature catalogue: a flat dump of vmangos creature_template
 // (creator-creatures.tsv at the repo root, generated from MangosSuperUI's
-// /Database/Export endpoint - one row per entry, highest patch wins, entries
-// with no display id dropped). Offline creator mode has no server to ask for
-// creature names, so the spawn browser reads this instead. Missing file is not
-// an error - the browser just reports the catalogue is absent.
+// GET /QuestAtlas/CreatureCatalogue - one row per entry, highest patch wins,
+// entries with no display id dropped). The client downloads it from the web app
+// itself once per session (GameLoop.EnsureCreatorCreatures) and keeps the file
+// as the offline copy; nobody makes it by hand. Missing file is not an error -
+// the browser just reports the catalogue is absent until the download lands.
 // ─────────────────────────────────────────────────────────────────────────────
 public sealed class CreatorCreatureTable
 {
@@ -32,19 +33,33 @@ public sealed class CreatorCreatureTable
         1 => "Elite", 2 => "Rare Elite", 3 => "Boss", 4 => "Rare", _ => "",
     };
 
+    public const string FileName = "creator-creatures.tsv";
+
+    public static string PathIn(string repoRoot) => Path.Combine(repoRoot, FileName);
+
     public static CreatorCreatureTable? Load(string repoRoot)
     {
-        string path = Path.Combine(repoRoot, "creator-creatures.tsv");
+        string path = PathIn(repoRoot);
         if (!File.Exists(path))
         {
-            Console.WriteLine($"[creator] creature catalogue missing ({path}) - browser disabled");
+            Console.WriteLine($"[creator] creature catalogue missing ({path}) - waiting for the web app download");
             return null;
         }
+        using var reader = new StreamReader(path);
+        return Parse(reader, path);
+    }
+
+    /// <summary>Parse the TSV (header line first). Null when it does not parse - never throws.</summary>
+    public static CreatorCreatureTable? Parse(TextReader reader, string source)
+    {
         try
         {
             var creatures = new List<Creature>(12000);
-            using var reader = new StreamReader(path);
-            reader.ReadLine();   // header
+            if (reader.ReadLine() is not { } header || !header.StartsWith("entry	", StringComparison.Ordinal))
+            {
+                Console.WriteLine($"[creator] creature catalogue {source}: not a catalogue (bad header)");
+                return null;
+            }
             while (reader.ReadLine() is { } line)
             {
                 string[] f = line.Split('\t');
@@ -54,7 +69,7 @@ public sealed class CreatorCreatureTable
                     byte.Parse(f[5]), byte.Parse(f[6]), uint.Parse(f[7]),
                     float.Parse(f[8], System.Globalization.CultureInfo.InvariantCulture)));
             }
-            Console.WriteLine($"[creator] creature catalogue ready ({creatures.Count} rows)");
+            Console.WriteLine($"[creator] creature catalogue ready ({creatures.Count} rows, {source})");
             return new CreatorCreatureTable(creatures);
         }
         catch (Exception ex)

@@ -42,7 +42,7 @@ namespace MSUIClient.Creator.Sketch;
 //
 // LAW (CODE_STRUCTURE_LAW §1): this namespace never references GameLoop.
 // ═══════════════════════════════════════════════════════════════════════════
-public static class SketchWriter
+public static partial class SketchWriter
 {
     // ── Strides, straight out of the readers ────────────────────────────────
     private const int VertexStride = 48;
@@ -56,6 +56,7 @@ public static class SketchWriter
     private const int ViewHeaderStride = 44;
     private const int SubmeshStride = 32;
     private const int BatchStride = 24;
+    private const int UvAnimationStride = 84;   // translation + rotation + scale blocks (M2Reader)
 
     /// <summary>The header runs to 0x144; the payload starts on the next 16-byte line.</summary>
     private const int HeaderBytes = 0x144;
@@ -74,6 +75,7 @@ public static class SketchWriter
     private const int HdrColours = 0x054;
     private const int HdrTextures = 0x05C;
     private const int HdrTransparency = 0x064;
+    private const int HdrUvAnimations = 0x074;
     private const int HdrRenderFlags = 0x084;
     private const int HdrBoneLookup = 0x08C;
     private const int HdrTextureLookup = 0x094;
@@ -120,7 +122,8 @@ public static class SketchWriter
         int VertexCount,
         int IndexCount,
         int BatchCount,
-        float LengthSeconds);
+        float LengthSeconds,
+        IReadOnlyList<string>? Notes = null);
 
     // ── Entry point ─────────────────────────────────────────────────────────
 
@@ -134,8 +137,11 @@ public static class SketchWriter
     /// nothing on screen to grab a handle on. Keeping the instance alive is not enough - the
     /// FADE is what hides it, not the lifetime. A looping sequence replays instead, so the
     /// piece is there whenever you reach for it. Never used for the bytes that get exported.</param>
+    /// <param name="archive">Reads a game file (the client's MPQs): where sparks and trails are
+    /// copied from (SketchWriter.Extras.cs). Null = no extras, everything else compiles.</param>
     public static SketchBuild? Build(SketchDoc doc, int spellId, string spellName,
-        BlpWriterService blp, SketchTextureCache? cache = null, bool loopForEditing = false)
+        BlpWriterService blp, SketchTextureCache? cache = null, bool loopForEditing = false,
+        Func<string, byte[]?>? archive = null)
     {
         ArgumentNullException.ThrowIfNull(doc);
         ArgumentNullException.ThrowIfNull(blp);
@@ -145,17 +151,31 @@ public static class SketchWriter
         if (doc.Pieces.Count > MaxPieces) return null;
 
         var textures = new List<SketchTextureFile>(doc.Pieces.Count);
+        var piecePaths = new List<string>(doc.Pieces.Count);
         foreach (SketchPiece piece in doc.Pieces)
         {
+            // An IMAGE piece wears an archive BLP as it is: nothing to rasterize, nothing to ship.
+            if (piece.Look.Image is { Length: > 0 } image)
+            {
+                piecePaths.Add(image);
+                continue;
+            }
             byte[]? bytes = cache is null
                 ? SketchTextures.BuildBlp(piece, blp)
                 : cache.Get(piece, blp);
             if (bytes == null) return null;      // a piece with no texture is not a piece
-            textures.Add(new SketchTextureFile(
-                SketchDoc.TexturePath(spellId, spellName, doc.Stage, piece.Name), bytes));
+            string path = SketchDoc.TexturePath(spellId, spellName, doc.Stage, piece.Name);
+            textures.Add(new SketchTextureFile(path, bytes));
+            piecePaths.Add(path);
         }
 
-        byte[] model = WriteModel(doc, textures, loopForEditing, out Stats stats);
+        // A MISSILE loops, always: it lives for its whole flight (seconds), and a one-shot
+        // sequence ends after the sketch's length with every piece faded to nothing - measured
+        // live 2026-10-26: a 6 s flight showed no ball at all. (SPELL_CREATOR_PLAN.md P2.)
+        var notes = new List<string>();
+        List<Extra> extras = ResolveExtras(doc, archive, notes);
+        byte[]? model = WriteModel(doc, piecePaths, extras, loopForEditing || doc.IsMissile, out Stats stats);
+        if (model is null) return null;          // over the vertex budget a ushort index can address
         return new SketchBuild(
             model,
             SketchDoc.ModelPath(spellId, spellName, doc.Stage),
@@ -165,7 +185,8 @@ public static class SketchWriter
             stats.Vertices,
             stats.Indices,
             stats.Batches,
-            doc.Length);
+            doc.Length,
+            notes);
     }
 
     private record struct Stats(int Bones, int Vertices, int Indices, int Batches);
@@ -209,7 +230,7 @@ public static class SketchWriter
 
     // ── The file ────────────────────────────────────────────────────────────
 
-    private static byte[] WriteModel(SketchDoc doc, List<SketchTextureFile> textures,
+    private static byte[]? WriteModel(SketchDoc doc, List<string> texturePaths, List<Extra> extras,
         bool loopForEditing, out Stats stats)
     {
         float length = doc.Length;
@@ -218,14 +239,22 @@ public static class SketchWriter
         // A "quad" is one drawn plane: every piece has one, and a piece with a glow
         // has a second, larger one on the SAME bone (§4.2 — the glow must travel with
         // the piece, and sharing the bone is what guarantees it).
-        var quads = new List<Quad>();
+        // A drawable is one batch: a painted plane, or a solid mesh (P3.5) - and a piece with a
+        // glow has a second, larger one on the SAME bone.
+        var quads = new List<Draw>();
         for (int i = 0; i < doc.Pieces.Count; i++)
         {
             SketchPiece piece = doc.Pieces[i];
             int bone = i + 1;                                  // bone 0 is the static root
-            quads.Add(new Quad(piece, bone, TextureIndex: i, Glow: false));
+            quads.Add(MakeDraw(piece, bone, i, glow: false));
             if (piece.Extras.Glow.Radius > 0.001f)
-                quads.Add(new Quad(piece, bone, TextureIndex: i, Glow: true));
+                quads.Add(MakeDraw(piece, bone, i, glow: true));
+        }
+        int totalVertices = quads.Sum(d => d.Vertices.Length);
+        if (totalVertices > ushort.MaxValue)
+        {
+            stats = default;
+            return null;
         }
 
         var b = new Blob();
@@ -259,7 +288,20 @@ public static class SketchWriter
         // ── bones ───────────────────────────────────────────────────────────
         // Every bone's three tracks are written FIRST so the 108-byte records can
         // embed real offsets; the records then go out contiguously.
-        int boneCount = doc.Pieces.Count + 1;
+        // Pieces first (bone i + 1 - the index the vertices name in a byte), then one MODIFIER
+        // bone per piece that orbits or jitters (SketchWriter.Modifiers.cs), parent-linked.
+        var globalSequences = new List<uint>();
+        var modifierBone = new int[doc.Pieces.Count];
+        int nextBone = doc.Pieces.Count + 1;
+        for (int i = 0; i < doc.Pieces.Count; i++)
+            modifierBone[i] = HasModifiers(doc.Pieces[i]) ? nextBone++ : -1;
+        int boneCount = nextBone;
+        if (boneCount > 255)
+        {
+            stats = default;
+            return null;                                       // a vertex names its bone in a byte
+        }
+        int[] parentPiece = ResolveParents(doc);
         var boneRecords = new BoneRecord[boneCount];
 
         boneRecords[0] = new BoneRecord(
@@ -269,9 +311,19 @@ public static class SketchWriter
         for (int i = 0; i < doc.Pieces.Count; i++)
         {
             SketchPiece piece = doc.Pieces[i];
+            short anchor = (short)(parentPiece[i] >= 0 ? parentPiece[i] + 1 : 0);
+            if (modifierBone[i] >= 0)
+            {
+                boneRecords[modifierBone[i]] = new BoneRecord(
+                    Flags: 0, Parent: anchor, Pivot: piece.Place.Origin,
+                    Translation: WriteModifierTranslation(b, piece, globalSequences),
+                    Rotation: WriteModifierRotation(b, piece, globalSequences),
+                    Scale: TrackRef.Absent);
+                anchor = (short)modifierBone[i];
+            }
             boneRecords[i + 1] = new BoneRecord(
                 Flags: piece.Place.Facing == SketchFacing.FaceCamera ? BoneFlagSphericalBillboard : 0u,
-                Parent: 0,
+                Parent: anchor,
                 Pivot: piece.Place.Origin,
                 Translation: WriteTranslationTrack(b, piece, lengthMs),
                 Rotation: WriteRotationTrack(b, piece, lengthMs),
@@ -297,9 +349,9 @@ public static class SketchWriter
         // ── vertices: four per quad ─────────────────────────────────────────
         int vertexOffset = b.Mark();
         int vertexCount = 0;
-        foreach (Quad quad in quads)
+        foreach (Draw quad in quads)
         {
-            foreach (Vertex v in QuadVertices(quad))
+            foreach (Vertex v in quad.Vertices)
             {
                 b.Vec3(v.Position);
                 b.U8(255); b.U8(0); b.U8(0); b.U8(0);          // weights: fully on its own bone
@@ -321,27 +373,30 @@ public static class SketchWriter
 
         int triangleOffset = b.Mark();
         int indexCount = 0;
+        var vertexStarts = new int[quads.Count];
+        var indexStarts = new int[quads.Count];
+        int vertexBase = 0;
         for (int q = 0; q < quads.Count; q++)
         {
-            int v0 = q * 4;
-            // Corner order from QuadVertices: 0 = top-left, 1 = top-right,
-            // 2 = bottom-left, 3 = bottom-right. Two-sided material, so winding
-            // never decides visibility.
-            foreach (int idx in new[] { v0 + 0, v0 + 1, v0 + 2, v0 + 2, v0 + 1, v0 + 3 })
+            vertexStarts[q] = vertexBase;
+            indexStarts[q] = indexCount;
+            // Two-sided material, so winding never decides visibility.
+            foreach (int idx in quads[q].Indices)
             {
-                b.U16((ushort)idx);
+                b.U16((ushort)(vertexBase + idx));
                 indexCount++;
             }
+            vertexBase += quads[q].Vertices.Length;
         }
 
         int submeshOffset = b.Mark();
         for (int q = 0; q < quads.Count; q++)
         {
-            Quad quad = quads[q];
+            Draw quad = quads[q];
             b.U16((ushort)q);                                  // id
             b.U16(0);                                          // level
-            b.U16((ushort)(q * 4)); b.U16(4);                  // vertexStart, vertexCount
-            b.U16((ushort)(q * 6)); b.U16(6);                  // indexStart, indexCount
+            b.U16((ushort)vertexStarts[q]); b.U16((ushort)quad.Vertices.Length);   // vertexStart, vertexCount
+            b.U16((ushort)indexStarts[q]); b.U16((ushort)quad.Indices.Length);     // indexStart, indexCount
             b.U16(1);                                          // boneCount
             b.U16((ushort)quad.Bone);                          // boneComboIndex into boneLookup
             b.U16(1);                                          // boneInfluences
@@ -350,6 +405,18 @@ public static class SketchWriter
         }
 
         ExpectStride(b, submeshOffset, quads.Count, SubmeshStride, "submesh");
+
+        // Texture transforms (P3.6): one per piece that scrolls or flips, each on its own GLOBAL
+        // sequence so it loops on its own clock whatever the sketch's length. uvAnimationLookup[0]
+        // stays -1 ("does not animate") for every other batch.
+        var transformLookupOfPiece = new int[doc.Pieces.Count];
+        var animatedPieces = new List<int>();
+        for (int i = 0; i < doc.Pieces.Count; i++)
+            if (doc.Pieces[i].Look.HasUvAnimation)
+            {
+                animatedPieces.Add(i);
+                transformLookupOfPiece[i] = animatedPieces.Count;   // lookup index (0 is the -1)
+            }
 
         int batchOffset = b.Mark();
         for (int q = 0; q < quads.Count; q++)
@@ -366,7 +433,7 @@ public static class SketchWriter
             b.U16((ushort)q);                                  // textureIndex -> textureLookup[q]
             b.U16((ushort)q);                                  // texCoordCombo -> textureUnits[q]
             b.U16(0);                                          // weightCombo -> transparencyLookup[0]
-            b.U16(0);                                          // transformCombo -> uvAnimationLookup[0] = -1
+            b.U16((ushort)transformLookupOfPiece[quads[q].TextureIndex]);   // transformCombo -> uvAnimationLookup
         }
 
         ExpectStride(b, batchOffset, quads.Count, BatchStride, "batch");
@@ -386,11 +453,11 @@ public static class SketchWriter
         var colourRefs = new (TrackRef Colour, TrackRef Alpha)[quads.Count];
         for (int q = 0; q < quads.Count; q++)
         {
-            Quad quad = quads[q];
+            Draw quad = quads[q];
             Vector3 tint = quad.Glow
                 ? quad.Piece.Extras.Glow.Colour ?? quad.Piece.Look.Colour
                 : quad.Piece.Look.Colour;
-            colourRefs[q] = (WriteColourTrack(b, tint), WriteAlphaTrack(b, quad.Piece, lengthMs));
+            colourRefs[q] = (WriteColourTrack(b, tint), WriteAlphaTrack(b, quad.Piece, lengthMs, doc.IsMissile));
         }
         int colourOffset = b.Mark();
         foreach ((TrackRef colour, TrackRef alpha) in colourRefs)
@@ -402,21 +469,34 @@ public static class SketchWriter
         b.PatchArray(HdrColours, quads.Count, colourOffset);
 
         // ── textures: one per PIECE; a glow quad reuses its piece's image ────
-        var filenameOffsets = new (int Offset, int Count)[textures.Count];
-        for (int i = 0; i < textures.Count; i++)
+        // Then one per EXTRA (sparks / trail), in extras order: their records index from
+        // texturePaths.Count (SketchWriter.Extras.cs).
+        int textureEntries = texturePaths.Count + extras.Count;
+        var filenameOffsets = new (int Offset, int Count)[textureEntries];
+        for (int i = 0; i < textureEntries; i++)
         {
-            byte[] path = Encoding.ASCII.GetBytes(textures[i].Path + "\0");
+            string fileName = i < texturePaths.Count ? texturePaths[i] : extras[i - texturePaths.Count].TexturePath;
+            byte[] path = Encoding.ASCII.GetBytes(fileName + "\0");
             filenameOffsets[i] = (b.Append(path), path.Length);   // count includes the NUL, and must be > 1
         }
         int textureOffset = b.Mark();
-        foreach ((int offset, int count) in filenameOffsets)
+        for (int i = 0; i < filenameOffsets.Length; i++)
         {
+            (int offset, int count) = filenameOffsets[i];
             b.U32(0);                                          // type 0 = hardcoded filename
-            b.U32(0);                                          // flags: no wrap
+            if (i < texturePaths.Count)
+            {
+                SketchLook look = doc.Pieces[i].Look;
+                // Wrap U and V (1 | 2) for an image or anything that scrolls / flips: a clamped
+                // texture slides off its geometry instead of repeating. A drawn mask stays clamped -
+                // its soft margin must never bleed in from the opposite edge.
+                b.U32(look.Image is { Length: > 0 } || look.HasUvAnimation ? 3u : 0u);
+            }
+            else b.U32(extras[i - texturePaths.Count].TextureFlags);   // the donor's own
             b.U32((uint)count); b.U32((uint)offset);
         }
-        ExpectStride(b, textureOffset, textures.Count, TextureStride, "texture");
-        b.PatchArray(HdrTextures, textures.Count, textureOffset);
+        ExpectStride(b, textureOffset, textureEntries, TextureStride, "texture");
+        b.PatchArray(HdrTextures, textureEntries, textureOffset);
 
         // ── transparency: one record, weight 1, shared by every batch ────────
         TrackRef weight = WriteFixed16Track(b, new uint[] { 0 }, new[] { AlphaOpaque });
@@ -427,7 +507,7 @@ public static class SketchWriter
 
         // ── render flags ────────────────────────────────────────────────────
         int renderFlagOffset = b.Mark();
-        foreach (Quad quad in quads)
+        foreach (Draw quad in quads)
         {
             ushort flags = 0x04;                               // two-sided: a plane is never backfaced away
             if (quad.Piece.Look.Unlit) flags |= 0x01;
@@ -436,8 +516,12 @@ public static class SketchWriter
             b.U16(flags);
             b.U16(blend);
         }
-        ExpectStride(b, renderFlagOffset, quads.Count, RenderFlagStride, "render flag");
-        b.PatchArray(HdrRenderFlags, quads.Count, renderFlagOffset);
+        // A trail draws with its donor's material, appended after the batches' own.
+        int ribbonMaterials = 0;
+        foreach (Extra extra in extras)
+            if (extra.Ribbon) { b.U16(extra.MaterialFlags); b.U16(extra.Blend); ribbonMaterials++; }
+        ExpectStride(b, renderFlagOffset, quads.Count + ribbonMaterials, RenderFlagStride, "render flag");
+        b.PatchArray(HdrRenderFlags, quads.Count + ribbonMaterials, renderFlagOffset);
 
         // ── lookups ─────────────────────────────────────────────────────────
         // boneLookup is not read by M2Reader but the real 1.12 client skins through it.
@@ -446,7 +530,7 @@ public static class SketchWriter
         b.PatchArray(HdrBoneLookup, boneCount, boneLookupOffset);
 
         int textureLookupOffset = b.Mark();
-        foreach (Quad quad in quads) b.U16((ushort)quad.TextureIndex);
+        foreach (Draw quad in quads) b.U16((ushort)quad.TextureIndex);
         b.PatchArray(HdrTextureLookup, quads.Count, textureLookupOffset);
 
         int textureUnitOffset = b.Mark();
@@ -457,15 +541,47 @@ public static class SketchWriter
         b.U16(0);
         b.PatchArray(HdrTransparencyLookup, 1, transparencyLookupOffset);
 
+        // The transforms themselves, then the lookup: entry 0 = -1, entry k = transform k-1.
+        var transformTracks = new List<TrackRef>();
+        foreach (int pieceIndex in animatedPieces)
+        {
+            (uint[] times, Vector3[] keys, ushort interp, uint durationMs) = UvAnimationKeys(doc.Pieces[pieceIndex].Look);
+            short global = (short)globalSequences.Count;
+            globalSequences.Add(durationMs);
+            transformTracks.Add(WriteVectorTrack(b, times, keys) with { Interpolation = interp, GlobalSequence = global });
+        }
+        if (transformTracks.Count > 0)
+        {
+            int transformOffset = b.Mark();
+            foreach (TrackRef translation in transformTracks)
+            {
+                b.Track(translation);
+                b.Track(TrackRef.Absent);                      // rotation
+                b.Track(TrackRef.Absent);                      // scale
+            }
+            ExpectStride(b, transformOffset, transformTracks.Count, UvAnimationStride, "uv animation");
+            b.PatchArray(HdrUvAnimations, transformTracks.Count, transformOffset);
+        }
         int uvAnimationLookupOffset = b.Mark();
         b.I16(-1);                                             // -1 = this batch does not animate its UVs
-        b.PatchArray(HdrUvAnimationLookup, 1, uvAnimationLookupOffset);
+        for (int t = 0; t < transformTracks.Count; t++) b.I16((short)t);
+        b.PatchArray(HdrUvAnimationLookup, 1 + transformTracks.Count, uvAnimationLookupOffset);
+
+        // ── extras: sparks and trails copied from Blizzard's models (P3.3 / P3.4) ──
+        // Before the global sequence table: a donor track on a global sequence adds one.
+        WriteExtras(b, doc, extras, texturePaths.Count, quads.Count, globalSequences);
 
         // ── header scalars ──────────────────────────────────────────────────
         b.PatchAscii(0, "MD20");
         b.PatchU32(0x004, 256);
         b.PatchU32(HdrGlobalFlags, 0);
-        b.PatchArray(HdrGlobalSequences, 0, 0);
+        if (globalSequences.Count > 0)
+        {
+            int globalOffset = b.Mark();
+            foreach (uint duration in globalSequences) b.U32(duration);
+            b.PatchArray(HdrGlobalSequences, globalSequences.Count, globalOffset);
+        }
+        else b.PatchArray(HdrGlobalSequences, 0, 0);
         b.PatchBounds(HdrBoundingBox, bounds.min, bounds.max);
         b.PatchF32(HdrBoundingRadius, BoundsRadius(bounds));
         b.PatchBounds(HdrCollisionBox, bounds.min, bounds.max);
@@ -479,7 +595,76 @@ public static class SketchWriter
 
     private readonly record struct Quad(SketchPiece Piece, int Bone, int TextureIndex, bool Glow);
 
-    private readonly record struct Vertex(Vector3 Position, Vector3 Normal, float U, float V);
+    /// <summary>One batch's geometry: vertices LOCAL to its bone, indices local to its own list.</summary>
+    private readonly record struct Draw(SketchPiece Piece, int Bone, int TextureIndex, bool Glow,
+        Vertex[] Vertices, int[] Indices);
+
+    private static readonly int[] QuadIndices = { 0, 1, 2, 2, 1, 3 };
+
+    private static Draw MakeDraw(SketchPiece piece, int bone, int textureIndex, bool glow)
+    {
+        Vertex[] vertices;
+        int[] indices;
+        if (SketchShapes.IsSolid(piece.Shape.Kind))
+            (vertices, indices) = SketchSolids.Build(piece, glow);
+        else
+        {
+            vertices = QuadVertices(new Quad(piece, bone, textureIndex, glow));
+            indices = QuadIndices;
+        }
+        // A flipbook shows ONE frame of the sheet at a time: the UVs cover a single cell and the
+        // texture transform steps the cell (UvAnimationKeys).
+        SketchLook look = piece.Look;
+        if (look.HasFlipbook)
+        {
+            float su = 1f / Math.Max(look.FlipCols, 1), sv = 1f / Math.Max(look.FlipRows, 1);
+            for (int i = 0; i < vertices.Length; i++)
+                vertices[i] = vertices[i] with { U = vertices[i].U * su, V = vertices[i].V * sv };
+        }
+        return new Draw(piece, bone, textureIndex, glow, vertices, indices);
+    }
+
+    /// <summary>The translation keys of a piece's texture transform, on a global sequence.
+    /// Flipbook: one STEPPED key per frame (interpolation 0 holds each cell). Scroll: two linear
+    /// keys over a period chosen so both offsets land on whole repeats - the loop is seamless.</summary>
+    private static (uint[] Times, Vector3[] Keys, ushort Interp, uint DurationMs) UvAnimationKeys(SketchLook look)
+    {
+        if (look.HasFlipbook)
+        {
+            int cols = Math.Max(look.FlipCols, 1), rows = Math.Max(look.FlipRows, 1), frames = cols * rows;
+            uint duration = (uint)Math.Max(MathF.Round(frames / look.FlipFps * 1000f), frames);
+            var times = new uint[frames];
+            var keys = new Vector3[frames];
+            for (int f = 0; f < frames; f++)
+            {
+                times[f] = (uint)((long)f * duration / frames);
+                keys[f] = new Vector3((f % cols) / (float)cols, (f / cols) / (float)rows, 0f);
+            }
+            return (times, keys, 0, duration);
+        }
+        Vector2 speed = look.UvScroll;
+        float slow = MathF.Min(MathF.Abs(speed.X) > 1e-4f ? MathF.Abs(speed.X) : float.MaxValue,
+                               MathF.Abs(speed.Y) > 1e-4f ? MathF.Abs(speed.Y) : float.MaxValue);
+        // The shortest multiple of the slow axis' period on which the fast axis ALSO lands on a
+        // whole repeat (0.5 and 1.25 per second -> 4 s: 2 and 5 repeats). Rounding one period
+        // instead would change the speed and jump at the seam. No such multiple within 32 -> the
+        // closest one (the jump is then under 2 %).
+        float basePeriod = 1f / slow, period = basePeriod, worst = float.MaxValue;
+        for (int k = 1; k <= 32 && k * basePeriod <= 60f; k++)
+        {
+            float t = k * basePeriod;
+            float miss = MathF.Max(MathF.Abs(speed.X * t - MathF.Round(speed.X * t)), MathF.Abs(speed.Y * t - MathF.Round(speed.Y * t)));
+            if (miss < worst - 1e-4f) { worst = miss; period = t; }
+            if (miss < 0.02f) break;
+        }
+        period = Math.Clamp(period, 0.1f, 60f);
+        var end = new Vector3(MathF.Round(speed.X * period), MathF.Round(speed.Y * period), 0f);
+        if (end == Vector3.Zero) end = new Vector3(speed.X * period, speed.Y * period, 0f);
+        uint ms = (uint)Math.Max(MathF.Round(period * 1000f), 2f);
+        return (new uint[] { 0, ms }, new[] { Vector3.Zero, end }, InterpLinear, ms);
+    }
+
+    internal readonly record struct Vertex(Vector3 Position, Vector3 Normal, float U, float V);
 
     /// <summary>The four corners of one quad, in the piece's LOCAL plane.
     ///
@@ -578,7 +763,8 @@ public static class SketchWriter
                               * SketchTextures.QuadOversize + piece.Place.Offset.Length())
                           * MathF.Max(piece.Place.Scale, 0.01f)
                           * MathF.Max(piece.Motion.GrowFrom, piece.Motion.GrowTo)
-                          + MathF.Max(piece.Extras.Glow.Radius, 0f);
+                          + MathF.Max(piece.Extras.Glow.Radius, 0f)
+                          + ModifierReach(piece);
 
             foreach (Vector3 point in MotionExtremes(piece))
             {
@@ -841,13 +1027,15 @@ public static class SketchWriter
     /// makes M2Reader treat the whole batch as invisible and never submit it. An
     /// animated track returns null from that test instead and is always kept — which is
     /// why a fade-in starting at zero is safe but an all-zero track would not be.</summary>
-    private static TrackRef WriteAlphaTrack(Blob b, SketchPiece piece, uint lengthMs)
+    private static TrackRef WriteAlphaTrack(Blob b, SketchPiece piece, uint lengthMs, bool missile)
     {
         float baseAlpha = Math.Clamp(piece.Look.Alpha, 0f, 1f);
         short peak = (short)Math.Clamp((int)MathF.Round(baseAlpha * AlphaOpaque), 1, AlphaOpaque);
 
-        float fadeIn = MathF.Max(piece.Motion.FadeIn, 0f);
-        float fadeOut = MathF.Max(piece.Motion.FadeOut, 0f);
+        // A missile's sequence LOOPS for the whole flight, so a fade would blink every loop:
+        // its pieces hold their alpha (the flight's start and end are the game's to decide).
+        float fadeIn = missile ? 0f : MathF.Max(piece.Motion.FadeIn, 0f);
+        float fadeOut = missile ? 0f : MathF.Max(piece.Motion.FadeOut, 0f);
 
         var times = new List<uint>();
         var keys = new List<short>();
@@ -1002,7 +1190,7 @@ public static class SketchWriter
 
     private readonly record struct TrackRef(
         ushort Interpolation, int RangesOffset, int RangesCount,
-        int TimesOffset, int TimesCount, int KeysOffset, int KeysCount)
+        int TimesOffset, int TimesCount, int KeysOffset, int KeysCount, short GlobalSequence = -1)
     {
         public static readonly TrackRef Absent = new(0, 0, 0, 0, 0, 0, 0);
     }
@@ -1070,7 +1258,7 @@ public static class SketchWriter
         {
             int start = _bytes.Count;
             U16(track.Interpolation);
-            I16(-1);                                            // globalSequence: -1, never 0
+            I16(track.GlobalSequence);                          // -1 = the sequence's clock; never 0 by accident
             U32((uint)track.RangesCount); U32((uint)track.RangesOffset);
             U32((uint)track.TimesCount); U32((uint)track.TimesOffset);
             U32((uint)track.KeysCount); U32((uint)track.KeysOffset);

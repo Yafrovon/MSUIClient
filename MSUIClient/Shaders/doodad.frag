@@ -81,6 +81,9 @@ uniform float uVertexColorScale;
 // this a lantern inside a dark room goes out, which is the one thing a lantern
 // must not do.
 uniform int   uUnlit;
+// M2 batch colour x texture weight at the world clock (DoodadRenderer.BatchTintFor); off = untinted batch.
+uniform int   uBatchTintOn;
+uniform vec4  uBatchTint;
 
 // Beyond-portal fill light (see wmo.frag). Weighted by (1 - vLight.a) so it
 // lands on interior-baked props and fades out on daylight-dominant ones;
@@ -217,6 +220,15 @@ void main()
     vec4 albedo = uHasTexture == 1
         ? texture(uTexture, vUV)
         : vec4(0.62, 0.60, 0.56, 1.0);
+    if (uBatchTintOn == 1)
+    {
+        // A batch authored invisible right now draws nothing and writes no depth (vanilla skips its submission).
+        if (uBatchTint.a < 1.0 / 255.0) discard;
+        albedo.rgb *= uBatchTint.rgb;
+        // Only a blending batch fades: on an opaque or alpha-key batch a partial weight would just eat into the
+        // 0.5 cutout and delete foliage, and the opaque pass has no blend func to consume it.
+        if (uBlendedBatch == 1) albedo.a *= uBatchTint.a;
+    }
 
     if (uAlphaCutoff > 0.0 && albedo.a < uAlphaCutoff) discard;
 

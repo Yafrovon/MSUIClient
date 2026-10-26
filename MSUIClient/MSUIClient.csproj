@@ -80,6 +80,8 @@
 			LogicalName="MSUIClient.Assets.UI.PartyChain.party-chain-world-hold.png" />
 		<EmbeddedResource Include="Data/vmangos-commands.tsv"
 			LogicalName="MSUIClient.Data.vmangos-commands.tsv" />
+		<EmbeddedResource Include="Data/vanilla-spell-rules.json"
+			LogicalName="MSUIClient.Data.vanilla-spell-rules.json" />
 	</ItemGroup>
 
 	<ItemGroup>

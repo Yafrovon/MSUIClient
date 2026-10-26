@@ -897,6 +897,7 @@ public sealed partial class GameLoop
                     else Log(false, $"unknown {line}");
                     break;
                 case "glue": Log(RunLiveGlue(line), line); break;
+                case "tabletop-live": Log(RunLiveTabletop(line), line); break;
                 case "character":
                     if (p[1].Equals("inspect", StringComparison.OrdinalIgnoreCase)) Log(InspectCharacterInventory(), line);
                     else if (p[1].Equals("open", StringComparison.OrdinalIgnoreCase))

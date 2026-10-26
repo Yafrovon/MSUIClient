@@ -26,6 +26,9 @@ public sealed class SoundKitLibrary
 
     public SoundKitLibrary(MpqMount mpq) => _catalog = SoundEntriesCatalog.Load(mpq);
 
+    /// <summary>The SoundEntries rows themselves (read-only), for the creator's sound picker.</summary>
+    public SoundEntriesCatalog? Catalog => _catalog;
+
     public bool TryGet(uint? soundId, out SoundEntry entry)
     {
         entry = default;

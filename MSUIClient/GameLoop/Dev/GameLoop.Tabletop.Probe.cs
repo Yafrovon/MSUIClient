@@ -42,6 +42,7 @@ public sealed partial class GameLoop
     {
         if (TabletopProbeSpec is null || _ttProbeStage >= 99) return;
         double now = NowSeconds();
+        if (TabletopProbePerfSampling(now)) return;
         if (_ttProbeStarted > 0 && now - _ttProbeStarted > 300 + 150 * Math.Max(1, _ttProbeZones.Count))
         {
             TabletopProbeCheck("probe finished in time", false, $"stuck at stage {_ttProbeStage}");
@@ -84,6 +85,11 @@ public sealed partial class GameLoop
                 TabletopProbeCheck("MCNK origin: 0x68 = world X (north), 0x6C = world Y (west) on Azeroth_29_51",
                     first is not null && MathF.Abs(first.BaseX - -10133.333f) < 0.5f && MathF.Abs(first.BaseY - 1600f) < 0.5f,
                     first is null ? "tile/chunk missing" : $"BaseX {first.BaseX:0.0}, BaseY {first.BaseY:0.0}");
+                // MCNR is stored (x, y, z) with Z up (2026-10-22: the reader had swapped up into Y since the first commit,
+                // lighting terrain as if it faced sideways and streaking the table's slope projection on flat ground).
+                var n0 = first?.NormalAt(0) ?? default;
+                TabletopProbeCheck("MCNR terrain normals: up is Z (flat chunk 0 of Azeroth_29_51)", n0.Z > 0.9f,
+                    $"({n0.X:0.00}, {n0.Y:0.00}, {n0.Z:0.00})");
                 var relief = adt is null ? null : ReliefCompiler.Compile(adt, 29, 51);
                 TabletopProbeCheck("relief compiler: every chunk origin agrees with its index placement",
                     relief is not null && relief.OriginsChecked == 256 && relief.OriginsAgree == 256,
@@ -104,6 +110,14 @@ public sealed partial class GameLoop
             case 1:   // the world is in and the body has landed: remember everything, open the table
             {
                 if (_worldLoading || _controller is null || now - _ttProbeAt < 10.0) return;
+                // MSUI_TABLETOP_WORLDSHOT=1: one shot of the ordinary world view first (terrain lighting comparisons).
+                if (Environment.GetEnvironmentVariable("MSUI_TABLETOP_WORLDSHOT") == "1" && !_ttProbeWorldShot)
+                {
+                    _ttProbeWorldShot = true;
+                    TabletopProbeShot($"tabletop-{_ttProbeZones[0].Area}-world");
+                    _ttProbeAt = now - 8.0;
+                    return;
+                }
                 Settings.Creator.Tabletop.AreaId = _ttProbeZones[0].Area;
                 _creatorPanel = CreatorPanel.Tabletop;
                 _ttProbeZone = 0;
@@ -134,7 +148,8 @@ public sealed partial class GameLoop
                 TabletopProbeNearChecks(area, "overview");
                 Console.WriteLine($"[tabletop-probe] info zone {area} quests: {_qaStatus}; {_qaPins.Count} pins, {_qaArcs.Count} arcs, {_qaDots.Count} dots; fps {ImGuiNET.ImGui.GetIO().Framerate:0}");
                 TabletopProbeShot($"tabletop-{area}-overview");
-                _ttProbeStage = 3; _ttProbeAt = now;
+                TabletopProbePerfStart($"zone {area} overview", now);
+                _ttProbeStage = Environment.GetEnvironmentVariable("MSUI_TABLETOP_LIVE") == "1" ? 20 : 3; _ttProbeAt = now;
                 return;
             }
 
@@ -142,8 +157,12 @@ public sealed partial class GameLoop
             {
                 if (now - _ttProbeAt < 1.0 || _tabletop?.Board is not { } b) return;
                 var c = _ttProbeZones[_ttProbeZone].Close ?? b.Centre;
-                float half = MathF.Min(450f, b.Span * 0.12f);
-                TabletopFrame(c - new Vector2(half), c + new Vector2(half));
+                // MSUI_TABLETOP_CLOSE_HALF=<yards>: a tighter close framing (texture checks at the owner's close-up range).
+                float half = float.TryParse(Environment.GetEnvironmentVariable("MSUI_TABLETOP_CLOSE_HALF"), NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float closeHalf) && closeHalf > 0 ? closeHalf : MathF.Min(450f, b.Span * 0.12f);
+                if (closeHalf > 0)
+                    TabletopFlyTo(new Vector3(c.X, c.Y, _tabletop.HeightAt(c.X, c.Y)), closeHalf, 0.95f, null, TabletopLaw.FrameSeconds);
+                else TabletopFrame(c - new Vector2(half), c + new Vector2(half));
                 _ttProbeStage = 4; _ttProbeAt = now;
                 return;
             }
@@ -155,6 +174,7 @@ public sealed partial class GameLoop
                 uint area = _ttProbeZones[_ttProbeZone].Area;
                 TabletopProbeNearChecks(area, "close");
                 TabletopProbeShot($"tabletop-{area}-close");
+                TabletopProbePerfStart($"zone {area} close", now);
                 _ttProbeStage = 7; _ttProbeAt = now;
                 return;
             }
@@ -288,12 +308,110 @@ public sealed partial class GameLoop
                 if (_ttOpen) return;
                 // Open-time snapshot vs close: game camera, body (position, facing, flying), streaming centre, map, packets.
                 TabletopProbeCheck("leaving the view: camera, body, stream centre unchanged; nothing sent", _ttLastCloseClean, _ttLastCloseReport);
+                _ttProbeStage = 11; _ttProbeAt = now;
+                return;
+            }
+
+            case 20:   // the living board: wait for the brain feed and the looks, then pick a bot (a moving one if any)
+            {
+                uint area = _ttProbeZones[_ttProbeZone].Area;
+                bool dressed = _live.Values.Any(b => b.View is not null);
+                if ((_live.Count == 0 || !dressed) && now - _ttProbeAt < 30) return;
+                Console.WriteLine($"[tabletop-probe] info zone {area} live: {_liveStatus}; {_live.Values.Count(b => b.View is not null)} dressed, {_live.Values.Count(b => b.Speed > 0)} moving, {_live.Values.Count(b => b.Stalled)} stalled, {_live.Values.Count(b => b.Dead)} dead");
+                TabletopProbeCheck($"zone {area}: live bots on the board", _live.Count > 0, _liveStatus);
+                var pick = _live.Values.Where(b => b.View is not null).OrderByDescending(b => b.Speed > 0).ThenBy(b => b.Guid).FirstOrDefault();
+                if (pick is null) { _ttProbeStage = 3; _ttProbeAt = now; return; }
+                LiveSelect(pick);
+                _ttProbeLiveFrom = pick.Shown;
+                Console.WriteLine($"[tabletop-probe] info live pick {pick.Name} ({pick.Guid}) {pick.Goal}/{pick.Step} at ({pick.Shown.X:0}, {pick.Shown.Y:0}) speed {pick.Speed:0.0}");
+                _ttProbeStage = 21; _ttProbeAt = now;
+                return;
+            }
+
+            case 21:   // follow it for a while: it must stand dressed in the near layer, and (if it walks) move
+            {
+                if (now - _ttProbeAt < 9.0 || TabletopFlying) return;
+                if (!TabletopProbeNearSettled(now)) return;
+                uint area = _ttProbeZones[_ttProbeZone].Area;
+                var sel = _liveSel is { } g && _live.TryGetValue(g, out var b) ? b : null;
+                bool drawn = sel is not null && _ttUnitsThisFrame.Any(u => LiveBotOf(u) == sel);
+                TabletopProbeCheck($"zone {area}: the selected bot stands dressed in the near layer", drawn,
+                    sel is null ? "selection lost" : $"{sel.Name}: view {(sel.View is null ? "none" : "built")}, items {sel.Look?.Items.Count ?? 0}, units this frame {_ttUnitsThisFrame.Count}, drawn {_ttNear?.CreaturesDrawn}");
+                var eye = _ttCamera.Position;
+                Console.WriteLine($"[tabletop-probe] info live camera: target ({_ttTarget.X:0.0}, {_ttTarget.Y:0.0}, {_ttTarget.Z:0.0}) r {_ttRadius:0.0} polar {_ttPolar:0.00} eye ({eye.X:0.0}, {eye.Y:0.0}, {eye.Z:0.0}); bot ({sel?.Shown.X:0.0}, {sel?.Shown.Y:0.0}, {sel?.Shown.Z:0.0}); far ground {_tabletop?.HeightAt(_ttTarget.X, _ttTarget.Y):0.0} shown {_tabletop?.ShownHeightAt(_ttTarget.X, _ttTarget.Y):0.0}; near ground {_ttNear?.GroundAt(_ttTarget.X, _ttTarget.Y):0.0}; base {_tabletop?.BaseZ:0.0} k {_tabletop?.Exaggeration:0.0}; near {_ttNear?.Status}");
+                if (sel is not null)
+                    Console.WriteLine($"[tabletop-probe] info live {sel.Name} moved {Vector2.Distance(new(sel.Shown.X, sel.Shown.Y), new(_ttProbeLiveFrom.X, _ttProbeLiveFrom.Y)):0.0} yd in 9 s; follow {_liveFollow}; card {QaCardOpen}");
+                TabletopProbeShot($"tabletop-{area}-live");
+                _ttProbeStage = 22; _ttProbeAt = now;
+                return;
+            }
+
+            case 22:   // one more frame a few seconds later (the follow shot)
+            {
+                if (now - _ttProbeAt < 4.0) return;
+                TabletopProbeShot($"tabletop-{_ttProbeZones[_ttProbeZone].Area}-live-later");
+                _ttProbeStage = 23; _ttProbeAt = now;
+                return;
+            }
+
+            case 23:   // after the shot has been written: back to the normal sequence
+            {
+                if (now - _ttProbeAt < 1.0) return;
+                QaClearSelection();
+                TabletopOverview();
+                _ttProbeStage = 3; _ttProbeAt = now;
+                return;
+            }
+
+            case 11:   // nothing local by hand: the creator catalogue downloads itself from the web app on any machine
+            {
+                EnsureCreatorCreatures();
+                if (_creatorCreaturesFetch is not null && now - _ttProbeAt < 60) return;
+                string path = CreatorCreatureTable.PathIn(_config.RepoRoot);
+                TabletopProbeCheck("creator catalogue downloaded from the web app and kept as the offline copy",
+                    _creatorCreatures is { Count: > 0 } && _creatorCreaturesStatus.Length == 0 && File.Exists(path),
+                    $"{_creatorCreatures?.Count ?? 0} creatures; {(_creatorCreaturesStatus.Length > 0 ? _creatorCreaturesStatus : "fresh")}; file {(File.Exists(path) ? "written" : "missing")}");
                 TabletopProbeFinish();
                 return;
             }
         }
     }
 
+    // §7/§10.5 frame times: the hitch recorder's completed frames over a fixed window per framing.
+    private const double TabletopPerfSeconds = 5.0;
+    private string? _ttPerfLabel;
+    private double _ttPerfStarted;
+    private long _ttPerfLastIndex = -1;
+    private readonly List<(double Frame, double Render)> _ttPerf = new();
+
+    private void TabletopProbePerfStart(string label, double now)
+    {
+        // Starts after the shot just armed has been written (a PNG encode is a ~0.5 s frame of the probe's own).
+        _ttPerfLabel = label; _ttPerfStarted = now + 1.5; _ttPerfLastIndex = _hitch.LastCompleted.Index; _ttPerf.Clear();
+    }
+
+    /// <summary>While a window is open: collect each completed frame; true holds the probe's stages until it closes.</summary>
+    private bool TabletopProbePerfSampling(double now)
+    {
+        if (_ttPerfLabel is null) return false;
+        var f = _hitch.LastCompleted;
+        if (now < _ttPerfStarted) { _ttPerfLastIndex = f.Index; return true; }
+        if (f.Index != _ttPerfLastIndex) { _ttPerfLastIndex = f.Index; _ttPerf.Add((f.FrameMs, f.RenderMs)); }
+        if (now - _ttPerfStarted < TabletopPerfSeconds) return true;
+        if (_ttPerf.Count > 0)
+        {
+            var ms = _ttPerf.Select(p => p.Frame).OrderBy(x => x).ToList();
+            double P(double q) => ms[Math.Min(ms.Count - 1, (int)(q * ms.Count))];
+            double avg = ms.Average();
+            Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"[tabletop-probe] perf {_ttPerfLabel}: {ms.Count} frames, {1000.0 / avg:0} fps avg; frame ms p50 {P(0.5):0.0} p95 {P(0.95):0.0} max {ms[^1]:0.0}; render ms avg {_ttPerf.Average(p => p.Render):0.0}; over 25 ms {ms.Count(x => x > 25.0)}; {ImGuiNET.ImGui.GetIO().DisplaySize.X:0}x{ImGuiNET.ImGui.GetIO().DisplaySize.Y:0}"));
+        }
+        _ttPerfLabel = null;
+        return false;
+    }
+
+    private Vector3 _ttProbeLiveFrom;
+    private bool _ttProbeWorldShot;
     private float? _ttProbeSavedK;
     private double _ttProbeNearWaitSince;
 

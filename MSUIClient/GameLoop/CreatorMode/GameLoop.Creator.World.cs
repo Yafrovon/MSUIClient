@@ -197,6 +197,8 @@ public sealed partial class GameLoop
 
     private CreatorCreatureTable? _creatorCreatures;
     private bool _creatorCreaturesTried;
+    private Task<CreatorCreatureTable?>? _creatorCreaturesFetch;
+    private string _creatorCreaturesStatus = "";
     private readonly byte[] _creatorCreatureSearchBuf = new byte[64];
     private List<CreatorCreatureTable.Creature>? _creatorCreatureResults;
     private bool _creatorCreatureSearchDirty = true;
@@ -224,11 +226,45 @@ public sealed partial class GameLoop
             DrawCreatorSpawnAdvanced);
     }
 
+    /// <summary>The creature catalogue: the local copy at once, and a fresh one from the web app
+    /// (GET /QuestAtlas/CreatureCatalogue) swapped in when its download lands - once per session, so a machine
+    /// without the file gets it by itself and newly published World Pack creatures appear. The download is
+    /// written back as the offline copy.</summary>
     private void EnsureCreatorCreatures()
     {
+        if (_creatorCreaturesFetch is { IsCompleted: true } fetch)
+        {
+            _creatorCreaturesFetch = null;
+            if (fetch.IsCompletedSuccessfully && fetch.Result is { } fresh)
+            {
+                _creatorCreatures = fresh;
+                _creatorCreaturesStatus = "";
+            }
+            else
+            {
+                _creatorCreaturesStatus = "download failed: " + (fetch.Exception?.GetBaseException().Message ?? "not a catalogue");
+                Console.WriteLine($"[creator] creature catalogue {_creatorCreaturesStatus}");
+            }
+        }
         if (_creatorCreaturesTried) return;
         _creatorCreaturesTried = true;
         _creatorCreatures = CreatorCreatureTable.Load(_config.RepoRoot);
+        if (string.IsNullOrWhiteSpace(SuiWebAppUrl)) { _creatorCreaturesStatus = "no web app configured"; return; }
+        string url = SuiWebAppUrl.TrimEnd('/') + "/QuestAtlas/CreatureCatalogue";
+        string path = CreatorCreatureTable.PathIn(_config.RepoRoot);
+        _creatorCreaturesStatus = "downloading from the web app...";
+        _creatorCreaturesFetch = Task.Run(async () =>
+        {
+            using var http = WebAppHttp.Create(TimeSpan.FromSeconds(60));
+            string text = await http.GetStringAsync(url);
+            var table = CreatorCreatureTable.Parse(new StringReader(text), url);
+            if (table is null || table.Count == 0) return null;
+            // Atomic replace: a half-written catalogue must never become the offline copy.
+            string tmp = path + ".download";
+            await File.WriteAllTextAsync(tmp, text);
+            File.Move(tmp, path, overwrite: true);
+            return table;
+        });
     }
 
     /// <summary>Type a name (or an entry id), browse the matches, spawn them.
@@ -240,8 +276,8 @@ public sealed partial class GameLoop
 
         if (_creatorCreatures is null)
         {
-            ImGui.TextWrapped("creator-creatures.tsv is missing at the repo root. Regenerate it " +
-                              "from MangosSuperUI (/Database/Export/mangos/creature_template).");
+            ImGui.TextWrapped("Creature catalogue: " + (_creatorCreaturesStatus.Length > 0 ? _creatorCreaturesStatus : "not loaded") +
+                              (_creatorCreaturesFetch is null ? " (needs the web app's /QuestAtlas/CreatureCatalogue once)" : ""));
             return;
         }
 

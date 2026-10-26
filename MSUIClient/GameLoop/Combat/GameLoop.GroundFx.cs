@@ -42,7 +42,17 @@ public sealed partial class GameLoop
         float maxX, float maxY, float maxZ,
         List<(Vector3 A, Vector3 B, Vector3 C)> output)
     {
+        // The live Quest Tabletop asks in its shown space: search the true world, then show what was found on the
+        // exaggerated relief (the terrain's own rule, vertex by vertex, so a decal hugs a raised slope).
+        float viewLift = LiveTableLiftAt((minX + maxX) * 0.5f, (minY + maxY) * 0.5f);
+        int first = output.Count;
         _terrain?.GatherGroundTriangles(minX, minY, maxX, maxY, output);
-        _collision?.GatherWalkableTriangles(minX, minY, minZ, maxX, maxY, maxZ, output);
+        _collision?.GatherWalkableTriangles(minX, minY, minZ - viewLift, maxX, maxY, maxZ - viewLift, output);
+        if (_liveTableOpen)
+            for (int i = first; i < output.Count; i++)
+            {
+                var (a, b, c) = output[i];
+                output[i] = (LiveTableShown(a), LiveTableShown(b), LiveTableShown(c));
+            }
     }
 }

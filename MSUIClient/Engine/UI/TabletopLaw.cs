@@ -53,6 +53,52 @@ public static class TabletopLaw
     /// <summary>A dungeon's board: this many yards each way around its entrance in the outside world (owner, 2026-10-21).</summary>
     public const float EntranceHalfYards = 800f;
 
+    /// <summary>Figure scale (owner, 2026-10-21: a slider with a cap, eased by zoom): creatures are true scale while the
+    /// camera is within <see cref="FigureTrueYards"/> of its target, so a guard never outgrows the tower door, and grow
+    /// smoothly to the slider's value by <see cref="FigureFullYards"/>, so the board still shows who stands where.</summary>
+    public const float MinFigureScale = 1f, MaxFigureScale = 4f, DefaultFigureScale = 3f;
+    public const float FigureTrueYards = 150f, FigureFullYards = 800f;
+
+    public static float FigureScale(float slider, float cameraRadius)
+    {
+        float t = Math.Clamp((cameraRadius - FigureTrueYards) / (FigureFullYards - FigureTrueYards), 0f, 1f);
+        t = t * t * (3f - 2f * t);
+        return 1f + (Math.Clamp(slider, MinFigureScale, MaxFigureScale) - 1f) * t;
+    }
+
+    /// <summary>Relief eases with zoom (owner, 2026-10-22: close-ups looked "totally bad pixelated"): exaggeration makes
+    /// every slope steeper, so up close the ground is both stretched and seen edge-on, and at true heights the same view
+    /// is crisp. Full slider value from <see cref="ReliefFullYards"/> out, easing to <see cref="ReliefCloseFraction"/> of
+    /// the extra height by <see cref="ReliefCloseYards"/>; the board still reads as a raised miniature from mid-range.</summary>
+    public const float ReliefCloseYards = 200f, ReliefFullYards = 1200f, ReliefCloseFraction = 0.2f;
+
+    public static float ShownExaggeration(float slider, float cameraRadius, bool easeClose)
+    {
+        float k = Math.Clamp(slider, MinExaggeration, MaxExaggeration);
+        if (!easeClose) return k;
+        float t = Math.Clamp((cameraRadius - ReliefCloseYards) / (ReliefFullYards - ReliefCloseYards), 0f, 1f);
+        t = t * t * (3f - 2f * t);
+        return 1f + (k - 1f) * (ReliefCloseFraction + (1f - ReliefCloseFraction) * t);
+    }
+
+    /// <summary>creature_template.type for ambient wildlife (rabbits, rats, deer): the Critters layer, off by default.</summary>
+    public const byte CritterType = 8;
+
+    /// <summary>Pin glyphs keep the web sprite's screen size up close and shrink to <see cref="PinOverviewScale"/> of it
+    /// as the camera pulls back to the overview (owner, 2026-10-21: "pins are large at overview").</summary>
+    public const float PinCloseYards = 700f, PinOverviewScale = 0.55f;
+
+    public static float PinScale(float cameraRadius, float span)
+    {
+        float far = MathF.Max(PinCloseYards + 1f, IntroEnd(span).Radius);
+        float t = Math.Clamp((cameraRadius - PinCloseYards) / (far - PinCloseYards), 0f, 1f);
+        t = t * t * (3f - 2f * t);
+        return 1f + (PinOverviewScale - 1f) * t;
+    }
+
+    /// <summary>At most this many same-NPC loops over one pin; the rest are counted ("+N").</summary>
+    public const int MaxLoopsPerPin = 3;
+
     /// <summary>
     /// Slab base: the board's lowest land-or-water SURFACE minus the slab depth; open sea on the board pulls it to ≤ 0
     /// first. Owner, 2026-10-14: under the lowest land or the water surface, not the sea floor (the web sketch's sea-floor

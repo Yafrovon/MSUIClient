@@ -20,6 +20,9 @@ namespace MSUIClient.Formats;
 ///
 ///   SpellVisualKit.dbc       1772 rec x 35 fields x 140 B, all u32
 ///     f0  id      f2 AnimationData.dbc id      f13 SoundEntries.dbc id
+///     f12 SpellVisualEffectName id: a WORLD effect - a model planted at the unit's feet, not on a
+///         bone (Thunder Clap's ring, Frost Nova's ice, Entangling Roots, Net, Web); 37 kits
+///     f14 SpellEffectCameraShakes.dbc id -> up to three CameraShakes.dbc rows
 ///     f3..f11  the NINE SpellVisualEffectName slots (see KitAttachmentIds)
 ///
 ///   SpellVisualEffectName.dbc  775 rec x 5 fields x 20 B
@@ -83,7 +86,17 @@ public readonly record struct SpellVisualKitInfo(
     ushort? AnimationId,
     uint? Sound,
     IReadOnlyList<SpellVisualKitEffect> Effects,
-    IReadOnlyList<SpellVisualCharProc> CharProcs);
+    IReadOnlyList<SpellVisualCharProc> CharProcs,
+    uint? Shake = null,
+    string? WorldEffect = null);
+
+/// <summary>One CameraShakes.dbc row (SPELL_CREATOR_PLAN.md P4.3): a wave on one camera axis.
+/// Type 0 = sine; 1 = a rectified (bouncing) sine. Direction 0/1/2 = the camera's right /
+/// forward / up. Amplitude is in the table's own unit (see CameraShakeLaw), frequency in Hz,
+/// duration in seconds, phase in turns, Coefficient the decay exponent of (1 - t/duration).</summary>
+public readonly record struct CameraShakeInfo(
+    uint Id, uint Type, uint Direction, float Amplitude, float Frequency,
+    float Duration, float Phase, float Coefficient);
 
 public readonly record struct SpellAreaVisualInfo(
     string? LoopingModelPath,
@@ -198,7 +211,24 @@ public sealed class SpellVisualCatalog
 
     private readonly Dictionary<uint, SpellVisualStages> _visuals = [];
     private readonly Dictionary<uint, (ushort? Anim, uint? Sound, uint[] Effects,
-        SpellVisualCharProc[] CharProcs)> _kits = [];
+        SpellVisualCharProc[] CharProcs, uint? Shake, uint? World)> _kits = [];
+    private readonly Dictionary<uint, CameraShakeInfo> _cameraShakes = [];
+    private readonly Dictionary<uint, uint[]> _spellShakes = [];
+
+    /// <summary>A SpellEffectCameraShakes id's waves (the kit's f14), or false.</summary>
+    public bool TryGetCameraShake(uint spellShakeId, out IReadOnlyList<CameraShakeInfo> waves)
+    {
+        waves = Array.Empty<CameraShakeInfo>();
+        if (Fk(spellShakeId) is null || !_spellShakes.TryGetValue(spellShakeId, out uint[]? ids)) return false;
+        var list = new List<CameraShakeInfo>(3);
+        foreach (uint id in ids)
+            if (Fk(id) is uint wave && _cameraShakes.TryGetValue(wave, out CameraShakeInfo info)) list.Add(info);
+        waves = list;
+        return list.Count > 0;
+    }
+
+    /// <summary>Every SpellEffectCameraShakes id, for pickers.</summary>
+    public IEnumerable<uint> SpellCameraShakeIds => _spellShakes.Keys.OrderBy(k => k);
     private readonly Dictionary<uint, string> _effects = [];
     private readonly Dictionary<string, string> _hardcodedEffects =
         new(StringComparer.OrdinalIgnoreCase);
@@ -279,7 +309,9 @@ public sealed class SpellVisualCatalog
             if (!_effects.TryGetValue(effect, out var visual) || visual.Length == 0) continue;
             effects.Add(new SpellVisualKitEffect(KitAttachmentIds[i], ModelPath(visual)));
         }
-        kit = new SpellVisualKitInfo(raw.Anim, raw.Sound, effects, raw.CharProcs);
+        string? world = Fk(raw.World ?? 0) is uint worldId && _effects.TryGetValue(worldId, out string? worldPath) && worldPath.Length > 0
+            ? ModelPath(worldPath) : null;
+        kit = new SpellVisualKitInfo(raw.Anim, raw.Sound, effects, raw.CharProcs, raw.Shake, world);
         return true;
     }
 
@@ -411,8 +443,24 @@ public sealed class SpellVisualCatalog
                 Fk(kits.GetUInt(row, 2)) is uint a ? (ushort)a : null,
                 Fk(kits.GetUInt(row, 13)),
                 effects,
-                charProcs.ToArray());
+                charProcs.ToArray(),
+                Fk(kits.GetUInt(row, 14)),
+                Fk(kits.GetUInt(row, 12)));
         }
+
+        // Camera shakes: optional tables - a client without them simply never shakes.
+        if (Parse(mpq, @"DBFilesClient\CameraShakes.dbc") is { FieldCount: >= 8 } shakes)
+            for (int row = 0; row < shakes.RecordCount; row++)
+            {
+                uint id = shakes.GetUInt(row, 0);
+                result._cameraShakes[id] = new CameraShakeInfo(id, shakes.GetUInt(row, 1), shakes.GetUInt(row, 2),
+                    shakes.GetFloat(row, 3), shakes.GetFloat(row, 4), shakes.GetFloat(row, 5),
+                    shakes.GetFloat(row, 6), shakes.GetFloat(row, 7));
+            }
+        if (Parse(mpq, @"DBFilesClient\SpellEffectCameraShakes.dbc") is { FieldCount: >= 4 } spellShakes)
+            for (int row = 0; row < spellShakes.RecordCount; row++)
+                result._spellShakes[spellShakes.GetUInt(row, 0)] =
+                    new[] { spellShakes.GetUInt(row, 1), spellShakes.GetUInt(row, 2), spellShakes.GetUInt(row, 3) };
 
         for (int row = 0; row < chains.RecordCount; row++)
         {

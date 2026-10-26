@@ -34,6 +34,27 @@ public enum SketchShapeKind
     Rect,
     /// <summary>Free-hand: the piece's texture is rasterized from <see cref="SketchShape.Points"/>.</summary>
     Stroke,
+
+    // ── SOLIDS (SPELL_CREATOR_PLAN.md P3.5): real 3D meshes, not painted planes. Width is the
+    // diameter, Height the length along the piece's own up axis (raw +Z before the facing turns
+    // it); the image wraps around them with real UVs, and the LOOK image / UV scroll / flipbook
+    // are what make a sphere read as a ball of lightning instead of a plastic one.
+    Sphere,
+    Cylinder,
+    Cone,
+    /// <summary>A ring tube: Thickness is the tube radius as a fraction of the ring's.</summary>
+    Torus,
+    /// <summary>Two crossed planes along the piece's FORWARD axis (Width = length): a bolt, a beam,
+    /// a streak - readable from any side, the way Blizzard builds lightning bolts.</summary>
+    Beam,
+}
+
+public static class SketchShapes
+{
+    /// <summary>A solid mesh (wrapped image) rather than a painted plane (drawn mask).</summary>
+    public static bool IsSolid(SketchShapeKind kind) =>
+        kind is SketchShapeKind.Sphere or SketchShapeKind.Cylinder or SketchShapeKind.Cone or
+            SketchShapeKind.Torus or SketchShapeKind.Beam;
 }
 
 /// <summary>Material blend, named as the emitter help in GameLoop.Creator.Spells.cs names them.</summary>
@@ -71,9 +92,12 @@ public enum SketchDirection { Forward, Left, Up, Custom }
 
 public enum SketchEase { Linear, Out }
 
-public enum SketchTrailPreset { None, ThinWhite, SoftWide, Glow, Charge }
+/// <summary>Custom = any ribbon of any model (SketchTrail.Model / Ribbon).</summary>
+public enum SketchTrailPreset { None, ThinWhite, SoftWide, Glow, Charge, Custom }
 
-public enum SketchSparkPreset { None, Embers, Motes, Sparkle, Smoke, Flare }
+/// <summary>Crackle = LightningStreak's sparks; Custom = any emitter of any model
+/// (SketchSparks.Model / Emitter).</summary>
+public enum SketchSparkPreset { None, Embers, Motes, Sparkle, Smoke, Flare, Crackle, Custom }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -115,6 +139,9 @@ public sealed class SketchShape
     /// <summary>Stroke only: join the last point back to the first.</summary>
     public bool Closed;
 
+    /// <summary>Solids only: segments around (rings = half of it for a sphere). 8..48.</summary>
+    public int Segments = 16;
+
     public SketchShape Clone() => new()
     {
         Kind = Kind,
@@ -125,6 +152,7 @@ public sealed class SketchShape
         Strokes = Strokes.ConvertAll(stroke => new List<Vector2>(stroke)),
         StrokeWidth = StrokeWidth,
         Closed = Closed,
+        Segments = Segments,
     };
 }
 
@@ -137,6 +165,22 @@ public sealed class SketchLook
     public float Glow = 0.5f;                 // 0..1 weight of the blurred copy baked into alpha
     public SketchBlend Blend = SketchBlend.Additive;
     public bool Unlit = true;
+
+    /// <summary>Any archive image (BLP path) to wear INSTEAD of the generated shape mask - a
+    /// lightning sheet, an energy swirl. Null = the drawn shape. The colour record still tints it.</summary>
+    public string? Image;
+
+    /// <summary>Texture scroll in image widths / heights per second (0 = still).</summary>
+    public Vector2 UvScroll;
+
+    /// <summary>Flipbook: the image is a grid of FlipCols x FlipRows frames played at FlipFps
+    /// (1 x 1 or 0 fps = no flipbook). Wins over UvScroll.</summary>
+    public int FlipRows = 1;
+    public int FlipCols = 1;
+    public float FlipFps;
+
+    public bool HasFlipbook => FlipRows * FlipCols > 1 && FlipFps > 0.01f;
+    public bool HasUvAnimation => HasFlipbook || UvScroll.LengthSquared() > 1e-8f;
 
     public SketchLook Clone() => (SketchLook)MemberwiseClone();
 }
@@ -185,6 +229,10 @@ public sealed class SketchPlace
     public Vector3 Offset = Vector3.Zero;
 
     public float Scale = 1f;
+
+    /// <summary>Another piece's NAME: this piece rides that piece's bone - its travel, spin,
+    /// swing and grow carry this one (SPELL_CREATOR_PLAN.md P3.8). Null = the caster.</summary>
+    public string? Parent;
 
     public SketchPlace Clone() => (SketchPlace)MemberwiseClone();
 }
@@ -236,6 +284,24 @@ public sealed class SketchMotion
     public float FadeIn;
     public float FadeOut = 0.2f;
 
+    // ── MODIFIERS (P3.8): their own looping clock, on top of everything above ──
+
+    /// <summary>Circle the piece's origin at this radius (yd), this many turns a second (sign =
+    /// direction), in the plane across OrbitAxis (Up = round the caster, Forward = a corkscrew
+    /// round the flight).</summary>
+    public float OrbitRadius;
+    public float OrbitTurnsPerSecond;
+    public SketchDirection OrbitAxis = SketchDirection.Up;
+
+    /// <summary>Random shake: up to JitterYards off and JitterDegrees turned, re-rolled
+    /// JitterRate times a second. Held between rolls (flicker - lightning arcs) unless
+    /// JitterSmooth (a wobble). JitterSeed picks another, equally random, pattern.</summary>
+    public float JitterYards;
+    public float JitterDegrees;
+    public float JitterRate = 12f;
+    public bool JitterSmooth;
+    public int JitterSeed;
+
     /// <summary>Longest time this motion occupies, used for the Sketch's sequence length.</summary>
     public float Span
     {
@@ -264,9 +330,13 @@ public sealed class SketchMotion
 public sealed class SketchTrail
 {
     public SketchTrailPreset Preset = SketchTrailPreset.None;
+    /// <summary>Edge lifetime in seconds: how long the streak is.</summary>
     public float Length = 0.3f;
     /// <summary>Null = follow the piece's LOOK colour.</summary>
     public Vector3? Colour;
+    /// <summary>Custom: the archive model and ribbon index to copy.</summary>
+    public string? Model;
+    public int Ribbon;
 
     public SketchTrail Clone() => (SketchTrail)MemberwiseClone();
 }
@@ -275,9 +345,18 @@ public sealed class SketchTrail
 public sealed class SketchSparks
 {
     public SketchSparkPreset Preset = SketchSparkPreset.None;
-    public float Rate = 20f;
-    public float Speed = 0.56f;
+    /// <summary>Particles per second; null = the donor's own. The donor's rate curve keeps its
+    /// shape, scaled so its peak is this.</summary>
+    public float? Rate;
+    /// <summary>Emission speed in yd/s (sign kept from the donor); null = the donor's own.</summary>
+    public float? Speed;
+    /// <summary>Particle size multiplier on the donor's three size keys.</summary>
+    public float Size = 1f;
+    /// <summary>Null = the donor's own colours; set = recoloured, keeping its brightness ramp.</summary>
     public Vector3? Colour;
+    /// <summary>Custom: the archive model and emitter index to copy.</summary>
+    public string? Model;
+    public int Emitter;
 
     public SketchSparks Clone() => (SketchSparks)MemberwiseClone();
 }
@@ -347,6 +426,8 @@ public sealed class SketchPiece
     /// turn a shape they can see, and can do nothing at all with one they cannot.</summary>
     public static SketchFacing DefaultFacing(SketchShapeKind kind) => kind switch
     {
+        // A solid looks the same from every side; its own axis stands up.
+        _ when SketchShapes.IsSolid(kind) => SketchFacing.VerticalForward,
         SketchShapeKind.Ring or SketchShapeKind.Disc => SketchFacing.Flat,
         _ => SketchFacing.VerticalSide,
     };

@@ -177,6 +177,7 @@ public sealed partial class GameLoop
     private void QaClearSelection()
     {
         _qaSelQuest = null; _qaSelEntity = null; _qaSelFigure = null;
+        _liveSel = null; _liveFollow = false;
         _qaDirty = true;
     }
 
@@ -351,7 +352,7 @@ public sealed partial class GameLoop
     private Vector3 QaShown(Vector3 world, float lift = 0f)
     {
         if (_tabletop is null) return world;
-        float ground = _ttNear?.GroundAt(world.X, world.Y) ?? _tabletop.HeightAt(world.X, world.Y);
+        float ground = TtGroundAt(world.X, world.Y) ?? _tabletop.HeightAt(world.X, world.Y);
         float h = MathF.Max(world.Z, ground);
         return new Vector3(world.X, world.Y, TabletopLaw.Exaggerate(h, _tabletop.BaseZ, _tabletop.Exaggeration) + lift);
     }
@@ -427,6 +428,7 @@ public sealed partial class GameLoop
 
         // Posts and pins: unfocused first so the focus draws on top.
         var font = ImGui.GetFont();
+        float pinScale = TabletopLaw.PinScale(_ttRadius, span);
         foreach (var pin in _qaPins.OrderBy(p => p.InFocus))
         {
             var foot = QaShown(pin.Place);
@@ -435,7 +437,7 @@ public sealed partial class GameLoop
             var col = pin.Faded ? pin.Colour * 0.35f : pin.Colour;
             dl.AddLine(footPx, headPx, QaCol(col, 0.85f), MathF.Max(1.5f, 1.5f * ui));
             // three.js sprite, sizeAttenuation off: scale 0.034 (focus 0.05) of the view's projected height.
-            float spriteH = (pin.InFocus ? 0.05f : 0.034f) * focal;   // scale · proj[1][1] · H / 2
+            float spriteH = (pin.InFocus ? 0.05f : 0.034f) * focal * pinScale;   // scale · proj[1][1] · H / 2, eased by zoom
             float size = spriteH * 0.81f;
             var textSize = QaTextSize(pin.Glyph, size);
             var topLeft = headPx - new Vector2(textSize.X * 0.5f, textSize.Y * 0.85f);
@@ -452,19 +454,37 @@ public sealed partial class GameLoop
             if (pin.Label) QaDrawLabel(dl, _qaBoard.EntityName(pin.Kind, pin.Entry), headPx - new Vector2(0f, textSize.Y * 0.9f), pin.Faded, false, ui);
         }
 
-        // Same NPC hands you the next step: a small loop above them (above the glyph; several side by side).
-        var perPin = new Dictionary<int, int>();
+        // Same NPC hands you the next step: a small loop above them (above the glyph; several side by side, centred).
+        // A busy NPC would otherwise grow a long row (owner, 2026-10-21): at most MaxLoopsPerPin, the strongest
+        // (selected chain) first, the rest counted as "+N".
+        var perPin = new Dictionary<int, List<QaArc>>();
         foreach (var arc in _qaArcs)
         {
             if (!arc.Loop) continue;
             int at = _qaPinRects.FindIndex(r => Vector2.Distance(new(r.Pin.Place.X, r.Pin.Place.Y), new(arc.A.X, arc.A.Y)) < 5f);
             if (at < 0) continue;
+            if (!perPin.TryGetValue(at, out var list)) perPin[at] = list = new();
+            list.Add(arc);
+        }
+        foreach (var (at, loops) in perPin)
+        {
             var rect = _qaPinRects[at];
-            int k = perPin.TryGetValue(at, out int n) ? n : 0;
-            perPin[at] = k + 1;
-            float r = MathF.Max(9f * ui, (rect.Max.Y - rect.Min.Y) * 0.12f);
-            var c = new Vector2((rect.Min.X + rect.Max.X) * 0.5f + (k - 0.5f) * r * 2.4f, rect.Min.Y - r - 3f * ui);
-            dl.AddCircle(c, r, QaCol(arc.Colour, arc.Opacity), 24, MathF.Max(2.5f * ui, r * 0.22f));
+            var shown = loops.OrderByDescending(a => a.Opacity).ThenByDescending(a => a.Thick).Take(TabletopLaw.MaxLoopsPerPin).ToList();
+            int extra = loops.Count - shown.Count;
+            float r = MathF.Max(7f * ui, (rect.Max.Y - rect.Min.Y) * 0.12f);
+            float step = r * 2.4f;
+            var mid = new Vector2((rect.Min.X + rect.Max.X) * 0.5f, rect.Min.Y - r - 3f * ui);
+            float first = -(shown.Count - 1) * 0.5f * step;
+            for (int k = 0; k < shown.Count; k++)
+                dl.AddCircle(mid + new Vector2(first + k * step, 0f), r, QaCol(shown[k].Colour, shown[k].Opacity), 24, MathF.Max(2f * ui, r * 0.22f));
+            if (extra > 0)
+            {
+                string more = $"+{extra}";
+                float size = 12f * ui;
+                var at2 = mid + new Vector2(first + shown.Count * step - r * 0.6f, -QaTextSize(more, size).Y * 0.5f);
+                dl.AddText(font, size, at2 + new Vector2(1f, 1f) * ui, QaCol(Vector3.Zero, 0.9f), more);
+                dl.AddText(font, size, at2, QaCol(QuestBoard.Hex(0xfff7e0), 0.95f), more);
+            }
         }
 
         // Objective labels.
@@ -554,6 +574,7 @@ public sealed partial class GameLoop
     /// <summary>A click on the table: a pin (one quest → select it, several → the NPC card), an explore ring, or a creature.</summary>
     private bool QaPick(Vector2 mouse)
     {
+        if (LiveHit(mouse) is { } liveBot) { LiveSelect(liveBot); return true; }
         if (_qaBoard is not { } m) return false;
         if (QaHit(mouse) is not { } hit) return false;
         switch (hit)
@@ -572,6 +593,7 @@ public sealed partial class GameLoop
             }
             case WorldEntity unit:
             {
+                if (LiveBotOf(unit) is { } viewBot) { LiveSelect(viewBot); return true; }
                 string k = QuestBoard.Key("npc", unit.Entry);
                 if (m.Gives.ContainsKey(k) || m.Ends.ContainsKey(k)) QaSelectEntity("npc", unit.Entry);
                 else { _qaSelQuest = null; _qaSelEntity = null; _qaSelFigure = (unit.Entry, unit.Position); QaRebuild(); }
@@ -586,6 +608,7 @@ public sealed partial class GameLoop
         for (int i = _qaPinRects.Count - 1; i >= 0; i--)
             if (mouse.X >= _qaPinRects[i].Min.X && mouse.X <= _qaPinRects[i].Max.X && mouse.Y >= _qaPinRects[i].Min.Y && mouse.Y <= _qaPinRects[i].Max.Y)
                 return _qaPinRects[i].Pin;
+        if (LiveHit(mouse) is { } liveBot) return liveBot;
         var display = ImGui.GetIO().DisplaySize;
         float focal = QaFocalPx(display);
         foreach (var ring in _qaRings)
@@ -611,7 +634,17 @@ public sealed partial class GameLoop
     private void QaDrawHover()
     {
         var io = ImGui.GetIO();
-        if (_qaBoard is not { } m || io.WantCaptureMouse || _ttDragButton >= 0) return;
+        if (io.WantCaptureMouse || _ttDragButton >= 0) return;
+        if (LiveHit(io.MousePos) is { } liveBot)
+        {
+            PushCreatorStyle();
+            ImGui.BeginTooltip();
+            LiveTooltip(liveBot);
+            ImGui.EndTooltip();
+            PopCreatorStyle();
+            return;
+        }
+        if (_qaBoard is not { } m) return;
         var hit = QaHit(io.MousePos);
         if (hit is null) return;
         PushCreatorStyle();
@@ -634,8 +667,7 @@ public sealed partial class GameLoop
                 break;
             case WorldEntity unit:
             {
-                EnsureCreatorCreatures();
-                var c = _creatorCreatures is not null && _creatorCreatures.TryGet(unit.Entry, out var cc) ? cc : default;
+                var c = TabletopCreatureInfo(unit.Entry);
                 int wanted = m.QuestsWanting(unit.Entry).Count;
                 ImGui.TextColored(AtlasGold, (c.Name ?? $"creature {unit.Entry}") + (string.IsNullOrEmpty(c.SubName) ? "" : $" <{c.SubName}>"));
                 ImGui.TextDisabled($"Lv {QaLevels(c.LevelMin, c.LevelMax)}{QaRank(c.Rank)}" + (wanted > 0 ? $" · wanted by {wanted} quest{(wanted > 1 ? "s" : "")}" : ""));
@@ -801,9 +833,20 @@ public sealed partial class GameLoop
                 Group("World");
                 Layer("Buildings, props and ground detail", () => t.World, v => t.World = v);
                 Layer("Creatures", () => t.Creatures, v => t.Creatures = v);
+                Layer("Critters (rabbits, rats, deer)", () => t.Critters, v => t.Critters = v);
+                float fig = t.FigureScale;
+                ImGui.SetNextItemWidth(180f * s);
+                if (ImGui.SliderFloat("Figures", ref fig, TabletopLaw.MinFigureScale, TabletopLaw.MaxFigureScale, "%.1fx")) t.FigureScale = fig;
+                save |= ImGui.IsItemDeactivatedAfterEdit();
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip($"True scale within {TabletopLaw.FigureTrueYards:0} yd of the camera target, this much larger by {TabletopLaw.FigureFullYards:0} yd (now {_ttFigureScaleShown:0.0}x).");
+                Group("Live");
+                Layer("Live bots (where they are now)", () => t.LiveBots, v => t.LiveBots = v, 0xABD473);
+                Layer("Trails (last minute)", () => t.LiveTrails, v => t.LiveTrails = v);
                 Group("Table");
                 Layer("Water", () => t.Water, v => t.Water = v);
                 Layer("Miniature lens (tilt-shift)", () => t.Miniature, v => t.Miniature = v);
+                Layer("Relief eases close up (crisper ground)", () => t.ReliefEasesClose, v => t.ReliefEasesClose = v);
                 float k = t.Exaggeration;
                 ImGui.SetNextItemWidth(180f * s);
                 if (ImGui.SliderFloat("Relief", ref k, TabletopLaw.MinExaggeration, TabletopLaw.MaxExaggeration, "%.1fx")) t.Exaggeration = k;
@@ -817,13 +860,16 @@ public sealed partial class GameLoop
 
     // ── compact card (right) ────────────────────────────────────────────────
 
-    private bool QaCardOpen => _qaBoard is not null && (_qaSelQuest is not null || _qaSelEntity is not null || _qaSelFigure is not null);
+    private bool QaCardOpen => _liveSel is { } liveSel && _live.ContainsKey(liveSel)
+        || _qaBoard is not null && (_qaSelQuest is not null || _qaSelEntity is not null || _qaSelFigure is not null);
     /// <summary>The web card's 420 px at 1080p, scaled with the display (never more than a quarter of the screen).</summary>
     private float QaCardWidth => MathF.Min(420f * MathF.Max(ImGui.GetIO().DisplaySize.Y / 1080f, 1f), ImGui.GetIO().DisplaySize.X * 0.25f);
 
     private void QaDrawCard()
     {
-        if (!QaCardOpen || _qaBoard is not { } m) return;
+        if (!QaCardOpen) return;
+        var m = _qaBoard;
+        var liveBot = _liveSel is { } liveSel && _live.TryGetValue(liveSel, out var lb) ? lb : null;
         var io = ImGui.GetIO();
         float s = CreatorPixelScale;
         float top = CreatorSidebarTop;
@@ -832,12 +878,16 @@ public sealed partial class GameLoop
         PushCreatorStyle();
         if (ImGui.Begin("##qa-card", CreatorChromeFlags | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings))
         {
-            string title = _qaSelQuest is { } qid && m.Quests.TryGetValue(qid, out var tq) ? tq.Title
+            string title = liveBot is not null ? liveBot.Name
+                : m is null ? ""
+                : _qaSelQuest is { } qid && m.Quests.TryGetValue(qid, out var tq) ? tq.Title
                 : _qaSelEntity is { } e ? m.EntityName(e.Split(':')[0], uint.Parse(e.Split(':')[1], CultureInfo.InvariantCulture))
                 : "Creature";
             if (DrawCreatorPanelChrome(title, null)) QaClearSelection();
             BeginCreatorContent();
-            if (_qaSelQuest is { } id && m.Quests.TryGetValue(id, out var q)) QaQuestCard(m, q);
+            if (liveBot is not null) LiveCard(liveBot);
+            else if (m is null) { }
+            else if (_qaSelQuest is { } id && m.Quests.TryGetValue(id, out var q)) QaQuestCard(m, q);
             else if (_qaSelEntity is { } ent) QaEntityCard(m, ent);
             else if (_qaSelFigure is { } fig) QaFigureCard(m, fig.Entry, fig.At);
             EndCreatorContent();
@@ -1060,8 +1110,7 @@ public sealed partial class GameLoop
 
     private void QaFigureCard(QuestBoard m, uint entry, Vector3 at)
     {
-        EnsureCreatorCreatures();
-        var c = _creatorCreatures is not null && _creatorCreatures.TryGet(entry, out var cc) ? cc : default;
+        var c = TabletopCreatureInfo(entry);
         ImGui.TextDisabled($"Creature {entry}{QaRank(c.Rank)}");
         ImGui.TextColored(AtlasGold, c.Name ?? $"creature {entry}");
         var badges = new List<(string, Vector4)>();

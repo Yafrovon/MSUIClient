@@ -332,6 +332,9 @@ public sealed class TabletopRenderer : IDisposable
     /// colour + depth target between the far layer's opaque pass and its water; the far tiles in
     /// <paramref name="nearTiles"/> are left to it. Leaves the opaque defaults (depth on, cull on, blend off) behind.
     /// </summary>
+    /// <summary>Far relief tiles left to the near layer last frame (diagnostics).</summary>
+    public int FarTilesHidden { get; private set; }
+
     public unsafe void Render(Camera camera, Action? near = null, IReadOnlySet<(int col, int row)>? nearTiles = null)
     {
         int* vp = stackalloc int[4];
@@ -415,8 +418,10 @@ public sealed class TabletopRenderer : IDisposable
             }
 
             if (_table is not null) Surface(_table, 1f, true, false, 1f, 0f);
+            FarTilesHidden = 0;
             foreach (var m in _tiles)
                 if (nearTiles is null || !nearTiles.Contains(m.Key)) Surface(m, Exaggeration, true, false, 1f, 0f);
+                else FarTilesHidden++;
             if (_skirt is not null) Surface(_skirt, Exaggeration, false, true, 1f, 0f);
 
             if (near is not null)

@@ -52,6 +52,11 @@ touching the code:
   (the spell's timeline of parts), the field-level inventory with real-use counts
   (`tools/spellvis/spell_visual_census.py`), the task walk and the ordered slice
   list. Read this before adding to or reordering Spell IDE work.
+- `shared_docs/SPELL_CREATOR_PLAN.md` — the EXECUTION plan (2026-10-25) that turns the
+  workshop into a full in-world spell builder: the four-layer audit, the decisions already
+  taken (rules in the workshop, deferred-destination Core flag, actors, new index rows), the
+  vanilla-legality law, phases P0–P5 with files and acceptance, the Ball Lightning acceptance
+  spell and the progress log. Read it before any Spell Creator work.
 - `shared_docs/WORLD_BUILDER.md` — the World Builder (Creator Mode terrain sculpt + WMO/M2
   placement) and optional World Content Packs: client → web app ops (audited, undoable) →
   `patch-7.MPQ` + real extractor maps/vmaps/mmaps with a vanilla baseline; the NPC Creator and
@@ -63,7 +68,7 @@ touching the code:
   permanent public Real Portals, an Azeroth circuit with bot racers and MK64 items, all in the opt-in `wow-karting`
   World Content Pack: decisions, architecture, phases and the as-built log.
 - `shared_docs/EQUIPMENT_CAPTURE.md` — deterministic weapon/armor capture with the production character renderer, body/view/pose matrix, asset hashes and offline-vs-live acceptance limits (added 2026-09-28).
-- `shared_docs/QUEST_TABLETOP.md` — SPEC (unbuilt, 2026-10-14): Creator Mode's raised-relief quest view, the client port of the web Quest Atlas: visual law, the `/QuestAtlas/Zone` data contract, the far/near rendering split, overlay semantics, phases and acceptance.
+- `shared_docs/QUEST_TABLETOP.md` — the Quest Tabletop (spec 2026-10-14, built P1-P4): Creator Mode's raised-relief quest view, the client port of the web Quest Atlas: visual law, the `/QuestAtlas/Zone` data contract, the far/near rendering split, overlay semantics, the living board (live SuperUI bots) and §12 the LIVE table (opened from the Command View: the real world, spells included, on the table), phases, acceptance and the as-built log.
 - `CODE_STRUCTURE_LAW.md` (repo root) — where a `.cs` file goes and how it is named.
 
 `interface-wire-check --shared-docs-only` fails when a file in `shared_docs/` is not

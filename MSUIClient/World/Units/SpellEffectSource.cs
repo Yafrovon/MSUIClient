@@ -264,9 +264,42 @@ public sealed class SpellEffectSource
         => SpawnKit(unit, spell, kit, persistent ? StageLife.Persistent : StageLife.SelfTerminating,
             now, stage, lifetime);
 
+    /// <summary>A kit with a camera shake (f14) just spawned: (shake id, unit, ground position or
+    /// null for the unit's own). GameLoop.CameraShake.cs listens.</summary>
+    public Action<uint, ulong, Vector3?>? KitShake { get; set; }
+
+    /// <summary>A kit with a WORLD effect (f12) spawned on a unit: (model path, unit, spell, life,
+    /// now, stage). The owner knows where the unit stands and plants it (SpawnWorldEffect).</summary>
+    public Action<string, ulong, uint, StageLife, double, string>? KitWorldEffect { get; set; }
+
+    /// <summary>A kit with a weapon-trail CharProc (type 8) spawned on a unit: (unit, spell, packed
+    /// RGB, duration ms, alpha %, now). GameLoop.WeaponTrail.cs.</summary>
+    public Action<ulong, uint, uint, float, float, double>? KitWeaponTrail { get; set; }
+
+    /// <summary>A kit's world effect: the model at a point on the ground, tied to the unit and spell so
+    /// the kit's state reaps it (Reap matches unit + spell whatever the anchor).</summary>
+    public bool SpawnWorldEffect(string path, ulong unit, uint spell, StageLife life, Vector3 position, double now, string stage)
+    {
+        if (Load(path) is not { } asset || !SpellAttachment.HasVisibleContent(asset.Model)) return false;
+        _instances.Add(new Instance
+        {
+            Id = ++_nextId, Asset = asset, Unit = unit, Spell = spell, Life = life, Started = now,
+            Ends = life == StageLife.SelfTerminating ? now + SpellAttachment.SelfTerminatingSpan(asset.Model) : double.PositiveInfinity,
+            Stage = stage + "_WORLD", Area = true, Position = position,
+            Playback = SpellEffectPlaybackLaw.Resolve(asset.Model, missile: false),
+        });
+        return true;
+    }
+
     public int SpawnKit(ulong unit, uint spell, SpellVisualKitInfo kit, StageLife life,
         double now, string stage, double? lifetime = null)
     {
+        if (kit.Shake is uint shake) KitShake?.Invoke(shake, unit, null);
+        if (kit.WorldEffect is { Length: > 0 } worldEffect) KitWorldEffect?.Invoke(worldEffect, unit, spell, life, now, stage);
+        foreach (SpellVisualCharProc proc in kit.CharProcs)
+            if (proc.Type == 8 && proc.Parameters.Length >= 4 && float.IsFinite(proc.Parameters[0]))
+                KitWeaponTrail?.Invoke(unit, spell, (uint)Math.Clamp(MathF.Round(proc.Parameters[0]), 0f, 0xFFFFFF),
+                    proc.Parameters[2], proc.Parameters[3], now);
         if (life == StageLife.Persistent)
             _instances.RemoveAll(i => !i.Area && i.Unit == unit && i.Life == StageLife.Persistent);
         else if (life == StageLife.AuraState)
@@ -378,6 +411,31 @@ public sealed class SpellEffectSource
             Playback = SpellEffectPlaybackLaw.Resolve(asset.Model, missile: false),
         });
         return true;
+    }
+
+    /// <summary>A whole kit played once at a world point (the impact of a ground missile that hit
+    /// no unit, shared_docs/SPELL_CREATOR_PLAN.md P2.2): every slot's model at the point, at its
+    /// kit scale - there is no body to attach to, so the attachment is the point itself.</summary>
+    public int SpawnGroundKit(ulong caster, uint spell, SpellVisualKitInfo kit, Vector3 position, double now, string stage)
+    {
+        if (kit.Shake is uint shake) KitShake?.Invoke(shake, caster, position);
+        if (kit.WorldEffect is { Length: > 0 } worldEffect)
+            SpawnWorldEffect(worldEffect, caster, spell, StageLife.SelfTerminating, position, now, stage);
+        int spawned = 0;
+        foreach (SpellVisualKitEffect effect in kit.Effects)
+        {
+            if (Load(effect.ModelPath) is not { } asset || !SpellAttachment.HasVisibleContent(asset.Model)) continue;
+            _instances.Add(new Instance
+            {
+                Id = ++_nextId, Asset = asset, Unit = caster, Spell = spell,
+                Life = StageLife.SelfTerminating, Started = now,
+                Ends = now + SpellAttachment.SelfTerminatingSpan(asset.Model),
+                Stage = stage, Area = true, Position = position, Scale = effect.Scale,
+                Playback = SpellEffectPlaybackLaw.Resolve(asset.Model, missile: false),
+            });
+            spawned++;
+        }
+        return spawned;
     }
 
     /// <summary>
@@ -517,7 +575,7 @@ public sealed class SpellEffectSource
                     ? ResolveModelPoint(launchPose, instance.ReleaseBone, instance.ReleasePosition)
                     : launchPose.Position;
                 Vector3 launchDestination = instance.Target == 0
-                    ? instance.FixedDestination ?? instance.Position
+                    ? (instance.FixedDestination is { } fixedLaunch ? ViewOf(fixedLaunch) : instance.Position)
                     : ResolveMissileDestination(targetPose, instance.DestinationAttachment);
                 double queuedSeconds = Math.Max(0, now - instance.Started);
                 instance.Remaining = SpellMissileLaw.RemainingAtRelease(
@@ -547,7 +605,7 @@ public sealed class SpellEffectSource
                 continue;
             }
             Vector3 destination = instance.Target == 0
-                ? instance.FixedDestination ?? instance.Position
+                ? (instance.FixedDestination is { } fixedDestination ? ViewOf(fixedDestination) : instance.Position)
                 : ResolveMissileDestination(liveTarget, instance.DestinationAttachment);
 
             SpellMissileLaw.Motion motion = SpellMissileLaw.Advance(instance.Position,
@@ -826,7 +884,17 @@ public sealed class SpellEffectSource
         }
     }
 
-    private static bool TryTransform(Instance instance, Func<ulong, SpellUnitPose> unitPose,
+    /// <summary>
+    /// A view of FIXED world points - area/ground effects and ground-targeted missile destinations - for a renderer that
+    /// shows the world transformed (the Quest Tabletop's live table lifts everything onto its exaggerated ground). Unit-
+    /// attached effects already follow the lifted unit poses; only points that come from the world itself need this.
+    /// Null (the game) = the identity.
+    /// </summary>
+    public Func<Vector3, Vector3>? FixedPointView { get; set; }
+
+    private Vector3 ViewOf(Vector3 world) => FixedPointView is { } view ? view(world) : world;
+
+    private bool TryTransform(Instance instance, Func<ulong, SpellUnitPose> unitPose,
         out Matrix4x4 transform)
     {
         if (!TryTransformUnscaled(instance, unitPose, out transform)) return false;
@@ -835,7 +903,7 @@ public sealed class SpellEffectSource
         return true;
     }
 
-    private static bool TryTransformUnscaled(Instance instance, Func<ulong, SpellUnitPose> unitPose,
+    private bool TryTransformUnscaled(Instance instance, Func<ulong, SpellUnitPose> unitPose,
         out Matrix4x4 transform)
     {
         if (instance.Area)
@@ -845,7 +913,7 @@ public sealed class SpellEffectSource
             // authored 7-30 units up local +Y, land N yards NORTH at ankle height (proven by
             // the particle census). RotationX(+90°) stands the model up: local +Y → world +Z.
             transform = Matrix4x4.CreateRotationX(MathF.PI / 2f) *
-                Matrix4x4.CreateTranslation(instance.Position);
+                Matrix4x4.CreateTranslation(ViewOf(instance.Position));
             return true;
         }
         if (instance.Missile)

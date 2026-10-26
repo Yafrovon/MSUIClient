@@ -1,0 +1,313 @@
+diff --git a/src/game/Chat/Chat.cpp b/src/game/Chat/Chat.cpp
+index 55123d8bb..4704d1387 100644
+--- a/src/game/Chat/Chat.cpp
++++ b/src/game/Chat/Chat.cpp
+@@ -918,6 +918,7 @@ ChatCommand * ChatHandler::getCommandTable()
+         { "spell_script_target",          SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadSpellScriptTargetCommand,       "", nullptr },
+         { "spell_scripts",                SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadSpellScriptsCommand,            "", nullptr },
+         { "spell_target_position",        SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadSpellTargetPositionCommand,     "", nullptr },
++        { "spell_index",                  SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadSpellIndexCommand,              "", nullptr },
+         { "spell_template",               SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadSpellTemplateCommand,           "", nullptr },
+         { "spell_threats",                SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadSpellThreatsCommand,            "", nullptr },
+         { "taxi_path_transitions",        SEC_DEVELOPER,     true,  &ChatHandler::HandleReloadTaxiPathTransitionsCommand,     "", nullptr },
+diff --git a/src/game/Chat/Chat.h b/src/game/Chat/Chat.h
+index 3d0473ee1..2e6ade650 100644
+--- a/src/game/Chat/Chat.h
++++ b/src/game/Chat/Chat.h
+@@ -870,6 +870,7 @@ class ChatHandler
+         bool HandleReloadSpellScriptsCommand(char* args);
+         bool HandleReloadSpellTargetPositionCommand(char* args);
+         bool HandleReloadSpellTemplateCommand(char* args);
++        bool HandleReloadSpellIndexCommand(char* args);
+         bool HandleReloadSpellThreatsCommand(char* args);
+         bool HandleReloadSpellPetAurasCommand(char* args);
+         bool HandleReloadItemTemplate(char* args);
+diff --git a/src/game/Commands/ServerCommands.cpp b/src/game/Commands/ServerCommands.cpp
+index 45fcc84d3..c3834133c 100644
+--- a/src/game/Commands/ServerCommands.cpp
++++ b/src/game/Commands/ServerCommands.cpp
+@@ -1424,10 +1424,26 @@ bool ChatHandler::HandleReloadSpellTargetPositionCommand(char* /*args*/)
+     return true;
+ }
+ 
++// SuperUI (MSUIClient SPELL_CREATOR_PLAN.md D5): the Spell Creator's new index rows, live. Send it
++// BEFORE .reload spell_template, so no spell names a row the stores do not hold yet.
++bool ChatHandler::HandleReloadSpellIndexCommand(char* /*args*/)
++{
++    // The same folder World::SetInitialWorldSettings loads the stores from: DataDir/<build>/.
++    std::string const report = ReloadSpellIndexStores(sWorld.GetDataPath() + std::to_string(SUPPORTED_CLIENT_BUILD) + "/");
++    sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "%s", report.c_str());
++    SendSysMessage(report.c_str());
++    return true;
++}
++
+ bool ChatHandler::HandleReloadSpellTemplateCommand(char* /*args*/)
+ {
+     sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "Re-Loading Spell Definitions...");
+     sSpellMgr.LoadSpells();
++    // SuperUI (MSUIClient SPELL_CREATOR_PLAN.md P0.7): the derived per-spell data World.cpp builds
++    // once at startup - Internal flags and AllowedTargetMask - must be rebuilt too, or a spell
++    // added since the server started has AllowedTargetMask 0 and the passive anticheat rejects
++    // every targeted cast of it ("unexpected target mask (64) when none were expected").
++    sSpellMgr.AssignInternalSpellFlags();
+     SendSysMessage("DB table `spell_template` reloaded.");
+     sSpellModMgr.LoadSpellMods();
+     SendSysMessage("DB table `spell_mod` reloaded.");
+diff --git a/src/game/Database/DBCStores.cpp b/src/game/Database/DBCStores.cpp
+index e0d6401a8..0a3718773 100644
+--- a/src/game/Database/DBCStores.cpp
++++ b/src/game/Database/DBCStores.cpp
+@@ -28,6 +28,7 @@
+ 
+ #include <map>
+ #include <vector>
++#include <sstream>
+ #include <regex>
+ 
+ struct WMOAreaTableTripple
+@@ -626,3 +627,16 @@ uint8 ValidateName(std::wstring const& name)
+ 
+     return CHAR_NAME_SUCCESS;
+ }
++
++std::string ReloadSpellIndexStores(std::string const& dataPath)
++{
++    std::string const dbcPath = dataPath + "dbc/";
++    uint32 const castTimes = sSpellCastTimesStore.MergeNewRowsFrom((dbcPath + "SpellCastTimes.dbc").c_str());
++    uint32 const durations = sSpellDurationStore.MergeNewRowsFrom((dbcPath + "SpellDuration.dbc").c_str());
++    uint32 const radii = sSpellRadiusStore.MergeNewRowsFrom((dbcPath + "SpellRadius.dbc").c_str());
++    uint32 const ranges = sSpellRangeStore.MergeNewRowsFrom((dbcPath + "SpellRange.dbc").c_str());
++    std::ostringstream report;
++    report << "[SUI] spell index rows merged: castTimes +" << castTimes << " durations +" << durations
++           << " radii +" << radii << " ranges +" << ranges;
++    return report.str();
++}
+diff --git a/src/game/Database/DBCStores.h b/src/game/Database/DBCStores.h
+index a717af5c2..4d2e6e8bc 100644
+--- a/src/game/Database/DBCStores.h
++++ b/src/game/Database/DBCStores.h
+@@ -107,6 +107,9 @@ extern DBCStorage <WMOAreaTableEntry>            sWMOAreaTableStore;
+ extern DBCStorage <WorldSafeLocsEntry>           sWorldSafeLocsStore;
+ 
+ void LoadDBCStores(std::string const& dataPath);
++// SuperUI (SPELL_CREATOR_PLAN.md D5): merge new SpellCastTimes / SpellDuration / SpellRadius /
++// SpellRange rows from the dbc dir into the running stores; returns a one-line report.
++std::string ReloadSpellIndexStores(std::string const& dataPath);
+ 
+ char const* GetUnitRaceName(uint8 race, uint8 locale);
+ char const* GetUnitClassName(uint8 class_, uint8 locale);
+diff --git a/src/game/Spells/Spell.cpp b/src/game/Spells/Spell.cpp
+index 164bb774b..72d83bdc6 100644
+--- a/src/game/Spells/Spell.cpp
++++ b/src/game/Spells/Spell.cpp
+@@ -3728,6 +3728,22 @@ void Spell::cast(bool skipCheck)
+             m_casterUnit->ProcDamageAndSpell(ProcSystemArguments(nullptr, m_procAttacker, PROC_FLAG_NONE, PROC_EX_NORMAL_HIT, 1, 1, m_attackType, m_spellInfo, this));
+     }
+ 
++    // SuperUI deferred destination (SPELL_CUSTOM_DEFERRED_DEST): the cast-time targets served
++    // validation and the cast-end procs above; the real ones are filled when the missile lands.
++    if (m_delayed && ShouldDeferDestination())
++    {
++        float dist = m_caster->GetDistance(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, SizeFactor::None);
++        if (dist < 5.0f)
++            dist = 5.0f;                                        // the same floor unit delays use (AddUnitTarget)
++        m_deferredDestDelay = (uint64)floor(dist / m_spellInfo->speed * 1000.0f);
++        m_UniqueTargetInfo.clear();
++        m_UniqueGOTargetInfo.clear();
++        m_delayMoment = m_deferredDestDelay;
++        m_deferredDest = true;
++        sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "[SUI-SPELL] deferred-dest launch spell=%u caster=%s dist=%.2f speed=%.2f arrivalMs=%llu",
++            m_spellInfo->Id, m_caster->GetName(), dist, m_spellInfo->speed, (unsigned long long)m_deferredDestDelay);
++    }
++
+     // Okay, everything is prepared. Now we need to distinguish between immediate and evented delayed spells
+     if (m_delayed)
+     {
+@@ -3861,10 +3877,51 @@ void Spell::handle_immediate()
+         finish(true);                                       // successfully finish spell cast (not last in case autorepeat or channel spell)
+ }
+ 
++bool Spell::ShouldDeferDestination() const
++{
++    return m_spellInfo->HasAttribute(SPELL_CUSTOM_DEFERRED_DEST) &&
++           m_spellInfo->speed > 0.0f &&
++           (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) &&
++           !m_spellInfo->IsChanneledSpell();
++}
++
++void Spell::ArriveAtDeferredDestination(uint64 t_offset)
++{
++    m_deferredDest = false;
++    m_UniqueTargetInfo.clear();
++    m_UniqueGOTargetInfo.clear();
++    FillTargetMap();
++    for (auto& ihit : m_UniqueTargetInfo)
++    {
++        ihit.timeDelay = t_offset;                              // everything at the point lands NOW
++        HandleDelayedSpellLaunch(&ihit);
++    }
++    for (auto& ighit : m_UniqueGOTargetInfo)
++        ighit.timeDelay = t_offset;
++    for (auto const& ihit : m_UniqueTargetInfo)
++        sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "[SUI-SPELL] deferred-dest target spell=%u guid=%s caster=%u effectMask=0x%X",
++            m_spellInfo->Id, ihit.targetGUID.GetString().c_str(), ihit.targetGUID == m_caster->GetObjectGuid() ? 1u : 0u, ihit.effectMask);
++    sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "[SUI-SPELL] deferred-dest arrival spell=%u caster=%s atMs=%llu plannedMs=%llu units=%u gos=%u dest=(%.1f,%.1f,%.1f)",
++        m_spellInfo->Id, m_caster->GetName(), (unsigned long long)t_offset, (unsigned long long)m_deferredDestDelay,
++        (uint32)m_UniqueTargetInfo.size(), (uint32)m_UniqueGOTargetInfo.size(),
++        m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
++}
++
+ uint64 Spell::handle_delayed(uint64 t_offset)
+ {
+     uint64 next_time = 0;
+ 
++    // SuperUI deferred destination: nothing happens until the missile reaches the point; then the
++    // area is filled and the ground phase below (persistent areas, send-event) runs at arrival.
++    if (m_deferredDest)
++    {
++        if (t_offset < m_deferredDestDelay)
++            return m_deferredDestDelay;
++        ArriveAtDeferredDestination(t_offset);
++        if (m_spellState == SPELL_STATE_FINISHED)
++            return 0;
++    }
++
+     if (!m_immediateHandled)
+     {
+         _handle_immediate_phase();
+diff --git a/src/game/Spells/Spell.h b/src/game/Spells/Spell.h
+index bf05475ac..eeff58b52 100644
+--- a/src/game/Spells/Spell.h
++++ b/src/game/Spells/Spell.h
+@@ -403,6 +403,12 @@ class Spell
+         uint64 m_delayStart = 0;                            // time of spell delay start, filled by event handler, zero = just started
+         uint64 m_delayMoment = 0;                           // moment of next delay call, used internally
+         bool m_immediateHandled = false;                    // were immediate actions handled? (used by delayed spells only)
++        // SPELL_CUSTOM_DEFERRED_DEST: the missile is still in the air; targets are filled and the
++        // ground phase runs at m_deferredDestDelay ms after launch (ArriveAtDeferredDestination).
++        bool m_deferredDest = false;
++        uint64 m_deferredDestDelay = 0;
++        bool ShouldDeferDestination() const;
++        void ArriveAtDeferredDestination(uint64 t_offset);
+ 
+         // Channeled spells system
+         typedef std::list<SpellAuraHolder*> SpellAuraHolderList;
+diff --git a/src/game/Spells/SpellDefines.h b/src/game/Spells/SpellDefines.h
+index 89a0e1eef..da1f1a7ff 100644
+--- a/src/game/Spells/SpellDefines.h
++++ b/src/game/Spells/SpellDefines.h
+@@ -975,6 +975,10 @@ enum SpellAttributesCustom
+     SPELL_CUSTOM_SEND_CHANNEL_VISUAL        = 0x800,     // Will periodically send the channeling spell visual kit
+     SPELL_CUSTOM_SEPARATE_AURA_PER_CASTER   = 0x1000,    // Each caster has his own aura slot, instead of replacing others
+     SPELL_CUSTOM_TRIGGER_WEAPON_PROCS       = 0x2000,    // Can trigger weapon enchants and on hit effects
++    SPELL_CUSTOM_DEFERRED_DEST              = 0x4000,    // SuperUI (MSUIClient SPELL_CREATOR_PLAN.md D3): a dest-targeted
++                                                         // spell with speed applies its destination effects and fills its
++                                                         // area-at-dest targets when the missile ARRIVES (dist/speed),
++                                                         // not at cast time
+ };
+ 
+ // Custom flags assigned by the core based on spell template data
+diff --git a/src/game/Spells/SpellEffects.cpp b/src/game/Spells/SpellEffects.cpp
+index e53fb036c..95991db9c 100644
+--- a/src/game/Spells/SpellEffects.cpp
++++ b/src/game/Spells/SpellEffects.cpp
+@@ -1548,7 +1548,11 @@ void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
+     if (m_CastItem)
+         DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: cast Item spellId - %i", spellInfo->Id);
+ 
+-    m_caster->CastSpell(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, spellInfo, true, m_CastItem, nullptr, m_originalCasterGUID);
++    SpellCastResult result = m_caster->CastSpell(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, spellInfo, true, m_CastItem, nullptr, m_originalCasterGUID);
++    // SuperUI (MSUIClient SPELL_CREATOR_PLAN.md P4.1): a workshop child spell is cast here when its
++    // parent lands; the result says whether it really went off.
++    sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "[SUI-SPELL] trigger-missile spell=%u -> %u at (%.1f,%.1f,%.1f) result=%u",
++        m_spellInfo->Id, triggeredSpellId, m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, uint32(result));
+ }
+ 
+ void Spell::EffectTeleportUnits(SpellEffectIndex effIdx)
+@@ -4941,6 +4945,16 @@ void Spell::EffectSummonTotem(SpellEffectIndex effIdx)
+ 
+     CreatureCreatePos pos(m_casterUnit, m_casterUnit->GetOrientation(), 2.0f, angle);
+ 
++    // SuperUI (MSUIClient SPELL_CREATOR_PLAN.md P4.2): a deferred-destination spell plants its totem -
++    // a workshop ACTOR, e.g. a lingering orb that zaps - where its missile LANDED, not at the caster's feet.
++    // Gated by SPELL_CUSTOM_DEFERRED_DEST, so every stock totem keeps its stock placement.
++    if (m_spellInfo->HasAttribute(SPELL_CUSTOM_DEFERRED_DEST) && (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
++    {
++        pos = CreatureCreatePos(m_casterUnit->GetMap(), m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, m_casterUnit->GetOrientation());
++        sLog.Out(LOG_BASIC, LOG_LVL_MINIMAL, "[SUI-SPELL] totem-at-dest spell=%u creature=%u at (%.1f,%.1f,%.1f)",
++            m_spellInfo->Id, uint32(m_spellInfo->EffectMiscValue[effIdx]), m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
++    }
++
+     CreatureInfo const* cinfo = sObjectMgr.GetCreatureTemplate(m_spellInfo->EffectMiscValue[effIdx]);
+     if (!cinfo)
+     {
+diff --git a/src/shared/Database/DBCStore.h b/src/shared/Database/DBCStore.h
+index ffd547fcb..2efc07675 100644
+--- a/src/shared/Database/DBCStore.h
++++ b/src/shared/Database/DBCStore.h
+@@ -23,6 +23,9 @@
+ #define DBCSTORE_H
+ 
+ #include "DBCFileLoader.h"
++#include <atomic>
++#include <algorithm>
++#include <cstring>
+ 
+ template<class T>
+ class DBCStorage
+@@ -95,6 +98,55 @@ class DBCStorage
+ 
+         void EraseEntry(uint32 id) { indexTable[id] = nullptr; }
+ 
++        // SuperUI (MSUIClient SPELL_CREATOR_PLAN.md D5): grow a LOADED store with the rows of a
++        // re-read file whose ids it does not hold yet - the Spell Creator appends SpellRange /
++        // SpellRadius / SpellCastTimes / SpellDuration rows (ids 1000+) while the server runs.
++        // Append-only: an existing entry is never moved, changed or freed, and the superseded index
++        // table is leaked on purpose (another thread may be reading it). Only formats without
++        // strings may merge (the four index tables have none). Returns the rows added.
++        uint32 MergeNewRowsFrom(char const* fn)
++        {
++            if (!indexTable || std::strchr(fmt, 's'))
++                return 0;
++            DBCFileLoader dbc;
++            if (!dbc.Load(fn, fmt))
++                return 0;
++            uint32 fileCount = 0;
++            T** fileIndex = nullptr;
++            char* fileData = dbc.AutoProduceData(fmt, fileCount, (char**&)fileIndex);
++            if (!fileIndex || !fileData)
++                return 0;
++
++            uint32 count = std::max(nCount, fileCount);
++            T** merged = (T**)new char[count * sizeof(T*)];
++            std::memset(merged, 0, count * sizeof(T*));
++            uint32 added = 0;
++            for (uint32 id = 0; id < count; ++id)
++            {
++                if (id < nCount && indexTable[id])
++                    merged[id] = indexTable[id];
++                else if (id < fileCount && fileIndex[id])
++                {
++                    merged[id] = fileIndex[id];
++                    ++added;
++                }
++            }
++            delete[] ((char*)fileIndex);
++            if (!added)
++            {
++                delete[] ((char*)merged);
++                delete[] fileData;
++                return 0;
++            }
++            m_stringPoolList.push_back(fileData);   // the merged rows live here; freed by Clear()
++            // Publish the table before the count: a reader that sees the new count sees the new
++            // table. A new id is only asked for after this returns (.reload spell_template).
++            indexTable = merged;
++            std::atomic_thread_fence(std::memory_order_release);
++            nCount = count;
++            return added;
++        }
++
+     private:
+         uint32 nCount;
+         uint32 fieldCount;

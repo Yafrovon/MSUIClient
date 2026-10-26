@@ -260,8 +260,12 @@ public sealed class Camera
     public static bool TerrainIsOverhead(float eyeZ, float? terrainZ, float slack)
         => terrainZ is float surfaceZ && surfaceZ - eyeZ > slack;
 
+    /// <summary>A camera shake's displacement this frame (GameLoop.CameraShake.cs). It moves the
+    /// VIEW only: Position, collision and everything that measures from the eye keep the true one.</summary>
+    public Vector3 ShakeOffset { get; set; }
+
     public Matrix4x4 View
-        => Matrix4x4.CreateLookAt(Position, EyeTarget, AuthoredUp ?? Vector3.UnitZ);
+        => Matrix4x4.CreateLookAt(Position + ShakeOffset, EyeTarget + ShakeOffset, AuthoredUp ?? Vector3.UnitZ);
 
     /// <summary>
     /// View matrix for camera-relative rendering. Geometry using this matrix
@@ -270,7 +274,7 @@ public sealed class Camera
     /// loss at large map coordinates.
     /// </summary>
     public Matrix4x4 RelativeView
-        => Matrix4x4.CreateLookAt(Vector3.Zero, EyeTarget - Position, AuthoredUp ?? Vector3.UnitZ);
+        => Matrix4x4.CreateLookAt(ShakeOffset, EyeTarget - Position + ShakeOffset, AuthoredUp ?? Vector3.UnitZ);
 
     public Matrix4x4 Projection
         => Matrix4x4.CreatePerspectiveFieldOfView(

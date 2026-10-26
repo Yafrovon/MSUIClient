@@ -72,12 +72,24 @@ public sealed partial class GameLoop
     private const double SketchRebuildThrottleSeconds = 0.08;
 
     private static readonly string[] SketchShapeNames =
-        { "Crescent", "Ring", "Disc", "Arrow", "Line", "Star", "Rect" };
+        { "Crescent", "Ring", "Disc", "Arrow", "Line", "Star", "Rect",
+          "Sphere", "Cylinder", "Cone", "Torus", "Beam" };
     private static readonly SketchShapeKind[] SketchShapeKinds =
     {
         SketchShapeKind.Crescent, SketchShapeKind.Ring, SketchShapeKind.Disc,
         SketchShapeKind.Arrow, SketchShapeKind.Line, SketchShapeKind.Star, SketchShapeKind.Rect,
+        // Solids (SPELL_CREATOR_PLAN.md P3.5): real meshes an image wraps round.
+        SketchShapeKind.Sphere, SketchShapeKind.Cylinder, SketchShapeKind.Cone,
+        SketchShapeKind.Torus, SketchShapeKind.Beam,
     };
+
+    // The LOOK card's archive image picker (P3.6): every effect image in the game, searchable,
+    // as thumbnails. Listed once from the mounted archives.
+    private bool _sketchImagePickerOpen;
+    private readonly byte[] _sketchImageSearchBuf = new byte[64];
+    private List<string>? _sketchImageFiles;
+    private static readonly string[] SketchImageChips =
+        { "lightning", "fire", "frost", "arcane", "shadow", "holy", "nature", "swirl", "glow", "smoke", "ball" };
     private static readonly string[] SketchFacingNames =
         { "Vertical, forward", "Vertical, side", "Flat", "Face camera", "Custom" };
     private static readonly string[] SketchBlendNames = { "Additive", "Alpha", "Modulate" };
@@ -269,33 +281,13 @@ public sealed partial class GameLoop
         // While holding, the bytes we PREVIEW loop. The bytes that get exported never do -
         // this flag is an editing convenience, not part of the spell.
         bool holding = _sketchHold && _sketchOpen && !sketch.IsMissile;
-        SketchWriter.SketchBuild? build = SketchWriter.Build(
-            sketch, (int)doc.Info.Id, doc.Info.Name, _sketchBlpWriter, _sketchTextureCache,
-            loopForEditing: holding);
-        if (build is null)
+        if (CompileSketchModel(doc, sketch, holding) is not { } build)
         {
             _sketchStatus = sketch.Pieces.Count > SketchWriter.MaxPieces
                 ? $"Too many pieces (max {SketchWriter.MaxPieces})."
                 : "The sketch could not be compiled.";
             return;
         }
-
-        // The textures first: the model names them, so they must resolve when it is parsed.
-        // ImportedTextures is what the session ships, so a sketch travels like any custom art.
-        foreach (SketchWriter.SketchTextureFile texture in build.Textures)
-        {
-            _mpq.SetOverride(texture.Path, texture.Blp);
-            doc.ImportedTextures[texture.Path] = texture.Blp;
-        }
-
-        // The mount override is what makes the custom path EXIST: EnsureCreatorModel reads
-        // the "original" back through the mount, and without this there is nothing to read.
-        _mpq.SetOverride(modelPath, build.Model);
-        _spellEffects?.SetModelOverride(modelPath, build.Model);
-        _spellParticles?.SetGeometryModelOverride(renderPath, build.Model);
-        _spellEffectMeshes?.InvalidateModel(renderPath);       // meshes bake per path at first draw
-
-        RefreshSketchModelDoc(doc, modelPath, build.Model);
 
         bool missile = sketch.IsMissile;
         bool placed = missile
@@ -333,13 +325,74 @@ public sealed partial class GameLoop
         // none yet - the compile is throttled to the next tick, so the select ran, found nothing
         // and returned. That is why the drag handles never appeared on a freshly added piece.
         if (_sketchSelected >= 0 && _sketchSelected < sketch.Pieces.Count)
-            SelectSketchPiece(doc, sketch, _sketchSelected);
+            SelectSketchPiece(doc, sketch, _sketchSelected,
+                // A recompile re-points the handles; it must not yank the inspector away from a
+                // part the author chose (measured 2026-10-26: Rules selected, the next card change
+                // put the missile model back in the inspector).
+                takeInspector: _spellIdeSelection.Kind is SpellIdeKind.Phase or SpellIdeKind.Emitter
+                    or SpellIdeKind.Mesh or SpellIdeKind.Ribbon or SpellIdeKind.Spell);
 
         if (CreatorSpellPaused) ReplayCreatorEffects();
 
         _sketchStatus = $"{build.PieceCount} piece(s), {build.BatchCount} quad(s), " +
                         $"{build.LengthSeconds:0.00}s, {build.Model.Length} B" +
                         (missile ? "  (missile)" : $"  ({CreatorSlotNames[_sketchSlot]})");
+    }
+
+    /// <summary>Where a sketch's sparks and trails are copied from: the mounted game archives.</summary>
+    private Func<string, byte[]?> SketchArchive => path => _mpq.ReadFile(path);
+
+    /// <summary>Compile one sketch and install the result everywhere a renderer or the doc reads
+    /// it, WITHOUT deciding where it sits (CompileSketch places it; reopening a saved design
+    /// restores the composition instead). Null when the writer refuses the doc.</summary>
+    private SketchWriter.SketchBuild? CompileSketchModel(CreatorSpellDoc doc, SketchDoc sketch, bool loopForEditing)
+    {
+        string modelPath = SketchDoc.ModelPath((int)doc.Info.Id, doc.Info.Name, sketch.Stage);
+        string renderPath = SpellVisualCatalog.ModelPath(modelPath);
+        SketchWriter.SketchBuild? build = SketchWriter.Build(
+            sketch, (int)doc.Info.Id, doc.Info.Name, _sketchBlpWriter, _sketchTextureCache,
+            loopForEditing: loopForEditing, archive: SketchArchive);
+        if (build is null) return null;
+        // A spark or trail whose donor could not be copied is skipped, never a failed build -
+        // but it must not be skipped SILENTLY.
+        if (build.Notes is { Count: > 0 } notes) _sketchStatus = "Not copied: " + string.Join("; ", notes);
+
+        // The textures first: the model names them, so they must resolve when it is parsed.
+        foreach (SketchWriter.SketchTextureFile texture in build.Textures)
+        {
+            _mpq.SetOverride(texture.Path, texture.Blp);
+            doc.SketchTextures[texture.Path] = texture.Blp;
+        }
+
+        // The mount override is what makes the custom path EXIST: EnsureCreatorModel reads
+        // the "original" back through the mount, and without this there is nothing to read.
+        _mpq.SetOverride(modelPath, build.Model);
+        _spellEffects?.SetModelOverride(modelPath, build.Model);
+        _spellParticles?.SetGeometryModelOverride(renderPath, build.Model);
+        _spellEffectMeshes?.InvalidateModel(renderPath);       // meshes bake per path at first draw
+
+        RefreshSketchModelDoc(doc, modelPath, build.Model);
+        return build;
+    }
+
+    /// <summary>The bytes a sketch SHIPS: recompiled one-shot (never the editing loop), then
+    /// every dial the author turned on the compiled model re-applied on top - the same
+    /// composition the preview uses, on the bytes the game will play (SPELL_CREATOR_PLAN.md
+    /// P0.1; before it, a sketch's model left the client with no bytes at all, because its
+    /// preview original and working copy were the same array and the export only shipped a
+    /// model whose working copy DIFFERED from its original).</summary>
+    private (byte[] Model, IReadOnlyList<SketchWriter.SketchTextureFile> Textures)? BuildSketchExport(
+        CreatorSpellDoc doc, SketchDoc sketch)
+    {
+        SketchWriter.SketchBuild? build = SketchWriter.Build(
+            sketch, (int)doc.Info.Id, doc.Info.Name, _sketchBlpWriter, _sketchTextureCache,
+            loopForEditing: false, archive: SketchArchive);
+        if (build is null) return null;
+        string modelPath = SketchDoc.ModelPath((int)doc.Info.Id, doc.Info.Name, sketch.Stage);
+        byte[] model = doc.Models.TryGetValue(modelPath, out CreatorModelDoc? tuned)
+            ? ComposeCreatorModelBytes(tuned, build.Model, out _)
+            : build.Model;
+        return (model, build.Textures);
     }
 
     /// <summary>Take this sketch's model out of every attachment slot and out of the missile,
@@ -384,6 +437,10 @@ public sealed partial class GameLoop
         // The cards are the source of truth for a sketch's bones; anything left here would be
         // re-applied on top of the freshly generated ones and drift away from what the cards say.
         model.BoneEdits.Clear();
+        // Any OTHER dial the author turned on the compiled model (an emitter added from the
+        // inspector, a hue, a texture swap) must survive the recompile: re-apply them on the
+        // new bytes. Before this a recompile silently dropped them until the next dial moved.
+        if (CreatorModelHasEdits(model)) RebuildCreatorModel(model, replay: false);
     }
 
     private void ClearSketchModel(CreatorSpellDoc doc, SketchDoc sketch, string modelPath, string renderPath)
@@ -401,14 +458,14 @@ public sealed partial class GameLoop
     /// <summary>Selecting a piece selects its BONE, so the translate arrows and rotate rings
     /// that already exist appear on it (§6: no new gizmo code). Bone 0 is the static root, so
     /// piece i is bone i+1.</summary>
-    private void SelectSketchPiece(CreatorSpellDoc doc, SketchDoc sketch, int index)
+    private void SelectSketchPiece(CreatorSpellDoc doc, SketchDoc sketch, int index, bool takeInspector = true)
     {
         _sketchSelected = index;
         if (index < 0 || index >= sketch.Pieces.Count) return;
         string modelPath = SketchDoc.ModelPath((int)doc.Info.Id, doc.Info.Name, sketch.Stage);
         if (!doc.Models.ContainsKey(modelPath)) return;
         _creatorBonePick[modelPath] = index + 1;
-        SpellIdeSelect(new SpellIdeSelection(SpellIdeKind.Phase, modelPath));
+        if (takeInspector) SpellIdeSelect(new SpellIdeSelection(SpellIdeKind.Phase, modelPath));
 
         // Put the handles ON the piece. The translate arrows and rotate rings already exist and
         // already write back into the PLACE card (AdoptSketchBoneEdits) - but they only draw
@@ -481,7 +538,10 @@ public sealed partial class GameLoop
         float maxHeight = MathF.Max(io.DisplaySize.Y - _spellIdeStripHeight - 24f, 260f);
         ImGui.SetNextWindowSize(new Vector2(width, MathF.Min(maxHeight, 820f * cs)), ImGuiCond.Always);
         var pos = new Vector2(io.DisplaySize.X - width - 8f - SpellIdeRightInset, _spellIdeStripHeight + 8f);
-        if (!BeginSpellIdeWindow("##spell-sketch", pos, Vector2.Zero, ImGuiCond.FirstUseEver,
+        // Docked BESIDE the inspector, every frame: on the first frame the inspector has not yet
+        // said where it sits (SpellIdeRightInset is 0 until it draws once), and a FirstUseEver
+        // position froze the window ON TOP of it - both unreadable (frame of 2026-10-26).
+        if (!BeginSpellIdeWindow("##spell-sketch", pos, Vector2.Zero, ImGuiCond.Always,
                 ImGuiWindowFlags.None, 0.10f))
         {
             EndSpellIdeWindow();
@@ -606,7 +666,10 @@ public sealed partial class GameLoop
         }
         CreatorHelp("Click a shape to add it at your chest, one yard across, facing the way that " +
                     "shape usually faces: a slash stands on edge, a ring lies on the ground, a " +
-                    "sparkle looks at you.");
+                    "sparkle looks at you.\n\n" +
+                    "Sphere, Cylinder, Cone, Torus and Beam are SOLIDS: real 3D meshes with an " +
+                    "image wrapped round them (LOOK > Image). A ball of lightning is a sphere " +
+                    "wearing a lightning image that scrolls; a bolt is a beam.");
 
         // ── the piece list: state in words, so a glance tells what each does ─
         ImGui.Spacing();
@@ -703,6 +766,11 @@ public sealed partial class GameLoop
     private void DeleteSketchPiece(CreatorSpellDoc doc, SketchDoc sketch)
     {
         if (_sketchSelected < 0 || _sketchSelected >= sketch.Pieces.Count) return;
+        // Its children drop to the caster - and must forget the name, or the next piece to be
+        // given it would quietly adopt them.
+        string gone = sketch.Pieces[_sketchSelected].Name;
+        foreach (SketchPiece other in sketch.Pieces)
+            if (other.Place.Parent == gone) other.Place.Parent = null;
         sketch.Pieces.RemoveAt(_sketchSelected);
         SelectSketchPiece(doc, sketch, Math.Min(_sketchSelected, sketch.Pieces.Count - 1));
         SketchChanged();
@@ -734,15 +802,21 @@ public sealed partial class GameLoop
             SketchChanged();
         }
 
+        bool solid = SketchShapes.IsSolid(piece.Shape.Kind);
         float glow = piece.Look.Glow;
+        ImGui.BeginDisabled(solid || piece.Look.Image is not null);
         ImGui.SetNextItemWidth(110f * cs);
         if (ImGui.SliderFloat("Glow", ref glow, 0f, 1f, "%.2f"))
         {
             piece.Look.Glow = glow;
             SketchChanged();
         }
-        CreatorHelp("A soft halo baked around the shape itself. This one DOES redraw the image, " +
-                    "so it is the only look dial that is not instant.");
+        ImGui.EndDisabled();
+        CreatorHelp(solid || piece.Look.Image is not null
+            ? "A halo baked into a DRAWN shape's image. This piece wears a whole image instead, " +
+              "so its halo is EXTRAS > Glow yd: a second, larger shell of the same mesh."
+            : "A soft halo baked around the shape itself. This one DOES redraw the image, " +
+              "so it is the only look dial that is not instant.");
 
         ImGui.SameLine();
         int blend = (int)piece.Look.Blend;
@@ -754,6 +828,146 @@ public sealed partial class GameLoop
         }
         CreatorHelp("Additive adds light to whatever is behind it and is what nearly every spell " +
                     "effect uses. Alpha blends normally. Modulate darkens.");
+
+        DrawSketchImageRow(piece, cs);
+    }
+
+    // The image a piece wears and how it moves across it (P3.6). A drawn shape wears its own
+    // generated mask; a solid wears plain white until it is given an image - which is what turns
+    // a plastic ball into a ball of lightning.
+    private void DrawSketchImageRow(SketchPiece piece, float cs)
+    {
+        SketchLook look = piece.Look;
+        string current = look.Image is null
+            ? (SketchShapes.IsSolid(piece.Shape.Kind) ? "plain white" : "the drawn shape")
+            : Path.GetFileNameWithoutExtension(look.Image);
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text($"Image: {current}");
+        if (look.Image is not null && ImGui.IsItemHovered()) ImGui.SetTooltip(look.Image);
+        ImGui.SameLine();
+        if (CreatorButton(_sketchImagePickerOpen ? "Close##sketch-img" : "Choose##sketch-img", 64f * cs))
+            _sketchImagePickerOpen = !_sketchImagePickerOpen;
+        if (look.Image is not null)
+        {
+            ImGui.SameLine();
+            if (CreatorButton("Clear##sketch-img", 56f * cs))
+            {
+                look.Image = null;
+                SketchChanged();
+            }
+        }
+        CreatorHelp("Wear any image from the game's archives instead of the drawn shape - a " +
+                    "lightning sheet, a fire swirl, an energy ring. The colour above still tints " +
+                    "it (white keeps it as painted). It ships as a path, not a copy: the player's " +
+                    "own game already has it.");
+        if (_sketchImagePickerOpen && DrawSketchImagePicker(look.Image, out string? picked))
+        {
+            look.Image = picked;
+            // An image painted for a sheet repeats: scrolling it is the usual next step, so the
+            // picker leaves the dials below in view rather than closing on the user.
+            SketchChanged();
+        }
+
+        Vector2 scroll = look.UvScroll;
+        ImGui.BeginDisabled(look.HasFlipbook);
+        ImGui.SetNextItemWidth(160f * cs);
+        if (ImGui.DragFloat2("Scroll /s", ref scroll, 0.01f, -10f, 10f, "%.2f"))
+        {
+            look.UvScroll = scroll;
+            SketchChanged();
+        }
+        ImGui.EndDisabled();
+        CreatorHelp("Slide the image across the piece, in image widths (u) and heights (v) per " +
+                    "second. On a sphere u runs AROUND and v from pole to pole, so (0.5, 0) spins " +
+                    "the pattern round the ball and (0, 1) pours it over the top. The loop is " +
+                    "always seamless: the model's clock is chosen so both axes land on whole " +
+                    "repeats.");
+
+        int cols = look.FlipCols, rows = look.FlipRows;
+        float fps = look.FlipFps;
+        ImGui.SetNextItemWidth(70f * cs);
+        bool flipChanged = ImGui.SliderInt("Cols", ref cols, 1, 8);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(70f * cs);
+        flipChanged |= ImGui.SliderInt("Rows", ref rows, 1, 8);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(90f * cs);
+        flipChanged |= ImGui.SliderFloat("Frames /s", ref fps, 0f, 60f, "%.0f");
+        if (flipChanged)
+        {
+            look.FlipCols = cols;
+            look.FlipRows = rows;
+            look.FlipFps = fps;
+            SketchChanged();
+        }
+        CreatorHelp("Flipbook: the image is a grid of frames (many of Blizzard's flame and " +
+                    "lightning sheets are 4 x 4) played one after another at this rate. Each " +
+                    "frame is HELD, not blended - the way the game plays them. A flipbook wins " +
+                    "over scrolling. 1 x 1 or 0 frames/s is off.");
+    }
+
+    /// <summary>Thumbnail grid of every effect image in the archives (Spells\, Particles\,
+    /// Textures\). True when the choice changed.</summary>
+    private bool DrawSketchImagePicker(string? selected, out string? picked)
+    {
+        picked = selected;
+        if (_sketchImageFiles is null && _mpq is not null)
+            _sketchImageFiles = _mpq.ListedFiles()
+                .Where(f => f.EndsWith(".blp", StringComparison.OrdinalIgnoreCase) &&
+                            (f.StartsWith("Spells\\", StringComparison.OrdinalIgnoreCase) ||
+                             f.StartsWith("Particles\\", StringComparison.OrdinalIgnoreCase) ||
+                             f.StartsWith("Textures\\", StringComparison.OrdinalIgnoreCase)))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+        if (_sketchImageFiles is null) { ImGui.TextDisabled("Game images are not loaded."); return false; }
+
+        float cs = CreatorUiScale;
+        ImGui.SetNextItemWidth(200f * cs);
+        ImGui.InputText("Search##sketch-img", _sketchImageSearchBuf, (uint)_sketchImageSearchBuf.Length);
+        bool firstChip = true;
+        foreach (string chip in SketchImageChips)
+        {
+            float width = ImGui.CalcTextSize(chip).X + ImGui.GetStyle().FramePadding.X * 2f + ImGui.GetStyle().ItemSpacing.X;
+            if (!firstChip && ImGui.GetItemRectMax().X + width < ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X)
+                ImGui.SameLine();
+            if (ImGui.SmallButton(chip + "##sketch-img-chip"))
+            {
+                Array.Clear(_sketchImageSearchBuf);
+                System.Text.Encoding.UTF8.GetBytes(chip, _sketchImageSearchBuf);
+            }
+            firstChip = false;
+        }
+
+        string[] words = BufToString(_sketchImageSearchBuf).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        List<string> hits = _sketchImageFiles
+            .Where(f => words.All(w => f.Contains(w, StringComparison.OrdinalIgnoreCase)))
+            .Take(96).ToList();
+        bool changed = false;
+        float thumb = 48f * cs;
+        if (ImGui.BeginChild("##sketch-img-grid", new Vector2(-1f, thumb * 3.3f + 8f), true))
+        {
+            float right = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+            for (int i = 0; i < hits.Count; i++)
+            {
+                string path = hits[i];
+                if (i > 0 && ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + thumb < right) ImGui.SameLine();
+                uint handle = _gameplayArt?.Handle(path) ?? 0;
+                // Effect images are mostly white-on-black additive art: a dark backing shows them
+                // the way the game will.
+                Vector2 at = ImGui.GetCursorScreenPos();
+                ImGui.GetWindowDrawList().AddRectFilled(at, at + new Vector2(thumb, thumb), 0xFF101010u);
+                if (handle != 0) ImGui.Image((nint)handle, new Vector2(thumb, thumb));
+                else ImGui.Dummy(new Vector2(thumb, thumb));
+                if (string.Equals(path, selected, StringComparison.OrdinalIgnoreCase))
+                    ImGui.GetWindowDrawList().AddRect(ImGui.GetItemRectMin() - Vector2.One * 2, ImGui.GetItemRectMax() + Vector2.One * 2,
+                        0xFF33DDEEu, 0f, ImDrawFlags.None, 3f);
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip(path);
+                if (ImGui.IsItemClicked()) { picked = path; changed = true; }
+            }
+        }
+        ImGui.EndChild();
+        ImGui.TextDisabled(hits.Count == 96 ? "First 96 shown; narrow the search." : $"{hits.Count} images");
+        return changed;
     }
 
     // ── PLACE ───────────────────────────────────────────────────────────────
@@ -783,6 +997,25 @@ public sealed partial class GameLoop
         {
             piece.Place.Scale = scale;
             SketchChanged();
+        }
+
+        // ── rides on (P3.8): hang this piece off another one ──
+        if (_creatorSpell is { } rideDoc)
+        {
+            SketchDoc rideSketch = SketchForStage(rideDoc, _sketchStage);
+            var names = new List<string> { "the caster" };
+            names.AddRange(rideSketch.Pieces.Where(p => !ReferenceEquals(p, piece)).Select(p => p.Name));
+            int current = piece.Place.Parent is { } parentName ? Math.Max(names.IndexOf(parentName), 0) : 0;
+            ImGui.SetNextItemWidth(150f * cs);
+            if (ImGui.Combo("Rides on", ref current, names.ToArray(), names.Count))
+            {
+                piece.Place.Parent = current == 0 ? null : names[current];
+                SketchChanged();
+            }
+            CreatorHelp("Hang this piece off another one: wherever that piece travels, spins, swings " +
+                        "or grows, this one goes with it - from where it is now. A spark ring round a " +
+                        "flying ball, a second blade on a swinging arm. A choice that would make a " +
+                        "loop (A on B on A) falls back to the caster.");
         }
 
         // ── turn and mirror: the two things a flat shape needs and a facing preset cannot give.
@@ -878,9 +1111,43 @@ public sealed partial class GameLoop
             piece.Shape.Height = MathF.Max(size.Y, 0.05f);
             SketchChanged();
         }
-        CreatorHelp("How big the drawn shape is, in yards. A human is about two yards tall.");
+        CreatorHelp(piece.Shape.Kind switch
+        {
+            SketchShapeKind.Sphere => "Width = the ball's diameter round its axis, height = along it (a stretched ball when they differ). A human is about two yards tall.",
+            SketchShapeKind.Cylinder or SketchShapeKind.Cone => "Width = the diameter, height = the length along its own axis.",
+            SketchShapeKind.Torus => "Width = the ring's diameter. Tube (below) is how fat the ring is.",
+            SketchShapeKind.Beam => "Width = the length along the piece's forward axis, height = how thick the bolt is.",
+            _ => "How big the drawn shape is, in yards. A human is about two yards tall.",
+        });
 
-        if (piece.Shape.Kind != SketchShapeKind.Stroke)
+        if (SketchShapes.IsSolid(piece.Shape.Kind))
+        {
+            if (piece.Shape.Kind != SketchShapeKind.Beam)
+            {
+                int segments = piece.Shape.Segments;
+                ImGui.SetNextItemWidth(110f * cs);
+                if (ImGui.SliderInt("Smoothness", ref segments, SketchSolids.MinSegments, SketchSolids.MaxSegments))
+                {
+                    piece.Shape.Segments = segments;
+                    SketchChanged();
+                }
+                CreatorHelp("Segments around the solid. 12-16 reads as round at spell sizes; more " +
+                            "costs vertices (the model has a 65,535 limit across all pieces).");
+            }
+            if (piece.Shape.Kind == SketchShapeKind.Torus)
+            {
+                ImGui.SameLine();
+                float tube = piece.Shape.Thickness;
+                ImGui.SetNextItemWidth(110f * cs);
+                if (ImGui.SliderFloat("Tube", ref tube, 0.05f, 0.9f, "%.2f"))
+                {
+                    piece.Shape.Thickness = tube;
+                    SketchChanged();
+                }
+                CreatorHelp("How fat the ring's tube is, as a fraction of the ring's radius.");
+            }
+        }
+        else if (piece.Shape.Kind != SketchShapeKind.Stroke)
         {
             float thickness = piece.Shape.Thickness;
             ImGui.SetNextItemWidth(110f * cs);
@@ -994,16 +1261,24 @@ public sealed partial class GameLoop
         }
         else
         {
+            // The flight speed is SPELL data (spell_template.speed / Spell.dbc 37), the one number
+            // both the server's arrival timing and every client's missile read. This field used to
+            // edit a sketch-only copy nothing read (shown "20 yd/s" beside a spell flying at 8);
+            // it now edits the spell's own speed through the Rules, and mirrors it into the piece
+            // only so the piece list says the truth.
             ImGui.SameLine();
-            float speed = piece.Motion.Speed;
+            Creator.Spells.SpellRules? speedRules = _creatorSpell is { } speedDoc ? CreatorRules(speedDoc) : null;
+            float speed = speedRules?.Speed ?? piece.Motion.Speed;
+            piece.Motion.Speed = speed;
             ImGui.SetNextItemWidth(90f * cs);
-            if (ImGui.DragFloat("yd/s", ref speed, 0.5f, 1f, 200f, "%.0f"))
+            if (ImGui.DragFloat("yd/s", ref speed, 0.25f, 0.5f, 200f, "%.1f") && speedRules is not null)
             {
-                piece.Motion.Speed = MathF.Max(speed, 1f);
-                SketchChanged();
+                speedRules.Set("speed", MathF.Round(MathF.Max(speed, 0.5f), 1));
+                piece.Motion.Speed = speedRules.Speed;
             }
-            CreatorHelp("How fast the missile flies. The RANGE is the spell's own - the missile " +
-                        "goes wherever you cast it.");
+            CreatorHelp("How fast the missile flies - the SPELL's speed, the same field as Rules > " +
+                        "Timing > Missile speed. The range is the spell's own; the missile goes wherever " +
+                        "you cast it.");
         }
 
         float duration = piece.Motion.Duration;
@@ -1085,6 +1360,61 @@ public sealed partial class GameLoop
                 SketchChanged();
             }
         }
+
+        DrawSketchModifierRows(piece, cs);
+    }
+
+    private static readonly string[] SketchOrbitAxisNames = { "round the forward axis", "round the left axis", "round the up axis" };
+
+    // Orbit and jitter (P3.8): their own looping clock on top of everything above.
+    private void DrawSketchModifierRows(SketchPiece piece, float cs)
+    {
+        SketchMotion m = piece.Motion;
+        ImGui.Spacing();
+        Vector2 orbit = new(m.OrbitRadius, m.OrbitTurnsPerSecond);
+        ImGui.SetNextItemWidth(160f * cs);
+        if (ImGui.DragFloat2("Orbit yd, turns/s", ref orbit, 0.01f, -10f, 10f, "%.2f"))
+        {
+            m.OrbitRadius = MathF.Max(orbit.X, 0f);
+            m.OrbitTurnsPerSecond = orbit.Y;
+            SketchChanged();
+        }
+        if (m.OrbitRadius > 0.001f)
+        {
+            ImGui.SameLine();
+            int axis = m.OrbitAxis switch { SketchDirection.Forward => 0, SketchDirection.Left => 1, _ => 2 };
+            ImGui.SetNextItemWidth(170f * cs);
+            if (ImGui.Combo("##orbit-axis", ref axis, SketchOrbitAxisNames, SketchOrbitAxisNames.Length))
+            {
+                m.OrbitAxis = axis switch { 0 => SketchDirection.Forward, 1 => SketchDirection.Left, _ => SketchDirection.Up };
+                SketchChanged();
+            }
+        }
+        CreatorHelp("Circle the piece's spot at this radius, this many turns a second (negative turns " +
+                    "the other way). Round the up axis circles the caster; round the forward axis is " +
+                    "a corkscrew round a missile's flight. It loops on its own clock, forever.");
+
+        Vector3 jitter = new(m.JitterYards, m.JitterDegrees, m.JitterRate);
+        ImGui.SetNextItemWidth(220f * cs);
+        if (ImGui.DragFloat3("Jitter yd, deg, /s", ref jitter, 0.01f, 0f, 60f, "%.2f"))
+        {
+            m.JitterYards = MathF.Max(jitter.X, 0f);
+            m.JitterDegrees = Math.Clamp(jitter.Y, 0f, 180f);
+            m.JitterRate = Math.Clamp(jitter.Z, 0.1f, 60f);
+            SketchChanged();
+        }
+        CreatorHelp("Random shake: up to this far off and this many degrees turned, re-rolled this " +
+                    "many times a second. Held between rolls it FLICKERS - a lightning arc is a Beam " +
+                    "wearing a lightning image with 30-60 degrees of jitter at 10-15/s. Smooth makes " +
+                    "it a wobble instead.");
+        if (m.JitterYards > 0.0001f || m.JitterDegrees > 0.01f)
+        {
+            bool smooth = m.JitterSmooth;
+            if (ImGui.Checkbox("Smooth##jitter", ref smooth)) { m.JitterSmooth = smooth; SketchChanged(); }
+            ImGui.SameLine();
+            if (ImGui.SmallButton("re-roll##jitter")) { m.JitterSeed++; SketchChanged(); }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Another, equally random, pattern.");
+        }
     }
 
     // ── EXTRAS ──────────────────────────────────────────────────────────────
@@ -1104,18 +1434,211 @@ public sealed partial class GameLoop
         CreatorHelp("A second, larger copy of the shape drawn additively behind it - a halo that " +
                     "reaches this many yards further out. Zero is off.");
 
-        // Trails and sparks are the next slice: they need a particle/ribbon record copied
-        // out of one of Blizzard's own models, which is real work and not yet done. Showing
-        // the dials greyed says "this is coming and here is where it lives"; showing them
-        // live would be a lie the owner only finds out about after a push.
-        ImGui.BeginDisabled();
-        int none = 0;
-        ImGui.SetNextItemWidth(140f * cs);
-        ImGui.Combo("Trail", ref none, new[] { "None" }, 1);
+        // Trails and sparks (SPELL_SKETCH.md §4.5, PLAN P3.3/P3.4): a record COPIED out of one
+        // of Blizzard's own models (SketchWriter.Extras.cs), riding the piece's bone.
+        DrawSketchSparksRow(piece, cs);
+        ImGui.Spacing();
+        DrawSketchTrailRow(piece, cs);
+    }
+
+    private static readonly string[] SketchSparkNames =
+        { "None", "Embers", "Motes", "Sparkle", "Smoke", "Flare", "Crackle", "From a model..." };
+    private static readonly string[] SketchTrailNames =
+        { "None", "Thin white", "Soft wide", "Glow", "Charge", "From a model..." };
+    private const int CreatorSparksPickerSlot = -3;
+    private const int CreatorTrailPickerSlot = -4;
+
+    // Donor models parsed for the cards (their own rate / speed, their emitter list).
+    private readonly Dictionary<string, M2Model?> _sketchDonorModels = new(StringComparer.OrdinalIgnoreCase);
+
+    private M2Model? SketchDonorModel(string path)
+    {
+        if (_sketchDonorModels.TryGetValue(path, out M2Model? cached)) return cached;
+        M2Model? model = null;
+        try { if (_mpq.ReadFile(path) is { } bytes) model = M2Reader.Parse(bytes); }
+        catch { model = null; }
+        return _sketchDonorModels[path] = model;
+    }
+
+    private void DrawSketchSparksRow(SketchPiece piece, float cs)
+    {
+        SketchSparks sparks = piece.Extras.Sparks;
+        int preset = (int)sparks.Preset;
+        ImGui.SetNextItemWidth(150f * cs);
+        if (ImGui.Combo("Sparks", ref preset, SketchSparkNames, SketchSparkNames.Length))
+        {
+            sparks.Preset = (SketchSparkPreset)preset;
+            sparks.Rate = null; sparks.Speed = null;   // a new donor starts as Blizzard made it
+            if (sparks.Preset == SketchSparkPreset.Custom && sparks.Model is null)
+                OpenCreatorModelPicker(null, CreatorSparksPickerSlot);
+            SketchChanged();
+        }
+        CreatorHelp("Particles pouring off the piece, copied from one of the game's own effects - " +
+                    "they travel with the piece. Embers, Motes, Sparkle, Smoke and Flare are the " +
+                    "most used emitters in the game; Crackle is Lightning Streak's sparks. 'From a " +
+                    "model' takes any emitter of any spell model.");
+        if (sparks.Preset == SketchSparkPreset.None) return;
+
+        if (sparks.Preset == SketchSparkPreset.Custom)
+        {
+            ImGui.TextDisabled(sparks.Model is { } m ? Path.GetFileName(m) : "no model yet");
+            ImGui.SameLine();
+            if (CreatorButton("Pick##sparks-model", 48f * cs)) OpenCreatorModelPicker(null, CreatorSparksPickerSlot);
+            if (sparks.Model is { } model && SketchDonorModel(model) is { } donorModel)
+            {
+                if (donorModel.ParticleEmitters.Count == 0) ImGui.TextDisabled("That model has no particle emitters.");
+                else
+                {
+                    string[] names = donorModel.ParticleEmitters.Select((e, i) =>
+                        $"e{i}: {Path.GetFileNameWithoutExtension(e.Texture < donorModel.Textures.Count ? donorModel.Textures[e.Texture].Filename : "?")}" +
+                        $" ({e.EmissionRate:0.#}/s, {e.Lifespan:0.##} s)").ToArray();
+                    int index = Math.Clamp(sparks.Emitter, 0, names.Length - 1);
+                    ImGui.SetNextItemWidth(240f * cs);
+                    if (ImGui.Combo("Emitter##sparks", ref index, names, names.Length))
+                    {
+                        sparks.Emitter = index;
+                        sparks.Rate = null; sparks.Speed = null;
+                        SketchChanged();
+                    }
+                }
+            }
+        }
+
+        // The donor's own numbers are the starting values: a dial starts where Blizzard left it.
+        M2ParticleEmitter? donor = SketchWriter.SparkDonor(sparks) is { } donorRef &&
+                                   SketchDonorModel(donorRef.Model) is { } dm && donorRef.Index < dm.ParticleEmitters.Count
+            ? dm.ParticleEmitters[donorRef.Index] : null;
+        float rate = sparks.Rate ?? donor?.ScalarTracks[6].Keys.DefaultIfEmpty(0f).Max(k => MathF.Abs(k)) ?? 20f;
+        ImGui.SetNextItemWidth(110f * cs);
+        if (ImGui.DragFloat("Rate /s", ref rate, 0.5f, 0f, 400f, "%.1f"))
+        {
+            sparks.Rate = MathF.Max(rate, 0f);
+            SketchChanged();
+        }
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(140f * cs);
-        ImGui.Combo("Sparks", ref none, new[] { "None" }, 1);
-        ImGui.EndDisabled();
-        ImGui.TextDisabled("Trails and sparks are not built yet (SPELL_SKETCH.md slice S5).");
+        float speed = sparks.Speed ?? MathF.Abs(donor?.EmissionSpeed ?? 0.56f);
+        ImGui.SetNextItemWidth(110f * cs);
+        if (ImGui.DragFloat("Speed##sparks", ref speed, 0.02f, 0f, 20f, "%.2f"))
+        {
+            sparks.Speed = MathF.Max(speed, 0f);
+            SketchChanged();
+        }
+        CreatorHelp("Rate: particles a second at the peak (the donor's own burst or ramp keeps its " +
+                    "shape). Speed: how fast they leave, in yards a second; the direction stays the " +
+                    "donor's.");
+        float size = sparks.Size;
+        ImGui.SetNextItemWidth(110f * cs);
+        if (ImGui.SliderFloat("Size##sparks", ref size, 0.1f, 5f, "x%.2f"))
+        {
+            sparks.Size = size;
+            SketchChanged();
+        }
+        ImGui.SameLine();
+        bool tint = sparks.Colour is not null;
+        if (ImGui.Checkbox("Tint##sparks", ref tint))
+        {
+            sparks.Colour = tint ? piece.Look.Colour : null;
+            SketchChanged();
+        }
+        if (sparks.Colour is { } colour)
+        {
+            ImGui.SameLine();
+            if (ImGui.ColorEdit3("##sparks-colour", ref colour, ImGuiColorEditFlags.NoInputs))
+            {
+                sparks.Colour = colour;
+                SketchChanged();
+            }
+        }
+        CreatorHelp("Tint recolours the particles but keeps the donor's bright-to-dim ramp and its " +
+                    "fade. Off = the donor's own colours.");
+    }
+
+    private void DrawSketchTrailRow(SketchPiece piece, float cs)
+    {
+        SketchTrail trail = piece.Extras.Trail;
+        int preset = (int)trail.Preset;
+        ImGui.SetNextItemWidth(150f * cs);
+        if (ImGui.Combo("Trail", ref preset, SketchTrailNames, SketchTrailNames.Length))
+        {
+            trail.Preset = (SketchTrailPreset)preset;
+            if (trail.Preset == SketchTrailPreset.Custom && trail.Model is null)
+                OpenCreatorModelPicker(null, CreatorTrailPickerSlot);
+            SketchChanged();
+        }
+        CreatorHelp("A ribbon streaming behind the piece as it moves - the streak behind a missile " +
+                    "or a blade. It wears the piece's colour. Copied from the game's own trails: " +
+                    "Thin white is the standard missile trail.");
+        if (trail.Preset == SketchTrailPreset.None) return;
+
+        if (trail.Preset == SketchTrailPreset.Custom)
+        {
+            ImGui.TextDisabled(trail.Model is { } m ? Path.GetFileName(m) : "no model yet");
+            ImGui.SameLine();
+            if (CreatorButton("Pick##trail-model", 48f * cs)) OpenCreatorModelPicker(null, CreatorTrailPickerSlot);
+            if (trail.Model is { } model && SketchDonorModel(model) is { } donorModel)
+            {
+                if (donorModel.RibbonEmitters.Count == 0) ImGui.TextDisabled("That model has no trails.");
+                else
+                {
+                    string[] names = donorModel.RibbonEmitters.Select((r, i) =>
+                        $"r{i}: {Path.GetFileNameWithoutExtension(r.Texture < donorModel.Textures.Count ? donorModel.Textures[r.Texture].Filename : "?")}").ToArray();
+                    int index = Math.Clamp(trail.Ribbon, 0, names.Length - 1);
+                    ImGui.SetNextItemWidth(240f * cs);
+                    if (ImGui.Combo("Ribbon##trail", ref index, names, names.Length))
+                    {
+                        trail.Ribbon = index;
+                        SketchChanged();
+                    }
+                }
+            }
+        }
+
+        float length = trail.Length;
+        ImGui.SetNextItemWidth(110f * cs);
+        if (ImGui.SliderFloat("Length s", ref length, 0.05f, 3f, "%.2f"))
+        {
+            trail.Length = length;
+            SketchChanged();
+        }
+        CreatorHelp("How long each part of the trail lives, in seconds: at 20 yd/s a 0.3 s trail is " +
+                    "six yards long.");
+        ImGui.SameLine();
+        bool own = trail.Colour is not null;
+        if (ImGui.Checkbox("Own colour##trail", ref own))
+        {
+            trail.Colour = own ? piece.Look.Colour : null;
+            SketchChanged();
+        }
+        if (trail.Colour is { } colour)
+        {
+            ImGui.SameLine();
+            if (ImGui.ColorEdit3("##trail-colour", ref colour, ImGuiColorEditFlags.NoInputs))
+            {
+                trail.Colour = colour;
+                SketchChanged();
+            }
+        }
+    }
+
+    /// <summary>The model picker hands a sparks / trail donor back here.</summary>
+    private void PickSketchExtraModel(int slot, string path)
+    {
+        if (_creatorSpell is not { } doc) return;
+        SketchDoc sketch = SketchForStage(doc, _sketchStage);
+        if (SelectedSketchPiece(sketch) is not { } piece) return;
+        if (slot == CreatorSparksPickerSlot)
+        {
+            piece.Extras.Sparks.Preset = SketchSparkPreset.Custom;
+            piece.Extras.Sparks.Model = path;
+            piece.Extras.Sparks.Emitter = 0;
+            piece.Extras.Sparks.Rate = null; piece.Extras.Sparks.Speed = null;
+        }
+        else
+        {
+            piece.Extras.Trail.Preset = SketchTrailPreset.Custom;
+            piece.Extras.Trail.Model = path;
+            piece.Extras.Trail.Ribbon = 0;
+        }
+        SketchChanged();
     }
 }

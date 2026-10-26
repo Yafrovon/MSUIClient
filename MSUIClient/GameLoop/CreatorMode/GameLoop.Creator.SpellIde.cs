@@ -31,7 +31,7 @@ namespace MSUIClient;
 // ─────────────────────────────────────────────────────────────────────────────
 public sealed partial class GameLoop
 {
-    private enum SpellIdeKind { Spell, Loop, Clock, Stage, Audio, Session, Composition, Phase, Emitter, Mesh, Ribbon }
+    private enum SpellIdeKind { Spell, Rules, Loop, Clock, Stage, Audio, Session, Composition, Phase, Emitter, Mesh, Ribbon }
 
     /// <summary>What the inspector shows: a fixed section, a phase model, or one emitter of it.</summary>
     private readonly record struct SpellIdeSelection(SpellIdeKind Kind, string Path = "", int Emitter = -1)
@@ -270,9 +270,22 @@ public sealed partial class GameLoop
             ImGui.SameLine();
             if (_creatorSpell is { } doc)
             {
-                ImGui.TextColored(SpellIdeGold, doc.Info.Name);
-                ImGui.SameLine();
-                ImGui.TextDisabled($"#{doc.Info.Id}");
+                if (EditingCreatorChild)
+                {
+                    // A child spell is open (P4.1): say so, and the way back, where the name is.
+                    DrawCreatorChildBar();
+                }
+                else
+                {
+                    ImGui.TextColored(SpellIdeGold, doc.Info.Name);
+                    ImGui.SameLine();
+                    ImGui.TextDisabled($"#{doc.Info.Id}");
+                    if (doc.Children.Count > 0)
+                    {
+                        ImGui.SameLine();
+                        ImGui.TextDisabled($"+{doc.Children.Count} child spell(s)");
+                    }
+                }
             }
             else ImGui.TextColored(SpellIdeGold, "SPELL WORKSHOP");
             ImGui.SameLine();
@@ -336,13 +349,20 @@ public sealed partial class GameLoop
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip("Centre the view on the selection (double-clicking a label in the world does the same).");
             ImGui.SameLine();
-            if (_creatorUndo.Count == 0) ImGui.BeginDisabled();
-            if (ImGui.SmallButton("Undo")) CreatorUndoLast();
-            if (_creatorUndo.Count == 0) ImGui.EndDisabled();
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(CreatorUndoLabel is { } undoLabel
-                    ? $"Undo the last drag: {undoLabel} (Ctrl+Z)"
-                    : "Nothing to undo - only drag handles are on the undo stack.");
+            bool canUndo = CanUndoDesign, canRedo = CanRedoDesign;
+            if (!canUndo) ImGui.BeginDisabled();
+            if (ImGui.SmallButton("Undo")) UndoCreatorDesign();
+            if (!canUndo) ImGui.EndDisabled();
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip(canUndo
+                    ? $"Undo the last change - any card, dial, rule, slot, sketch piece or drag ({_designUndo.Count} step(s), Ctrl+Z)"
+                    : "Nothing to undo yet.");
+            ImGui.SameLine();
+            if (!canRedo) ImGui.BeginDisabled();
+            if (ImGui.SmallButton("Redo")) RedoCreatorDesign();
+            if (!canRedo) ImGui.EndDisabled();
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip(canRedo ? $"Redo ({_designRedo.Count} step(s), Ctrl+Y)" : "Nothing to redo.");
             ImGui.SameLine();
             ImGui.TextDisabled("|");
             SpellIdeToggle("Tree", !_spellIdeOutlinerHidden,
@@ -406,6 +426,9 @@ public sealed partial class GameLoop
             }
             else
             {
+                // What the spell DOES comes first: it decides what the parts below have to show.
+                SpellIdeRow(new SpellIdeSelection(SpellIdeKind.Rules),
+                    doc.Rules is { } r && r.ChangedColumns.Any() ? "Rules *  (what it does)" : "Rules  (what it does)");
                 SpellIdeRow(new SpellIdeSelection(SpellIdeKind.Loop), _creatorLoopOn ? "Loop  (running)" : "Loop");
                 SpellIdeRow(new SpellIdeSelection(SpellIdeKind.Clock), _creatorClockPaused ? "Clock  (paused)" : "Clock");
                 SpellIdeRow(new SpellIdeSelection(SpellIdeKind.Stage), _creatorStageActive ? "Void stage  (on)" : "Void stage & gizmos");
@@ -476,6 +499,7 @@ public sealed partial class GameLoop
         switch (selection.Kind)
         {
             case SpellIdeKind.Spell: return "Spell";
+            case SpellIdeKind.Rules: return "Rules - what the spell does";
             case SpellIdeKind.Loop: return "Loop";
             case SpellIdeKind.Clock: return "Clock";
             case SpellIdeKind.Stage: return "Void stage & gizmos";
@@ -568,6 +592,7 @@ public sealed partial class GameLoop
                 DrawCreatorSpellPickerBody();
                 _creatorResultsFractionOverride = null;
                 return;
+            case SpellIdeKind.Rules: DrawCreatorRulesBody(); return;
             case SpellIdeKind.Loop: DrawCreatorLoopBody(); return;
             case SpellIdeKind.Clock: DrawCreatorClockBody(); return;
             case SpellIdeKind.Stage: DrawCreatorStageBody(); return;
@@ -602,6 +627,7 @@ public sealed partial class GameLoop
             }
             ImGui.Spacing();
             ImGui.TextDisabled($"EMITTERS ({model.Emitters.Count()})");
+            dirty |= DrawCreatorTransplantRow(model);
             CreatorHelp("Each emitter is one particle source inside this model. Pick one in the " +
                 "tree (or click its gizmo in the world) to edit it; here you can only switch " +
                 "them on and off. A bold gizmo is the selected emitter. Mesh layers and " +
@@ -701,6 +727,8 @@ public sealed partial class GameLoop
                 }
                 ImGui.TextDisabled(parts.Count == 0 ? "(nothing playing)" : string.Join("   ", parts));
             }
+            // The dope sheet (P3.2): the selection's keyframes, editable while paused.
+            DrawCreatorDopeSheet(io.DisplaySize.X - 24f * cs);
             _spellIdeTimelineHeight = ImGui.GetWindowSize().Y;
         }
         EndSpellIdeWindow();

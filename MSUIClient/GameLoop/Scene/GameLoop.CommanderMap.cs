@@ -472,7 +472,11 @@ public sealed partial class GameLoop
             : "WORLD OVERVIEW";
         float titleSize = (drilled ? 13f : 15f) * s;
         float titleLeft = headerMin.X + 210f * s;
-        float titleRight = close.X - intelWidth - 22f * s;
+        // The live Quest Tabletop opens from here (QUEST_TABLETOP.md §12): the same Command View, seen as the table.
+        Vector2 tableButtonSize = new(96f, 22f);
+        Vector2 tableButtonMin = new(close.X - intelWidth - 26f * s - tableButtonSize.X * s,
+            headerMin.Y + (headerH - tableButtonSize.Y * s) * 0.5f);
+        float titleRight = tableButtonMin.X - 12f * s;
         string fittedTitle = CommanderFitText(centreTitle,
             MathF.Max(80f * s, titleRight - titleLeft), titleSize);
         DrawCenteredText(dl, new Vector2((titleLeft + titleRight) * 0.5f,
@@ -481,6 +485,8 @@ public sealed partial class GameLoop
         CmdText(dl, intelSize,
             new Vector2(close.X - intelWidth - 14f * s, headerMin.Y + (headerH - intelSize) * 0.5f),
             intelColor, intelText);
+        if (VanillaButton(dl, "##commander-tabletop", "Tabletop", tableButtonMin, tableButtonSize, s))
+            LiveTableOpen();
         DrawImageButton(dl, "##commander-close", close, new Vector2(28f) * s,
             @"Interface\Buttons\UI-Panel-MinimizeButton-Up", @"Interface\Buttons\UI-Panel-MinimizeButton-Down",
             @"Interface\Buttons\UI-Panel-MinimizeButton-Highlight");

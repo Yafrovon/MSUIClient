@@ -30,7 +30,27 @@ public sealed partial class GameLoop
     private void PickCreatorModel(string path)
     {
         if (_creatorSpell is not { } doc || _modelPickerTarget is not { } target) return;
-        if (target.Stage is { } stage) SetCreatorSlot(doc, stage, target.Slot, path);
+        if (target.Slot == CreatorTransplantPickerSlot)
+        {
+            _transplantDonor = path;        // the phase inspector now lists its emitters and trails
+            _modelPickerTarget = null;
+            return;
+        }
+        if (target.Slot == CreatorWorldPickerSlot && target.Stage is { } worldStage)
+        {
+            if (doc.Composition.TryGetValue(worldStage, out CreatorStageComposition? c) && EnsureCreatorModel(doc, path))
+            {
+                c.WorldEffect = path;
+                ReapPresentedEffect();
+                _creatorLoopNextAt = 0;
+            }
+        }
+        else if (target.Stage is { } stage) SetCreatorSlot(doc, stage, target.Slot, path);
+        else if (target.Slot is CreatorSparksPickerSlot or CreatorTrailPickerSlot) PickSketchExtraModel(target.Slot, path);
+        else if (target.Slot == CreatorAreaPickerSlot)
+        {
+            if (EnsureCreatorModel(doc, path)) { doc.Area.Model = path; RestartCreatorArea(); }
+        }
         else SetCreatorMissile(doc, path);
         _modelPickerTarget = null;
     }
@@ -67,8 +87,17 @@ public sealed partial class GameLoop
         {
             ClampCreatorWindowOnScreen();
             string title = target.Stage is { } stage
-                ? $"Pick a model: {CreatorStageName(stage)} / {CreatorSlotNames[target.Slot]}"
-                : "Pick the missile model";
+                ? target.Slot == CreatorWorldPickerSlot
+                    ? $"Pick a model: {CreatorStageName(stage)} / world (feet)"
+                    : $"Pick a model: {CreatorStageName(stage)} / {CreatorSlotNames[target.Slot]}"
+                : target.Slot switch
+                {
+                    CreatorSparksPickerSlot => "Copy sparks from a model",
+                    CreatorTransplantPickerSlot => "Copy an emitter or trail from a model",
+                    CreatorTrailPickerSlot => "Copy a trail from a model",
+                    CreatorAreaPickerSlot => "Pick the area model",
+                    _ => "Pick the missile model",
+                };
             if (DrawCreatorPanelChrome(title)) close = true;
             ImGui.SetWindowFontScale(CreatorTextScale);
             BeginCreatorContent();

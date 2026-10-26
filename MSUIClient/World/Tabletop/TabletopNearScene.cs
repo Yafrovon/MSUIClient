@@ -53,6 +53,12 @@ public sealed class TabletopNearScene : IDisposable
     public int Buildings => _wmo.InstanceCount;
     public int Props => _doodads?.InstanceCount ?? 0;
     public int CreaturesDrawn => _creatures?.DrawnLastFrame ?? 0;
+    /// <summary>Item entry -> template for view-only players (the living board's bots): the remote-player renderer
+    /// dresses them from it without any server query.</summary>
+    public Func<uint, (bool Settled, ItemTemplate? Item)>? PlayerItemResolver
+    {
+        set { if (_creatures is not null) _creatures.PlayerItemResolver = value; }
+    }
     public string? Failure { get; private set; }
 
     public TabletopNearScene(GL gl, ClientConfig config, GpuUploadWorker uploads, AssetWorkerPool workers, MpqMount mpq, int radius = 1)

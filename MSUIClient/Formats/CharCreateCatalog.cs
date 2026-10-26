@@ -126,14 +126,26 @@ public sealed class CharCreateCatalog
         return cat;
     }
 
-    // ChrRaces build 5875: 29 u32 fields / 116-byte records. Fields 26/27 are the male/female
-    // facial-hair GlueStrings tokens and field 28 is the shared hair token.
+    private readonly Dictionary<(byte Race, byte Sex), uint> _nativeDisplay = new();
+
+    /// <summary>The race/sex body model (ChrRaces MaleDisplayId/FemaleDisplayId): what UNIT_DISPLAYID holds for an
+    /// undisguised player. 0 when unknown.</summary>
+    public uint NativeDisplay(byte race, byte sex) => _nativeDisplay.GetValueOrDefault((race, sex));
+
+    // ChrRaces build 5875: 29 u32 fields / 116-byte records. Fields 4/5 are the male/female display
+    // ids; fields 26/27 are the male/female facial-hair GlueStrings tokens and field 28 is the shared
+    // hair token.
     private void ParseCustomizationTokens(byte[]? d)
     {
         if (!ValidWdbc(d) || Fields(d!) < 29 || I32(d!, 12) < 116) return;
         ForEachRecord(d!, rec =>
         {
             byte race = (byte)U32(d!, rec, 0);
+            if (race is >= 1 and <= 8)
+            {
+                _nativeDisplay[(race, 0)] = U32(d!, rec, 4);
+                _nativeDisplay[(race, 1)] = U32(d!, rec, 5);
+            }
             string male = WdbcString(d!, U32(d!, rec, 26));
             string female = WdbcString(d!, U32(d!, rec, 27));
             string hair = WdbcString(d!, U32(d!, rec, 28));

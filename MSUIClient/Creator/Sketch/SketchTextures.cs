@@ -117,6 +117,18 @@ public static class SketchTextures
         SketchShape shape = piece.Shape;
         int size = SizeFor(shape);
 
+        // A SOLID wraps its whole image round the mesh: full coverage, no margin, no baked glow
+        // (its glow is a second, larger shell of the same mesh).
+        if (SketchShapes.IsSolid(shape.Kind))
+        {
+            var solidInfo = new SKImageInfo(MinSize, MinSize, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+            var solid = new SKBitmap(solidInfo);
+            var white = new SKColor[MinSize * MinSize];
+            Array.Fill(white, new SKColor(255, 255, 255, 255));
+            solid.Pixels = white;
+            return solid;
+        }
+
         float[] coverage = shape.Kind == SketchShapeKind.Stroke
             ? StrokeCoverage(shape, size)
             : PrimitiveCoverage(shape, size);

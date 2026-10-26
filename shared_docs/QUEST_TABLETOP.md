@@ -125,6 +125,10 @@ full detail will either crawl or leave blank edges. So:
   discard) and draw the skirt + slab + table.
 - **Gameplay isolation:** entering the view does not move the player or a possessed body, does not
   send movement or SUI packets, and leaving it restores the previous camera and streaming centre.
+  **Live table (§12) amendment (owner, 2026-10-22):** opened from the Command View in a logged-in session, the table
+  moves the Command View rig - and with it the server's freecam eye (CMSG_SUI_CAM) - to its ground target; that is the
+  only packet it causes. It never moves the logged-in body or a possessed one and sends no movement; closing leaves
+  the Command View where the table looked.
 
 ---
 
@@ -244,10 +248,47 @@ quests on the board that kill it or need an item it drops.
    objective places and turn-in, its chain lists its steps in order, and the same-NPC hand-offs show
    as loops over Gryan — matching the web page on the same quest.
 
+## 12. The live table (owner, 2026-10-22: "we LIVE the experience as a true tabletop view ... non-negotiable")
+
+**What it is:** the same table - relief board, skirt, walnut table, warm light, miniature lens, exaggerated relief,
+quest overlays, the living board - opened from a LIVE session's Command View (commander map header -> **Tabletop**;
+M returns to the commander map, the panel's X to the Command View at the table's spot). Inside the server's
+visibility bubble around where the table looks (Visibility.Distance.Continents = 100 yd on the box) everything is the
+real game: mobs, players, bots, their swings, casts, spell kits, missiles, chain beams, totems, auras, deaths, world
+particles. Beyond it the board stays populated by the brain feed's bots and the census figures.
+
+**How (GameLoop/CreatorMode/GameLoop.Creator.Tabletop.LiveWorld.cs):**
+- **Eye:** the Command View rig is `_controller` while `_freeView`; the table writes it to its ground target (+25 yd)
+  each update and the existing heartbeat sends CMSG_SUI_CAM; the server's World Trigger eye (`SuiPossess::HandleCam`,
+  `NearTeleportTo`) streams the world there. Same map only (the packet has no map): a board on another map says so.
+  Lock-on-primary is suspended while open; wheel-fly drift is snapped back.
+- **Near layer = the game's own world renderers** (terrain, WMO, doodads incl. dynamic game objects, liquid, the
+  world CreatureRenderer, the spell stack) drawn through the table camera with a `TabletopViewTransform`: terrain/water
+  exaggerated in the shader, placements lifted by the ground under them (`ModelLift`), units drawn as lifted copies
+  (`WorldEntity.WithViewPosition`) so every bone a spell attaches to is lifted, figure scale through
+  `CreatureRenderer.ScaleMultiplier` (never a live entity's fields), fixed world points (ground AoE, destinations)
+  through `SpellEffectSource.FixedPointView`, spell ground samplers and decal triangles answer in the shown space
+  (`LiveTableLiftAt`, `LiveTableShown`), doodad particle emitters lifted per emitter, effect far clips off. Because
+  the WORLD's renderer draws the units, every animation trigger the packet handlers fire plays on the table.
+- **Restore:** every setting the pass bends is saved at open and put back at close; light/fog/visibility come back by
+  themselves (ApplyAtmosphere each world frame); the relief uniforms are reset by one k = 1 frame before detaching.
+- **Overlays:** health bars over live units that fight or are hurt; bots in the bubble take the live entity's
+  position (not the feed's 5 s past); census figures stand down inside the bubble.
+- **Proof:** protocol runner `tabletop-live freeview | open [area] | frame x y [r] | bot combat|caster|moving|NAME [r] |
+  status | shot NAME | close` (status prints rig, eye moves, world tiles, far tiles hidden, terrain drawn, live units,
+  spell instances, particles). Use a living character on neutral ground (an Alliance L1 teleported into the Crossroads
+  died and a dead viewer streams nothing).
+
+**Known gaps:** player corpses are not drawn on the live table; spell effects are not cut at the board edge (they can
+poke over the skirt there); the live area is only the server's 100 yd bubble (a SUI-only larger eye radius would be a
+Core change, measured first); abilities outside the bubble need a Core event feed.
+
 ## 11. Open questions for the owner / as-built log
 
 - Should "filed in this zone only" default **on**?
-- Creatures: true scale (realistic, tiny from the overview) or a default figure scale (> 1)?
+- Creatures: true scale (realistic, tiny from the overview) or a default figure scale (> 1)? **Answered 2026-10-21:**
+  a slider with a cap (1-4x, default 3x), eased by zoom - true scale within 150 yd of the camera target, full slider
+  value by 800 yd (`TabletopLaw.FigureScale`). Critters: their own layer, off by default.
 - Should the far layer ever show creatures as markers when they are outside the near radius?
 
 *(append dated as-built lines below)*
@@ -333,3 +374,89 @@ quests on the board that kill it or need an item it drops.
   chunk scan → givers/enders (Blackrock Mountain lands there: its terrain belongs to its neighbours). (2) **"Filed in this
   zone only" starts ON** (§11 answered): the Barrens' wide WorldMapArea rectangle otherwise pulls in 815 quests (104 its own).
   P4 notes from the sweep: a busy NPC's same-NPC loops line up in a long row (cap them); pins are large at overview.
+- **2026-10-21 (night) — portability: the table needs no hand-made local file.** On a second PC the creatures were missing
+  ("2632 without a model"): models came from `creator-creatures.tsv`, a git-ignored file generated by hand in August. Fixed
+  both sides (web deploy 2026-10-21 22:28): `GET /QuestAtlas/Creatures` templates now carry `displayId` (first non-zero
+  `display_id1..4`) and that slot's `scale`; the client takes model, name, levels and rank from the census
+  (`TabletopCreatureInfo`), the local catalogue only for an older web app. The creator catalogue itself is now served by
+  `GET /QuestAtlas/CreatureCatalogue` (same nine-column TSV) and the client downloads it once per session, atomically
+  replacing the offline copy (`EnsureCreatorCreatures`); new probe check (stage 11). Audit of the table's other local
+  inputs: `data/reference/areatrigger_teleport.tsv` is tracked; everything else comes from MPQs or the web app. Runs
+  `look-3`/`look-4` on the second PC with no local catalogue: Westfall 2632 creatures (1279 drawn at Sentinel Hill),
+  Gilneas 158, §10.6 PASS, catalogue 10422 rows downloaded.
+  **Isolation leak fixed:** "leaving the view" failed because a panel closed mid-update (after `UpdateTabletopLifecycle`,
+  before movement - the probe; a hotkey would too) unlocked the controller for one frame before `CloseTabletop` compared:
+  an airborne body fell 0.07 yd and the game camera followed it. Traced with per-phase checkpoints (the move was inside
+  `_controller.Update`). Program.cs now holds the lock until the close has run: `tabletopLocked = TabletopActive || _ttOpen`.
+  `look-5` (Westfall + Gilneas): **VERDICT PASS**, 25/25; `--shared-docs-only` and `--imgui-policy-only` PASS; Debug +
+  Release green.
+- **2026-10-21 (late) — P4 polish, first pass; Westfall + Barrens VERDICT PASS (`perf-2`), Debug + Release green, both
+  policy checks PASS.** Owner decisions: figure scale = slider with cap eased by zoom; critters = layer off by default.
+  (1) **Figures:** `Creator.Tabletop.FigureScale` (Layers → Figures, 1-4x, default 3) and `TabletopLaw.FigureScale(slider,
+  radius)`; the census row keeps each creature's base scale, `TabletopUnits` writes base × figure into OBJECT_SCALE_X per
+  frame (CreatureRenderer reads `entity.Scale` live). At Sentinel Hill's close framing guards/vultures/plainstriders read
+  as figurines; at 140 yd they are true scale beside the tower door. (2) **Critters:** `Creator.Tabletop.Critters` (off),
+  creature type 8 (`TabletopLaw.CritterType`) from the census template. (3) **Loops:** at most `MaxLoopsPerPin` = 3 over a
+  pin, centred, the selected chain's first, the rest as "+N". (4) **Pins:** `TabletopLaw.PinScale` - the web sprite size
+  up to 700 yd, easing to 0.55x of it at the overview radius. (5) **Grey smears:** traced with the lens off - Westfall's
+  own grey rock layer on steep faces, stretched into vertical streaks by the top-down terrain UV (exaggeration makes
+  every face 2.2x steeper). terrain.vert/.frag now blend in a side projection of the same layers on steep SHOWN faces
+  (n.z < 0.85, world yards of the shown surface, gradients in uniform control flow), only when `uReliefOn` = 1 - every
+  game program takes the unchanged path. The rock stays grey (it is the real texture), the streaks are gone.
+  **Lime trees: not fixed, cause not found.** They are northern Stranglethorn jungle crowns south of Westfall's ridge,
+  seen from straight above. Ruled out by probe: (a) Duskwood canopy glow batches - `duskwoodtreecanopy02` carries 3 unlit
+  alpha-blended batches whose colour alpha is 0 and the doodad renderer draws them at full strength anyway (a real,
+  game-wide bug; fix kept as `scratch/tabletop/patches/doodad-colour-tracks.patch`, not applied - needs its own
+  before/after in Duskwood), but the lime crowns are not those; (b) camera-facing leaf cards (none in the billboard list);
+  (c) over-1 light clipping (a hue-preserving shoulder in the output pass changed nothing - reverted). Likely the crown
+  texture itself from an angle the game never shows; owner's call. (6) **Frame times** (Release, visible window,
+  2560x1369, vsync 60; 5 s windows starting 1.5 s after each probe screenshot so the PNG encode is not measured):
+  Westfall overview 60 fps, p50 16.7 / p95 17.6 / max 18.9 ms, 0 frames > 25 ms; Westfall close 60 fps, p95 17.9, max
+  33.5, 4 > 25 ms (tile streaming); Barrens overview (256 tiles) 60 fps, p95 17.3, max 20.2, 0; Barrens close 60 fps, p95
+  17.3, max 19.9, 0. Section 7's target (60 Westfall, >= 30 Barrens) met; GPU headroom above vsync not measured. Noted:
+  the Barrens census hits `MaxBoardSpawns` (6000 drawn; the cap was hit), so far creatures on big boards are truncated.
+- **2026-10-21 (night) — the living board: SuperUI bots live on the table, dressed. Barrens + Westfall VERDICT PASS
+  (`live-6`), Debug + Release green, both policy checks PASS.** Owner ask: "a viewer mode in creator mode with real-time
+  telemetry on bots". Built as the table's **Live** layers (Layers -> Live bots, Trails; settings `LiveBots`, `LiveTrails`),
+  `GameLoop/CreatorMode/GameLoop.Creator.Tabletop.Live.cs`. Data, all read-only: the brain feed `GET /Bots/MapBots`
+  (existing: pos, map/zone, goal/step/why, timers, hp/mana, dead/inCombat, stall, target, last failure) polled at 1 Hz,
+  and the NEW web endpoint `GET /Bots/Appearance?guids=` (MangosSuperUI `BotsController.Map.cs`, deployed 23:33): race,
+  class, gender, skin/face/hair/facial hair from `characters`, worn bag-0 slots 0-18 with item display id, inventory
+  type, class/subclass, material, sheath. Timing: the brain hears from a bot about every 4 s and stamps
+  `sensoryFeed.lastStateReceivedUtc`; samples are placed at that moment on the client clock and every bot is played back
+  `LiveDelaySeconds` = 5 s behind, interpolated (teleports over 150 yd snap; under 1.5 yd/s is standing - the brain's
+  position noise). Drawing: in the near layer each bot is a view-only PLAYER entity (race/class/sex in UNIT_BYTES_0, look
+  in PLAYER_BYTES/_2, worn entries in PLAYER_VISIBLE_ITEM_n_0, native display from ChrRaces fields 4/5 via
+  `CharCreateCatalog.NativeDisplay`) posed with `WithRenderPose` and dressed by the remote-player renderer through
+  `TabletopNearScene.PlayerItemResolver` (no server query); on the whole board a class-coloured marker (a foot ring where
+  the model is drawn), name + hp bar when close or selected, red ring in combat, pulsing red ring when stalled, grey when
+  dead, a fading trail of the last minute. Click (marker or model) -> card: goal/step/why, time in goal / without
+  progress, hp/mana bars, target, stall, last failure, follow-with-camera (any pan lets go), link to the web bot map.
+  Found on the way: the brain can report a bot far UNDER the ground (Bluebear 37 yd below the Barrens floor) - it put the
+  follow camera under the board; bots now stand on the ground (near layer's, else the relief's) and the card shows
+  "reported N yd under the ground". Probe: `MSUI_TABLETOP_LIVE=1` adds stages 20-23 (wait for feed + looks, pick a bot -
+  a moving one if any - select/follow, check it stands dressed in the near layer, shots `-live`/`-live-later`).
+  Barrens board: 72 of 147 online bots, all 72 dressed. Not yet seen: a walking bot's run/walk animation (every pick was
+  idle or under 1.5 yd/s), and players (the feed is bots only - real players and live mobs need a Core feed, step 3).
+- **2026-10-22 (night) — the live table (§12) built and proven live.** Runs `livetable-2..9` (Testagain at Ratchet, eye
+  over the Barrens): the eye follows the table (7-24 eye moves per run), the client streams the units there (4-19 live
+  units in the bubble), real combat draws on the exaggerated ground - Calstone (shaman) casting with its Searing Totem
+  burning and firing bolts, Haldforge (priest) against a zhevra with health bars, a dead bot under the creature that
+  killed it - and closing restores the normal Command View (true heights, HUD) with no movement packet sent. Found on
+  the way: (1) the terrain side projection added for P4 used a REVERSED `smoothstep(0.85, 0.45, n.z)` - undefined in
+  GLSL; the driver applied side projection on flat ground and streaked it sideways (both the live and the offline
+  table at close range) - now `1 - smoothstep(0.35, 0.6, n.z)`, cliffs only; (2) a dead viewer streams nothing.
+  Offline regression `regress-2` (Westfall + Barrens, living board on): VERDICT PASS 29/29; Debug + Release green;
+  shared-docs, ImGui policy and possess-law checks PASS.
+- **2026-10-22 (morning) — close-ups crisp: the terrain normals were swapped game-wide.** Owner: the ground "totally bad
+  pixelated" close up (Elwynn, live table). Bisected with the probe's new `MSUI_TABLETOP_CLOSE_HALF` (close framing in
+  yards) and `MSUI_TABLETOP_WORLDSHOT` (one ordinary world shot first): crisp at k = 1.0, streaked at k = 1.02 (identical
+  geometry, relief path on), crisp again at 1.02 with the slope projection disabled - so the projection fired on FLAT
+  ground. Cause: `AdtTerrainReader.NormalAt` reordered MCNR as (x, z, y), putting "up" into Y; measured on Azeroth_29_51,
+  MCNR is plain (x, y, z): byte 2 averages |125| on flat ground, byte 0 tracks the X slope (corr 0.97), byte 1 the Y
+  slope (0.98). Fixed there (since the first commit every terrain vertex was lit as if it faced sideways; the world view
+  changes subtly - hills shade by their real slope). New probe check "MCNR terrain normals: up is Z". With the normals
+  right, the table's slope texturing is now triplanar (top + X + Y projections weighted by |n|^4 of the SHOWN face,
+  world yards, flat ground untouched), and the relief eases with zoom (`TabletopLaw.ShownExaggeration`: full slider
+  value from 1200 yd out, a fifth of the extra height by 200 yd; Layers -> "Relief eases close up", on by default).
+  Regression `regress-4`: VERDICT PASS 30/30; Debug + Release green; shared-docs, ImGui and possess-law checks PASS.

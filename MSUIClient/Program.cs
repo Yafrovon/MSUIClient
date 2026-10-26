@@ -769,6 +769,15 @@ public sealed partial class GameLoop : IDisposable
         }
         double packSyncSeconds = packSyncTimer.Elapsed.TotalSeconds;
 
+        // The custom-spell patch (patch-3) the same way, before the mount: a client whose copy
+        // is older than the server's shows custom spells wrongly or not at all
+        // (shared_docs/SPELL_CREATOR_PLAN.md P0.7). MSUI_SPELLPATCH_SYNC=off leaves it alone.
+        string spellPatchSync = Environment.GetEnvironmentVariable("MSUI_SPELLPATCH_SYNC") == "off"
+            ? "spell patch: sync skipped (MSUI_SPELLPATCH_SYNC=off)"
+            : Net.SpellPatchClient.EnsureCurrent(SuiWebAppUrl, _config.ClientDataPath,
+                checkTimeout: TimeSpan.FromSeconds(4), downloadTimeout: TimeSpan.FromSeconds(60));
+        Console.WriteLine($"[spellpatch] {spellPatchSync}");
+
         // Mount the archives once and point AdtTerrainReader's extractor hook at
         // them. Without this every file read reopens up to fifteen MPQs.
         _mpq = new MpqMount(_config.ClientDataPath);
@@ -1610,6 +1619,7 @@ public sealed partial class GameLoop : IDisposable
 
         // Scripted creator-mode texture-swap reproduction (MSUI_CREATOR_PROBE).
         UpdateCreatorProbe();
+        UpdateSpellPipeProbe();
         UpdateWorldBuilderScript();
         UpdateXrayProbe();
 
@@ -2061,7 +2071,9 @@ public sealed partial class GameLoop : IDisposable
         ApplyVanillaControlLockout(ref forward, ref strafe, ref turn, ref scriptedJump);
         bool vanillaControlLocked = VanillaSelfControlLocksMover;
         // Quest Tabletop open: the view has its own camera; the body holds exactly where it was (QUEST_TABLETOP.md §4).
-        bool tabletopLocked = TabletopActive;
+        // Held until CloseTabletop has run (_ttOpen), not just while the panel is up: a panel closed mid-update (a hotkey,
+        // the probe) otherwise let one frame of movement through before the close compared the body (2026-10-21).
+        bool tabletopLocked = TabletopActive || _ttOpen;
         if (tabletopLocked) { forward = 0f; strafe = 0f; turn = 0f; scriptedJump = false; }
         // Body status can keep changing while Ctrl+F is detached. Root, Ice Block, drunkenness,
         // and cast interruption belong to that streamed body; none may seize the observer rig.
@@ -2465,6 +2477,9 @@ public sealed partial class GameLoop : IDisposable
         AdvanceCreatorClock(dt);
         UpdateSpellPresentation();
         UpdateCreatorSketch();
+        UpdateCreatorDesignUndo();
+        UpdateCreatorTestLive();
+        UpdateSpellTestLiveWatcher();
         UpdateCreatorSpellLoop();
         UpdateCreatorLocationPersist();
 
@@ -2655,9 +2670,9 @@ public sealed partial class GameLoop : IDisposable
     /// </summary>
     private CharacterRenderer.UnitState BuildUnitState(bool includeAuraVisual = false)
     {
-        AuraVisualState? aura = includeAuraVisual &&
-            _entities.TryGet(ControlledGuid, out WorldEntity visualUnit)
-                ? visualUnit.AuraVisual : null;
+        // The creator's sandbox has no server auras: its body preview stands in (BodyProcs.cs).
+        AuraVisualState? aura = !includeAuraVisual ? null
+            : CreatorBodyAura ?? (_entities.TryGet(ControlledGuid, out WorldEntity visualUnit) ? visualUnit.AuraVisual : null);
         return new()
         {
         Guid = ControlledGuid,

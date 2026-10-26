@@ -238,7 +238,7 @@ Where a row is a gap, the §5 slice that closes it is named.
 | Shapes (7), draw canvas, LOOK / PLACE / MOVE / EXTRAS, compile to M2 + BLP, handles | built (SPELL_SKETCH §10–12) |
 | Draw canvas preview | fixed today: round joins/caps, sampling past the paper's edge |
 | Trails and sparks on a piece (S5: cross-file ribbon/emitter copy) | **not built** |
-| Session export + Completer round trip + reopen (S7) | **not built** — a sketch is LOST when the client closes. This is the single largest gap in the tool: everything drawn is a preview |
+| Session export + Completer round trip + reopen (S7) | built 2026-10-25 (SPELL_CREATOR_PLAN.md P0): saved in the session `design`, reopened by "open", built from zero by the Completer, cast live |
 | Piece colour from the model inspector | added today (PIECE COLOURS; Hue/Tint hidden for a sketch's white images) |
 
 ## 4. The task walk
@@ -269,7 +269,7 @@ Where a row is a gap, the §5 slice that closes it is named.
 | edit the ramp of an emitter's rate over time | first key or flatten only — **GAP** (slice A) |
 | change when a burst fires | **GAP** (enable track, slice A) |
 | play a sound the game already has | import own file only — **GAP** for picking an existing SoundEntries row (slice C) |
-| keep my sketch for tomorrow | **GAP** (S7) |
+| keep my sketch for tomorrow | Session → Add to session / Push; later "open" on the saved entry (2026-10-25) |
 | know that what I see is what the Completer will build | **GAP** (the round trip, slice R) |
 
 ## 5. The next slices, in order
@@ -278,7 +278,7 @@ Ordered by §1.2 weight × §4 blockage. Each names its acceptance.
 
 | # | Slice | Why now | Done when |
 |---|---|---|---|
-| S7 | **Sketch persistence and export** (SPELL_SKETCH §5, §7) | everything drawn is currently lost | push → Completer builds → the patch plays the sketch in the real client; reopening shows the pieces |
+| ~~S7~~ | ~~Sketch persistence and export~~ — DONE 2026-10-25, SPELL_CREATOR_PLAN.md P0 | | |
 | A | **Keyframe timeline**: the paused scrubber grows a track lane per animated track of the selection (emitter scalars, enable windows, colour/alpha/transparency, bone rot/trans); keys are draggable; "add key at time" | 40–50% of emitters ramp; today's first-key/flatten writes cannot express them | a Cleave rate ramp and a burst window round-trip through the lab and preview live |
 | C | **Every "+" is a copy from a real spell**: emitter, ribbon, layer, sound, from ANY spell (cross-file record copy: the S5 mechanism, promoted to the whole tool); slot drag in the tree; "colour this part" over hue + tint + colour records at once | the owner's "from existing of course"; the task walk's most common GAP | +Em in any model offers "from another spell…" and the copy renders identically to its source |
 | root | **Anatomy becomes the outliner root**; Composition folds into the part rows (animation done; add sound and slots) | the spine (§2); today the same fact lives in three panels | a new author finds animation, sound and slots on the part's row without a tooltip |

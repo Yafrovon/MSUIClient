@@ -2010,10 +2010,13 @@ public static class AdtTerrainReader
         {
             if (Normals == null || index < 0 || index * 3 + 2 >= Normals.Length)
                 return (0f, 0f, 1f);
-            // Stored (x, z, y) with 127 = 1.0; reordered here to (x, y, z).
+            // Stored (x, y, z) - world X (north), world Y (west), Z up - with 127 = 1.0. Measured on Azeroth_29_51
+            // (2026-10-22): byte 2 averages |125| on flat ground, byte 0 tracks the slope along X (corr 0.97) and byte 1
+            // the slope along Y (0.98). The (x, z, y) reorder this used to do put "up" into Y, so every terrain vertex
+            // was lit and shaded as if it faced sideways (and the Quest Tabletop's side projection streaked flat ground).
             return (Normals[index * 3 + 0] / 127f,
-                    Normals[index * 3 + 2] / 127f,
-                    Normals[index * 3 + 1] / 127f);
+                    Normals[index * 3 + 1] / 127f,
+                    Normals[index * 3 + 2] / 127f);
         }
 
         /// <summary>

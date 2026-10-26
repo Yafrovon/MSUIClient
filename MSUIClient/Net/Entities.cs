@@ -66,7 +66,8 @@ public sealed class WorldEntity
     public float PowerFraction => Fields.PowerFraction;
     public bool IsDead => Fields.IsDead;
     public bool InCombat => Fields.InCombat;
-    public float Scale => Fields.Scale;
+    /// <summary>OBJECT_FIELD_SCALE_X times an aura's scale CharProc (AuraVisualLaw.ScaleProc).</summary>
+    public float Scale => Fields.Scale * AuraVisual.Scale;
     public uint NpcFlags => Fields.NpcFlags;
     public uint GameObjectType => Fields.GameObjectType;
 
@@ -114,6 +115,19 @@ public sealed class WorldEntity
     // A renderer-only view shares the immutable-for-this-frame descriptor/aura
     // but carries the predicted local pose without overwriting network state.
     public float? RenderMotionSpeed { get; private set; }
+
+    /// <summary>
+    /// A renderer-only copy at another position (the Quest Tabletop's live table lifts every unit onto its exaggerated
+    /// ground). Unlike <see cref="WithRenderPose"/> it keeps the spline, flags and speeds, so walk/run, mounts and
+    /// facing animate exactly as in the world; descriptor fields and aura visuals are shared, never written.
+    /// </summary>
+    public WorldEntity WithViewPosition(Vector3 position)
+    {
+        var view = (WorldEntity)MemberwiseClone();
+        view.Position = position;
+        return view;
+    }
+
     public WorldEntity WithRenderPose(Vector3 position, float yaw, float speed, uint flags, bool flying)
     {
         var view = (WorldEntity)MemberwiseClone();

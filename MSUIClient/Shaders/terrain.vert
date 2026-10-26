@@ -42,6 +42,8 @@ uniform vec4 uBoardClip2;
 uniform vec4 uBoardClip3;
 
 out vec3 vWorldPos;
+// Quest Tabletop only: the SHOWN (exaggerated) absolute position, for side-projected texturing on steep faces.
+out vec3 vReliefPos;
 out vec3 vNormal;
 out vec2 vChunkUV;
 flat out vec4 vLayers;
@@ -59,6 +61,7 @@ void main()
     }
 
     vWorldPos   = relativePosition;
+    vReliefPos  = vec3(aPosition.xy, aPosition.z + (uReliefOn == 1 ? (uReliefK - 1.0) * (aPosition.z - uReliefBase) : 0.0));
     vNormal     = normalize(normal);
     vChunkUV    = aChunkUV;
     vLayers     = aLayers;

@@ -9,6 +9,7 @@
 // ASCII ONLY - see terrain.vert.
 
 in vec3 vWorldPos;
+in vec3 vReliefPos;                  // Quest Tabletop: shown absolute position (terrain.vert)
 in vec3 vNormal;
 in vec2 vChunkUV;                    // 0..1 across this fragment's own MCNK
 flat in vec4 vLayers;
@@ -74,6 +75,7 @@ uniform float uFogStart;
 uniform float uFogEnd;
 uniform vec3  uFogColor;
 uniform float uTextureScale;         // texture repeats per chunk; vanilla ~8
+uniform int uReliefOn;               // Quest Tabletop view transform (terrain.vert); 0 in every game program
 uniform int   uDebugMode;            // 0 textured, 1 normals, 2 UVs, 3 flat, 4 splat, 5 untextured
 
 uniform int uPointLightCount;
@@ -122,6 +124,20 @@ vec3 proceduralAlbedo(vec3 n)
     vec3 rock  = vec3(0.42, 0.41, 0.39);
     vec3 c = mix(rock, dirt, smoothstep(0.55, 0.80, slope));
     return mix(c, grass, smoothstep(0.80, 0.94, slope));
+}
+
+// The chunk's layers painted in order at one UV: base, then each overlay by its own alpha.
+// Gradients come from the caller: they must be taken in uniform control flow.
+vec3 layeredAlbedo(vec2 uv, vec2 ddx, vec2 ddy, vec3 splat)
+{
+    vec3 albedo = sampleLayerGrad(vLayers.x, uv, ddx, ddy);
+    if (vLayers.y >= 0.0 && splat.r > 0.0)
+        albedo = mix(albedo, sampleLayerGrad(vLayers.y, uv, ddx, ddy), splat.r);
+    if (vLayers.z >= 0.0 && splat.g > 0.0)
+        albedo = mix(albedo, sampleLayerGrad(vLayers.z, uv, ddx, ddy), splat.g);
+    if (vLayers.w >= 0.0 && splat.b > 0.0)
+        albedo = mix(albedo, sampleLayerGrad(vLayers.w, uv, ddx, ddy), splat.b);
+    return albedo;
 }
 
 void main()
@@ -218,17 +234,29 @@ void main()
         // so the index test is per-primitive and free. The splat weight is a
         // texture read, so that test is divergent within a quad - which is why
         // the fetches use explicit gradients.
-        vec2 ddx = dFdx(texUV);
-        vec2 ddy = dFdy(texUV);
+        albedo = layeredAlbedo(texUV, dFdx(texUV), dFdy(texUV), splat);
 
-        albedo = sampleLayerGrad(vLayers.x, texUV, ddx, ddy);
-
-        if (vLayers.y >= 0.0 && splat.r > 0.0)
-            albedo = mix(albedo, sampleLayerGrad(vLayers.y, texUV, ddx, ddy), splat.r);
-        if (vLayers.z >= 0.0 && splat.g > 0.0)
-            albedo = mix(albedo, sampleLayerGrad(vLayers.z, texUV, ddx, ddy), splat.g);
-        if (vLayers.w >= 0.0 && splat.b > 0.0)
-            albedo = mix(albedo, sampleLayerGrad(vLayers.w, texUV, ddx, ddy), splat.b);
+        // Quest Tabletop: exaggeration makes every slope steeper, and the top-down UV stretches a few yards of texture
+        // over a tall face - smears that follow the slope (owner, 2026-10-21 "grey smearing", 2026-10-22 "totally bad
+        // pixelated" close up). Triplanar: the same layers also projected along X and along Y, in world yards of the
+        // SHOWN surface (so they never swim with the camera), each weighted by how squarely the shown face looks
+        // along that axis (|n|^4), so no slope stretches any one projection badly. Flat ground keeps the top-down
+        // texture exactly (the side weights are ~0 there and skipped); every game program (uReliefOn 0) never enters.
+        // Gradients are taken here, in uniform control flow, before the per-pixel skips.
+        if (uReliefOn == 1)
+        {
+            float yardsPerRepeat = 33.333333 / max(uTextureScale, 0.001);
+            vec2 uvX = vReliefPos.yz / yardsPerRepeat;   // faces looking along +/-X (north/south)
+            vec2 uvY = vReliefPos.xz / yardsPerRepeat;   // faces looking along +/-Y (west/east)
+            vec2 xdx = dFdx(uvX), xdy = dFdy(uvX);
+            vec2 ydx = dFdx(uvY), ydy = dFdy(uvY);
+            vec3 w = pow(abs(n), vec3(4.0));
+            vec3 sum = albedo * w.z;
+            float total = w.z;
+            if (w.x > 0.02 * (w.x + w.y + w.z)) { sum += layeredAlbedo(uvX, xdx, xdy, splat) * w.x; total += w.x; }
+            if (w.y > 0.02 * (w.x + w.y + w.z)) { sum += layeredAlbedo(uvY, ydx, ydy, splat) * w.y; total += w.y; }
+            albedo = sum / max(total, 1e-5);
+        }
     }
 
     // uSunDirection arrives normalised from the CPU - see TerrainRenderer.

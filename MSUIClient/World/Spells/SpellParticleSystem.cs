@@ -130,6 +130,7 @@ public sealed class SpellParticleSystem : IDisposable
         public float SpawnAccumulator;
         public bool GatePrev;               // benilla accumulate_emission rising-edge latch (burst + gate reset)
         public bool TouchedThisFrame;
+        public long LastTraceTick;
         public int DrawnLastFrame;
         public int HeadQuadsLastFrame;
         public int TailQuadsLastFrame;
@@ -158,6 +159,9 @@ public sealed class SpellParticleSystem : IDisposable
     }
 
     // ── Simulate ─────────────────────────────────────────────────────────────
+
+    /// <summary>MSUI_FX_POOL_TRACE: twice a second, every live pool's particle count and gates.</summary>
+    private static readonly bool TracePools = Environment.GetEnvironmentVariable("MSUI_FX_POOL_TRACE") is not null;
 
     public void Simulate(float dt, Vector3 cameraPosition,
         IEnumerable<(string Path, Matrix4x4 Transform, M2ParticleEmitter Emitter,
@@ -249,6 +253,13 @@ public sealed class SpellParticleSystem : IDisposable
 
             WireChildren(pool);
             Advance(pool, sdt, cameraPosition, emit: true, groundHeight);
+            if (TracePools && (Environment.TickCount64 / 500) != pool.LastTraceTick)
+            {
+                pool.LastTraceTick = Environment.TickCount64 / 500;
+                Console.WriteLine($"[fx-pool] {Path.GetFileName(path)} e{index} n={pool.Particles.Count} " +
+                    $"rate={pool.Scalars[6]:0.#} life={pool.Scalars[5]:0.##} speed={pool.Scalars[0]:0.##} " +
+                    $"t={animationTime:0.00} seq={sequenceIndex} at=({emitterWorld.X:0.#},{emitterWorld.Y:0.#},{emitterWorld.Z:0.#})");
+            }
         }
 
         // Orphaned pools: drain their particles, then drop when empty.

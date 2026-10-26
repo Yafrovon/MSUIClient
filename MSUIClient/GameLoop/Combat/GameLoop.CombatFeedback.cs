@@ -184,6 +184,12 @@ public sealed partial class GameLoop
             // and banner are all suppressed under it, same rule as the world map.
             // Unlike DrawWorldMapFrame it must not require the player ENTITY —
             // in the free view the own character may be unstreamed far away.
+            // The live Quest Tabletop is the same kind of full command surface (opened from the commander map).
+            if (TabletopActive && _liveTableOpen)
+            {
+                DrawLiveTableHud();
+                return;
+            }
             if (_commanderMapOpen && _freeView)
             {
                 DrawCommanderMapFrame();

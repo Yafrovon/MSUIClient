@@ -204,6 +204,19 @@ public sealed partial class DoodadRenderer : IDisposable
         /// M2TextureTransform).
         /// </summary>
         public M2AnimTrack<Vector3>? UvTranslation;
+
+        /// <summary>
+        /// The batch's colour (M2 colour animation: rgb + alpha) and texture-weight (transparency) tracks, kept only
+        /// when they can change the batch (a track whose every key is white / fully opaque stays null, so the
+        /// common single-key weight of 1 does not retain the parsed M2). Vanilla multiplies both into the batch
+        /// every frame. Without them a doodad drew every batch at full strength: DuskwoodTreeCanopy02's three
+        /// unlit, alpha-blended eye quads blink on step alpha tracks over the 20 s Stand loop and stared
+        /// permanently instead (2026-10-21).
+        /// </summary>
+        public M2AnimTrack<Vector3>? ColorTrack;
+        public M2AnimTrack<short>? ColorAlphaTrack;
+        public M2AnimTrack<short>? WeightTrack;
+        public bool HasTint => ColorTrack is not null || ColorAlphaTrack is not null || WeightTrack is not null;
     }
 
     private sealed class Model : IDisposable
@@ -222,7 +235,7 @@ public sealed partial class DoodadRenderer : IDisposable
 
         /// <summary>
         /// The parsed M2, retained ONLY when some batch carries a UV-translation
-        /// track — M2TrackSampling needs the model's sequences/global-sequence
+        /// or tint track — M2TrackSampling needs the model's sequences/global-sequence
         /// table to evaluate it. Null for the static majority, so their parsed
         /// data stays collectable exactly as before. (Emitter models already
         /// retain the whole M2Model through Emitters[i].OwnerModel.)
@@ -2488,6 +2501,23 @@ public sealed partial class DoodadRenderer : IDisposable
                 uvAnim >= 0 ? m2.TextureTransforms[uvAnim].Translation : null;
             if (uvTrack is not null && uvTrack.Keys.Count == 0) uvTrack = null;
 
+            // Colour and texture-weight tracks (see Batch.ColorTrack): empty or all-identity tracks stay null (the
+            // untinted fast path).
+            M2AnimTrack<Vector3>? colorTrack = null;
+            M2AnimTrack<short>? colorAlphaTrack = null, weightTrack = null;
+            if (batch.ColorIndex >= 0 && batch.ColorIndex < m2.Colors.Count)
+            {
+                var colour = m2.Colors[batch.ColorIndex];
+                if (colour.Color.Keys.Any(k => MathF.Abs(k.X - 1f) + MathF.Abs(k.Y - 1f) + MathF.Abs(k.Z - 1f) > 1e-3f))
+                    colorTrack = colour.Color;
+                if (colour.Alpha.Keys.Any(k => k < short.MaxValue)) colorAlphaTrack = colour.Alpha;
+            }
+            if (batch.TextureWeightIndex < m2.TransparencyLookup.Count &&
+                m2.TransparencyLookup[batch.TextureWeightIndex] is var weightIndex &&
+                weightIndex < m2.TransparencyTracks.Count &&
+                m2.TransparencyTracks[weightIndex].Keys.Any(k => k < short.MaxValue))
+                weightTrack = m2.TransparencyTracks[weightIndex];
+
             model.Batches.Add(new Batch
             {
                 IndexStart = submesh.IndexStart,
@@ -2499,11 +2529,14 @@ public sealed partial class DoodadRenderer : IDisposable
                 NoDepthWrite = material?.NoZWrite ?? false,
                 FogMode = fogMode,
                 UvTranslation = uvTrack,
+                ColorTrack = colorTrack,
+                ColorAlphaTrack = colorAlphaTrack,
+                WeightTrack = weightTrack,
             });
         }
 
         model.HasBlendedBatches = model.Batches.Any(b => b.Blended);
-        if (model.Batches.Any(b => b.UvTranslation is not null))
+        if (model.Batches.Any(b => b.UvTranslation is not null || b.HasTint))
             model.UvAnimSource = m2;
 
         // Only synthesize a whole-mesh batch for malformed/legacy models that
@@ -2706,6 +2739,67 @@ public sealed partial class DoodadRenderer : IDisposable
     /// </summary>
     private float OpaqueCutoffFor(Batch batch)
         => batch.Texture is not null && batch.BlendMode == 1 ? AlphaCutoff : 0f;
+
+    /// <summary>
+    /// The batch's colour (rgb) and alpha (colour alpha × texture weight) at the world clock, on the same timeline as
+    /// <see cref="UvOffsetFor"/>: sequence 0 (Stand, which loops; the canopy eyes' 20 s blink) for a static doodad,
+    /// the absolute chained timeline for a bone-animated one. Null for an untinted batch (the shader's tint stays off).
+    /// </summary>
+    private Vector4? BatchTintFor(Model model, Batch batch)
+    {
+        if (!batch.HasTint || model.UvAnimSource is not { } src) return null;
+        Vector3 rgb = Vector3.One;
+        float alpha = 1f;
+        bool absolute = model.BoneAnimSource is not null;
+        if (batch.ColorTrack is { } c)
+            rgb = absolute ? M2TrackSampling.AbsoluteVector(c, src, NowSeconds, Vector3.One)
+                           : M2TrackSampling.Vector(c, src, 0, NowSeconds, Vector3.One);
+        if (batch.ColorAlphaTrack is { } a)
+            alpha *= absolute ? AbsoluteFixed16(a, src, NowSeconds) : M2TrackSampling.Fixed16(a, src, 0, NowSeconds);
+        if (batch.WeightTrack is { } w)
+            alpha *= absolute ? AbsoluteFixed16(w, src, NowSeconds) : M2TrackSampling.Fixed16(w, src, 0, NowSeconds);
+        if (!float.IsFinite(rgb.X) || !float.IsFinite(rgb.Y) || !float.IsFinite(rgb.Z)) rgb = Vector3.One;
+        if (!float.IsFinite(alpha)) alpha = 1f;
+        return new Vector4(Vector3.Clamp(rgb, Vector3.Zero, new Vector3(4f)), Math.Clamp(alpha, 0f, 1f));
+    }
+
+    /// <summary>
+    /// A fixed16 track on the absolute timeline (M2TrackSampling has the absolute path for vectors and rotations
+    /// only): wall clock mod the chained Stand timeline, or mod the track's own global sequence.
+    /// </summary>
+    private static float AbsoluteFixed16(M2AnimTrack<short> track, M2Model model, float seconds)
+    {
+        var times = track.Timestamps;
+        var keys = track.Keys;
+        if (keys.Count == 0 || times.Count != keys.Count) return 1f;
+        uint loop = track.GlobalSequence < 0 ? model.AbsoluteTimelineDurationMs
+            : track.GlobalSequence < model.GlobalSequenceDurations.Count ? model.GlobalSequenceDurations[track.GlobalSequence] : 0;
+        float at = loop > 0 ? seconds * 1000f % loop : seconds * 1000f;
+        float value = keys[^1];
+        if (keys.Count == 1 || at <= times[0]) value = keys[0];
+        else
+        {
+            for (int i = 1; i < keys.Count; i++)
+            {
+                if (at > times[i]) continue;
+                if (at == times[i]) value = keys[i];
+                else if (!track.IsLinear || times[i] == times[i - 1]) value = keys[i - 1];
+                else value = keys[i - 1] + (keys[i] - keys[i - 1]) * ((at - times[i - 1]) / (times[i] - times[i - 1]));
+                break;
+            }
+        }
+        return Math.Clamp(value / 32767f, 0f, 1f);
+    }
+
+    private void SetBatchTint(Model model, Batch batch)
+    {
+        if (BatchTintFor(model, batch) is { } tint)
+        {
+            _shader!.Set("uBatchTintOn", 1);
+            _shader.Set("uBatchTint", tint);
+        }
+        else _shader!.Set("uBatchTintOn", 0);
+    }
 
     /// <summary>
     /// The batch's animated UV offset at the world clock, or zero for static
@@ -3224,6 +3318,7 @@ public sealed partial class DoodadRenderer : IDisposable
                     _shader.Set("uUnlit", batch.Unlit ? 1 : 0);
                     _shader.Set("uFogMode", batch.FogMode);
                     _shader.Set("uUvOffset", UvOffsetFor(model, batch));
+                    SetBatchTint(model, batch);
 
                     _gl.DrawElements(PrimitiveType.Triangles, batch.IndexCount,
                         DrawElementsType.UnsignedShort, (void*)(batch.IndexStart * sizeof(ushort)));
@@ -3362,6 +3457,7 @@ public sealed partial class DoodadRenderer : IDisposable
             _shader.Set("uUnlit", batch.Unlit ? 1 : 0);
             _shader.Set("uFogMode", batch.FogMode);
             _shader.Set("uUvOffset", UvOffsetFor(model, batch));
+            SetBatchTint(model, batch);
 
             if (instanceCount > 0)
             {
@@ -3639,6 +3735,7 @@ public sealed partial class DoodadRenderer : IDisposable
                 _shader.Set("uUnlit", batch.Unlit ? 1 : 0);
                 _shader.Set("uFogMode", batch.FogMode);
                 _shader.Set("uUvOffset", UvOffsetFor(model, batch));
+                SetBatchTint(model, batch);
 
                 _gl.DrawElementsInstanced(PrimitiveType.Triangles, batch.IndexCount,
                     DrawElementsType.UnsignedShort, (void*)(batch.IndexStart * sizeof(ushort)),

@@ -88,6 +88,32 @@ public sealed partial class GameLoop
         catch (Exception ex) { Console.WriteLine($"[actions] UI initialization failed: {ex.Message}"); }
     }
 
+    /// <summary>Re-read Spell.dbc and the SpellVisual chain from the mount after an archive was
+    /// hot-swapped (the custom-spell patch-3, shared_docs/SPELL_CREATOR_PLAN.md P0.7). The two
+    /// catalogs were read exactly once at boot, so a freshly built custom spell showed no name,
+    /// no targeting and no visual until the client restarted. Everything reads the catalogs
+    /// through these fields, so swapping the references is the reload; the one subsystem that
+    /// captured the visual catalog (the chain-beam source) is rebuilt with it.</summary>
+    private void ReloadSpellCatalogs(string cause)
+    {
+        if (_mpq is null) return;
+        try
+        {
+            SpellCatalog? spells = SpellCatalog.Load(_mpq);
+            SpellVisualCatalog? visuals = SpellVisualCatalog.Load(_mpq);
+            if (spells is not null) _spellCatalog = spells;
+            if (visuals is not null)
+            {
+                _spellVisualCatalog = visuals;
+                _spellChainBeams = new World.Units.SpellChainBeamSource(visuals);
+            }
+            _creatorSpellSearchDirty = true;
+            InvalidateSpellRuleTables();
+            Console.WriteLine($"[actions] spell catalogs reloaded ({cause}): {_spellCatalog?.Count ?? 0} spell rows");
+        }
+        catch (Exception ex) { Console.WriteLine($"[actions] spell catalog reload failed ({cause}): {ex.Message}"); }
+    }
+
     private void UpdateActionBarInput(bool typing)
     {
         UpdateBonusBarFeedback();

@@ -548,7 +548,10 @@ public sealed class SpellEffectMeshRenderer : IDisposable
         if (index < 0 || index >= model.Textures.Count) return null;
         string path = model.Textures[index].Filename.Replace('/', '\\');
         if (path.Length == 0) return null;
-        return ResolveTexture(path);
+        // M2 texture flags 1 / 2 = wrap U / V. Every texture used to be uploaded CLAMPED, so a
+        // scrolling energy texture slid off its geometry and left a smear of edge pixels
+        // (SPELL_CREATOR_PLAN.md P3.6 found it; it applies to Blizzard's own spells as much).
+        return ResolveTexture(path, repeat: (model.Textures[index].Flags & 0x3) != 0);
     }
 
     /// <summary>
@@ -574,14 +577,20 @@ public sealed class SpellEffectMeshRenderer : IDisposable
             _textureTints.Remove(path);
         }
         if (_textures.Remove(path, out Texture? old)) old?.Dispose();
+        if (_textures.Remove(path + WrapKeySuffix, out Texture? oldWrapped)) oldWrapped?.Dispose();
         foreach (Mesh? mesh in _meshes.Values) mesh?.Dispose();
         _meshes.Clear();
     }
 
-    private Texture? ResolveTexture(string path)
+    /// <summary>The cache holds one upload per (path, wrap): the same image can be clamped on one
+    /// model and wrapped on another.</summary>
+    private const string WrapKeySuffix = "|wrap";
+
+    private Texture? ResolveTexture(string path, bool repeat = false)
     {
         path = path.Replace('/', Path.DirectorySeparatorChar);
-        if (_textures.TryGetValue(path, out Texture? cached)) return cached;
+        string key = repeat ? path + WrapKeySuffix : path;
+        if (_textures.TryGetValue(key, out Texture? cached)) return cached;
         long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         byte[]? bytes = _mpq.ReadFile(path);
         if (bytes is null)
@@ -591,20 +600,20 @@ public sealed class SpellEffectMeshRenderer : IDisposable
             // from "nothing wanted to draw" — which is how the raid-marker atlas went missing
             // without a single line of evidence.
             Console.WriteLine($"[fx-load] mesh-tex MISSING {path}");
-            return _textures[path] = null;
+            return _textures[key] = null;
         }
         try
         {
             byte[] pixels = BlpDecoder.GetPixels(bytes, 0, out int width, out int height);
             if (_textureTints.TryGetValue(path, out uint target))
                 BlpRecolor.HueMapBgra(pixels, target);
-            Texture texture = Texture.From2D(_gl, pixels, width, height, mipmaps: true, repeat: false);
+            Texture texture = Texture.From2D(_gl, pixels, width, height, mipmaps: true, repeat: repeat);
             double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - t0) * 1000.0 /
                 System.Diagnostics.Stopwatch.Frequency;
             if (ms > 2) Console.WriteLine($"[fx-load] mesh-tex {Path.GetFileName(path)} {ms:0.0}ms");
-            return _textures[path] = texture;
+            return _textures[key] = texture;
         }
-        catch { return _textures[path] = null; }
+        catch { return _textures[key] = null; }
     }
 
     private static GroundQuad? FindGroundQuad(M2Model model, M2Submesh sub)

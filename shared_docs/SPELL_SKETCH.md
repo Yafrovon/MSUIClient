@@ -4,7 +4,11 @@ Status, 2026-09-10: **S1 BUILT and proven** (the compiler, `MSUIClient/Creator/S
 §10) and **S2 / S4 BUILT, live-unverified** (the window and its four cards,
 `GameLoop/CreatorMode/GameLoop.Creator.Sketch.cs`, §11). S3 is partly there — a piece
 selects its own bone so the existing handles land on it, but card edits are not yet on
-the undo stack. S5 (trails and sparks), S5b, S6 (the draw canvas), S7 and S8 are SPEC.
+the undo stack. S5 (trails and sparks) is BUILT 2026-10-26 (SPELL_CREATOR_PLAN.md P3.3/P3.4: `SketchWriter.Extras.cs`, cross-file record copy, all §4.5 presets plus Crackle and "From a model..."); S5b and S8 are SPEC. **Update 2026-10-25:** S6 (the draw
+canvas) is built; **S7 is BUILT and proven live** (SPELL_CREATOR_PLAN.md P0 - the `sketches`
+block inside the session's `design`, reopen, the Completer from-zero path and a sketched spell
+cast on the live server). S5b is partial: the MOVE card's Speed field is not read by anything
+yet (the missile speed is spell data, P1's rules part).
 Written for the implementer after the owner's ask, verbatim:
 
 > "My goal for today would be that I could basically free form, in the editor,
@@ -381,7 +385,7 @@ Travel has two modes, chosen per Sketch (the owner: "both"):
 | S5 | EXTRAS: trail, sparks, glow presets (§4.5 tables), cross-file record copy | A trail follows the slash; embers pour off it; lab has one copy test per preset |
 | S5b | MOVE "To the target": missile-slot placement, Speed box, range read-out, impact-stage partner | A sketched bolt flies to the spawned target and the impact sketch plays on arrival |
 | S6 | Draw canvas | A hand-drawn shape flies like a primitive does |
-| S7 | Session `sketches` block, Completer round trip (template fallback), reopen editable | Push → complete → the patch plays the sketch in the real client; reopening the spell shows the pieces |
+| S7 | ✅ **DONE 2026-10-25** (SPELL_CREATOR_PLAN.md P0) — `sketches` in the session `design`, Completer from zero (template 18282), reopen editable | Push → complete → the patch plays the sketch in the real client; reopening the spell shows the pieces |
 | S8 | Obviousness pass with the owner | The §1 script needs no explanation |
 
 S1 must land first and alone. Nothing in the window is worth building until

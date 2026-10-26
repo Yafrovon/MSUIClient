@@ -6,6 +6,8 @@ namespace MSUIClient;
 public sealed partial class GameLoop
 {
     private uint _presentedEffectSpell;
+    /// <summary>The stage the presented kit is ("STATE", ...): the creator's body preview reads it.</summary>
+    private string _presentedEffectStage = "";
 
     /// <summary>The unit the current presented kit is anchored to. Usually the local
     /// player; the creator loop anchors IMPACT on the spawned target instead.</summary>
@@ -20,12 +22,13 @@ public sealed partial class GameLoop
             _spellEffects.Reap(_presentedEffectGuid, _presentedEffectSpell);
         _presentedEffectSpell = 0;
         _presentedEffectGuid = 0;
+        _presentedEffectStage = "";
     }
 
     /// <summary>Present one visual-kit stage. <paramref name="onGuid"/> anchors the kit
     /// on another unit (the creator loop lands impact on the spawned target); the
     /// character animation always plays on the local player either way.</summary>
-    private bool PresentSpellEffect(uint spellId, string stage, ulong? onGuid = null)
+    private bool PresentSpellEffect(uint spellId, string stage, ulong? onGuid = null, System.Numerics.Vector3? groundPoint = null)
     {
         if (_spellEffects is null) return false;
 
@@ -67,13 +70,22 @@ public sealed partial class GameLoop
             kit = CreatorComposedKit(composed, composedStage, haveKit
                 ? kit
                 : new SpellVisualKitInfo(null, null, Array.Empty<SpellVisualKitEffect>(), Array.Empty<SpellVisualCharProc>()));
-            haveKit = kit.Effects.Count > 0;
+            // A phase that only changes the BODY (tint, see-through, a weapon trail) plays too.
+            haveKit = kit.Effects.Count > 0 || kit.CharProcs.Count > 0;
         }
         if (!haveKit) return false;
         ReapPresentedEffect();
         ulong anchor = onGuid ?? LocalPlayerGuid;
         _presentedEffectSpell = spellId;
         _presentedEffectGuid = anchor;
+        _presentedEffectStage = stage.ToUpperInvariant();
+        if (groundPoint is { } point)
+        {
+            // A ground spell's impact plays AT the spot, the way the live client plays a ground
+            // missile's arrival (SpellEffectSource.SpawnGroundKit, SPELL_CREATOR_PLAN.md P2.4).
+            _spellEffects.SpawnGroundKit(anchor, spellId, kit, point, SpellClockNow, stage.ToUpperInvariant());
+            return true;
+        }
         // A phase being sketched is held on screen: an editor needs the thing to sit still long
         // enough to be grabbed, and a half-second cast in a two-second loop does not.
         _spellEffects.SpawnKit(anchor, spellId, kit,

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ImGuiNET;
 using MSUIClient.Net;
+using MSUIClient.Creator.Sketch;
 
 namespace MSUIClient;
 
@@ -144,9 +145,29 @@ public sealed partial class GameLoop
     /// with the reason already in the status line.</summary>
     private JsonObject? BuildCreatorSpellEntry(CreatorSpellDoc doc, string tempName)
     {
-        var modified = doc.Models.Values.Where(m => m.Modified).ToList();
+        // Sketched models are AUTHORED: there is no archive file behind their path, so they
+        // always ship, always with bytes - recompiled one-shot with the author's dials on top
+        // (BuildSketchExport). They used to be skipped: a sketch's preview original and working
+        // copy are the same bytes, and only a model whose working copy differed was sent.
+        var sketchBytes = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        var sketchTextures = new List<SketchWriter.SketchTextureFile>();
+        foreach (SketchDoc sketch in doc.Sketches.Values)
+        {
+            if (sketch.Pieces.Count == 0) continue;
+            if (BuildSketchExport(doc, sketch) is not { } built)
+            {
+                _creatorExportStatus = $"The {sketch.Stage} sketch could not be compiled - nothing was sent.";
+                return null;
+            }
+            sketchBytes[SketchDoc.ModelPath((int)doc.Info.Id, doc.Info.Name, sketch.Stage)] = built.Model;
+            sketchTextures.AddRange(built.Textures);
+        }
+
+        var modified = doc.Models.Values
+            .Where(m => m.Modified || sketchBytes.ContainsKey(m.Path)).ToList();
         bool composed = CreatorCompositionChanged(doc);
-        if (modified.Count == 0 && doc.Audio.Count == 0 && !composed)
+        bool ruled = doc.Rules is { } authoredRules && authoredRules.ChangedColumns.Any();
+        if (modified.Count == 0 && doc.Audio.Count == 0 && !composed && !ruled)
         {
             _creatorExportStatus = "Nothing modified - tune the look, the composition or the audio before adding it.";
             return null;
@@ -155,15 +176,18 @@ public sealed partial class GameLoop
         var models = new JsonArray();
         foreach (var model in modified)
         {
-            bool byteModified = !model.Working.AsSpan().SequenceEqual(model.Original);
+            bool authored = sketchBytes.TryGetValue(model.Path, out byte[]? authoredBytes);
+            bool byteModified = authored || !model.Working.AsSpan().SequenceEqual(model.Original);
+            byte[] shipped = authoredBytes ?? model.Working;
             var entry = new JsonObject
             {
                 ["path"] = model.Path,
                 ["phases"] = CreatorModelPhases(doc, model),
                 ["byteModified"] = byteModified,
+                ["authored"] = authored ? "sketch" : null,
                 // The patched model at its full fidelity - the consumer writes
                 // these bytes (at a cloned path) instead of re-deriving them.
-                ["m2Base64"] = byteModified ? Convert.ToBase64String(model.Working) : null,
+                ["m2Base64"] = byteModified ? Convert.ToBase64String(shipped) : null,
                 ["tuning"] = JsonSerializer.SerializeToNode(CreatorModelTuningPayload(model)),
                 ["textures"] = JsonSerializer.SerializeToNode(model.Textures.Select(t => new
                 {
@@ -203,6 +227,18 @@ public sealed partial class GameLoop
         // decides the isolated path it re-homes them to.
         var blps = new JsonArray();
         var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // The sketch's own images first, from the same one-shot compile as its model.
+        foreach (SketchWriter.SketchTextureFile texture in sketchTextures)
+        {
+            if (!written.Add(texture.Path)) continue;
+            blps.Add(new JsonObject
+            {
+                ["path"] = texture.Path,
+                ["reason"] = "sketch",
+                ["blpBase64"] = Convert.ToBase64String(texture.Blp),
+            });
+        }
         foreach (var model in modified)
             foreach (var (texIndex, tint) in model.TextureTints)
             {
@@ -286,26 +322,54 @@ public sealed partial class GameLoop
             {
                 ["animationId"] = stageComposition.AnimationId is { } anim ? anim : null,
                 ["slots"] = slots,
+                // Kit f14 (P4.4): 0 = no shake; the Completer writes it as given.
+                ["cameraShake"] = stageComposition.Shake ?? 0u,
+                // Kit f13 (P3.9): a picked game sound; absent = keep the kit's (custom audio still wins).
+                ["sound"] = stageComposition.Sound != stageComposition.AuthoredSound && stageComposition.Sound is { } picked ? picked : null,
+                // Kit f12: "" removes the world effect, a path sets it, absent keeps the source's.
+                ["worldEffect"] = string.Equals(stageComposition.WorldEffect ?? "", stageComposition.AuthoredWorldEffect ?? "", StringComparison.OrdinalIgnoreCase)
+                    ? null : stageComposition.WorldEffect ?? "",
+                // Kit f15-34 (P4.4 body dials): all four lanes, positional; absent = keep the source's.
+                ["charProcs"] = CreatorProcLanesJson(stageComposition),
             };
         }
+        if (CreatorAreaJson(doc) is { } areaJson) composition["area"] = areaJson;
         if (CreatorMissileChanged(doc))
             composition["missile"] = new JsonObject
             {
                 ["modelPath"] = CreatorEffectiveMissile(doc),
                 ["scale"] = doc.MissileScale,
+                ["sound"] = doc.MissileSound is { } missileSound ? missileSound : null,
             };
 
+        // A new spell has NO source: its local id (9,000,001+) is a session counter, and the
+        // Completer must not read it as "clone spell 9000001".
+        bool isNew = IsCreatorNewSpellId(doc.Info.Id);
         return new JsonObject
         {
             ["tempName"] = tempName,
-            ["sourceSpellId"] = doc.Info.Id,
-            ["sourceSpellName"] = doc.Info.Name,
-            ["sourceVisualId"] = doc.Info.VisualId,
+            ["designId"] = doc.DesignId,
+            ["sourceSpellId"] = isNew ? 0u : doc.Info.Id,
+            ["sourceSpellName"] = isNew ? "" : doc.Info.Name,
+            ["sourceVisualId"] = isNew ? 0u : doc.Info.VisualId,
+            ["localSpellId"] = doc.Info.Id,
             ["exportedAtUtc"] = DateTime.UtcNow.ToString("o"),
             ["models"] = models,
             ["tintedBlps"] = blps,
             ["audio"] = audio,
             ["composition"] = composition.Count > 0 ? composition : null,
+            // What the spell DOES: spell_template columns that differ from the baseline
+            // (SPELL_CREATOR_PLAN.md P1.7) - the Completer writes them as they are.
+            ["rules"] = doc.Rules is { } rules && rules.ChangedColumns.Any() ? rules.ToJson() : null,
+            // Everything needed to reopen this design editable (GameLoop.Creator.Design.cs).
+            ["design"] = CaptureCreatorDesign(doc),
+            // The totem it plants (P4.2): the Completer writes its creature row.
+            ["actor"] = CreatorActorJson(doc.Actor),
+            // Spells this one triggers, each a complete entry (P4.1); Test live completes them first.
+            ["children"] = doc.Children.Count > 0
+                ? new JsonArray(doc.Children.Where(c => c.Entry is not null)
+                    .Select(c => (JsonNode)new JsonObject { ["localId"] = c.LocalId, ["entry"] = c.Entry!.DeepClone() }).ToArray())
+                : null,
         };
     }
 
@@ -401,6 +465,8 @@ public sealed partial class GameLoop
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Write it to the local session file instead (no audio downstream)");
 
+        DrawCreatorTestLiveRow(doc, tempName, nameOk, webOk);
+
         if (!nameOk)
         {
             ImGui.SameLine();
@@ -446,6 +512,22 @@ public sealed partial class GameLoop
                 break;   // the list just changed - redraw next frame
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Remove this spell from the session");
+            ImGui.SameLine();
+            if (ImGui.SmallButton("open"))
+            {
+                JsonObject session = LoadCreatorSession();
+                var spells = (JsonArray)session["spells"]!;
+                int index = IndexOfSessionSpell(spells, name);
+                _creatorExportStatus = index >= 0 && spells[index] is JsonObject saved
+                    ? OpenCreatorSessionEntry(saved)
+                    : $"'{name}' is no longer in the session file.";
+                Console.WriteLine($"[creator] {_creatorExportStatus}");
+                ImGui.PopID();
+                break;   // the spell just changed under the window - redraw next frame
+            }
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Reopen this design in the workshop, editable: the same source, every " +
+                                 "dial, the composition, the audio and the sketch pieces.");
             ImGui.SameLine();
             ImGui.TextUnformatted($"{name}  ({modelCount} model(s), {audioCount} audio)");
             ImGui.PopID();

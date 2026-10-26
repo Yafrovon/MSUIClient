@@ -170,7 +170,7 @@ public sealed partial class GameLoop
         catch (Exception ex) { Console.WriteLine($"[fishing-line] renderer unavailable: {ex.Message}"); }
         if (_mpq is not null)
         {
-            _spellEffects = new SpellEffectSource(_mpq);
+            _spellEffects = new SpellEffectSource(_mpq) { KitShake = StartKitCameraShake, KitWorldEffect = PlantKitWorldEffect, KitWeaponTrail = PlayKitWeaponTrail };
             if (_spellVisualCatalog is not null)
                 _spellChainBeams = new SpellChainBeamSource(_spellVisualCatalog);
             _questMarkerModels = new QuestMarkerModelSource(_mpq);
@@ -1645,6 +1645,7 @@ public sealed partial class GameLoop
                             CombatPacketParser.Parse((Op)opcode, body), _entities);
                         ObserveCombatReceive((Op)opcode, combatEvent);
                         ObserveChannelCombat(combatEvent);
+                        ObserveDeferredImpact(combatEvent);
                         ApplyCombatAnimation(combatEvent);
                         break;
                     case Op.SMSG_PVP_CREDIT:
@@ -2471,7 +2472,8 @@ public sealed partial class GameLoop
         if (_entities.TryGet(ControlledGuid, out WorldEntity controlled) && controlled.IsPlayer &&
             float.IsFinite(controlled.Scale))
             scale = MathF.Max(0.01f, controlled.Scale);
-        _character.ModelScale = scale;
+        // The creator's sandbox body preview (its State's scale lane) - GameLoop.Creator.BodyProcs.cs.
+        _character.ModelScale = scale * (CreatorBodyAura?.Scale ?? 1f);
     }
 
     /// <summary>ChrRaces id -> character model folder name (Undead's folder is "Scourge").</summary>

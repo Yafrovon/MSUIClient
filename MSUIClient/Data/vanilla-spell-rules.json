@@ -1,0 +1,12037 @@
+{
+ "generatedBy": "tools/spellvis/spell_rules_extract.py",
+ "coreHead": "2d8d49c67",
+ "stockSpells": 22357,
+ "auraEffects": [
+  6,
+  27,
+  35,
+  65,
+  119,
+  128
+ ],
+ "effects": [
+  {
+   "id": 0,
+   "name": "",
+   "handler": "EffectNULL",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 1,
+   "name": "SPELL_EFFECT_INSTAKILL",
+   "handler": "EffectInstaKill",
+   "note": "",
+   "implemented": true,
+   "uses": 71
+  },
+  {
+   "id": 2,
+   "name": "SPELL_EFFECT_SCHOOL_DAMAGE",
+   "handler": "EffectSchoolDMG",
+   "note": "",
+   "implemented": true,
+   "uses": 1851
+  },
+  {
+   "id": 3,
+   "name": "SPELL_EFFECT_DUMMY",
+   "handler": "EffectDummy",
+   "note": "",
+   "implemented": true,
+   "uses": 895
+  },
+  {
+   "id": 4,
+   "name": "SPELL_EFFECT_PORTAL_TELEPORT",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 5,
+   "name": "SPELL_EFFECT_TELEPORT_UNITS",
+   "handler": "EffectTeleportUnits",
+   "note": "",
+   "implemented": true,
+   "uses": 154
+  },
+  {
+   "id": 6,
+   "name": "SPELL_EFFECT_APPLY_AURA",
+   "handler": "EffectApplyAura",
+   "note": "",
+   "implemented": true,
+   "uses": 12358
+  },
+  {
+   "id": 7,
+   "name": "SPELL_EFFECT_ENVIRONMENTAL_DAMAGE",
+   "handler": "EffectEnvironmentalDMG",
+   "note": "",
+   "implemented": true,
+   "uses": 8
+  },
+  {
+   "id": 8,
+   "name": "SPELL_EFFECT_POWER_DRAIN",
+   "handler": "EffectPowerDrain",
+   "note": "",
+   "implemented": true,
+   "uses": 32
+  },
+  {
+   "id": 9,
+   "name": "SPELL_EFFECT_HEALTH_LEECH",
+   "handler": "EffectHealthLeech",
+   "note": "",
+   "implemented": true,
+   "uses": 49
+  },
+  {
+   "id": 10,
+   "name": "SPELL_EFFECT_HEAL",
+   "handler": "EffectHeal",
+   "note": "",
+   "implemented": true,
+   "uses": 291
+  },
+  {
+   "id": 11,
+   "name": "SPELL_EFFECT_BIND",
+   "handler": "EffectBind",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 12,
+   "name": "SPELL_EFFECT_PORTAL",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1, exist 2 spell, but not exist any data about its real usage",
+   "implemented": false,
+   "uses": 2
+  },
+  {
+   "id": 13,
+   "name": "SPELL_EFFECT_RITUAL_BASE",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 14,
+   "name": "SPELL_EFFECT_RITUAL_SPECIALIZE",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 15,
+   "name": "SPELL_EFFECT_RITUAL_ACTIVATE_PORTAL",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 16,
+   "name": "SPELL_EFFECT_QUEST_COMPLETE",
+   "handler": "EffectQuestComplete",
+   "note": "",
+   "implemented": true,
+   "uses": 55
+  },
+  {
+   "id": 17,
+   "name": "SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL",
+   "handler": "EffectWeaponDmg",
+   "note": "",
+   "implemented": true,
+   "uses": 72
+  },
+  {
+   "id": 18,
+   "name": "SPELL_EFFECT_RESURRECT",
+   "handler": "EffectResurrect",
+   "note": "",
+   "implemented": true,
+   "uses": 9
+  },
+  {
+   "id": 19,
+   "name": "SPELL_EFFECT_ADD_EXTRA_ATTACKS",
+   "handler": "EffectAddExtraAttacks",
+   "note": "",
+   "implemented": true,
+   "uses": 24
+  },
+  {
+   "id": 20,
+   "name": "SPELL_EFFECT_DODGE",
+   "handler": "EffectEmpty",
+   "note": "one spell: Dodge",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 21,
+   "name": "SPELL_EFFECT_EVADE",
+   "handler": "EffectEmpty",
+   "note": "one spell: Evade (DND)",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 22,
+   "name": "SPELL_EFFECT_PARRY",
+   "handler": "EffectParry",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 23,
+   "name": "SPELL_EFFECT_BLOCK",
+   "handler": "EffectBlock",
+   "note": "one spell: Block",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 24,
+   "name": "SPELL_EFFECT_CREATE_ITEM",
+   "handler": "EffectCreateItem",
+   "note": "",
+   "implemented": true,
+   "uses": 1712
+  },
+  {
+   "id": 25,
+   "name": "SPELL_EFFECT_WEAPON",
+   "handler": "EffectEmpty",
+   "note": "spell per weapon type, in ItemSubclassmask store mask that can be used for usability check at equip, but current way using skill also work.",
+   "implemented": true,
+   "uses": 20
+  },
+  {
+   "id": 26,
+   "name": "SPELL_EFFECT_DEFENSE",
+   "handler": "EffectEmpty",
+   "note": "one spell: Defense",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 27,
+   "name": "SPELL_EFFECT_PERSISTENT_AREA_AURA",
+   "handler": "EffectPersistentAA",
+   "note": "",
+   "implemented": true,
+   "uses": 137
+  },
+  {
+   "id": 28,
+   "name": "SPELL_EFFECT_SUMMON",
+   "handler": "EffectSummon",
+   "note": "",
+   "implemented": true,
+   "uses": 24
+  },
+  {
+   "id": 29,
+   "name": "SPELL_EFFECT_LEAP",
+   "handler": "EffectLeapForward",
+   "note": "",
+   "implemented": true,
+   "uses": 11
+  },
+  {
+   "id": 30,
+   "name": "SPELL_EFFECT_ENERGIZE",
+   "handler": "EffectEnergize",
+   "note": "",
+   "implemented": true,
+   "uses": 135
+  },
+  {
+   "id": 31,
+   "name": "SPELL_EFFECT_WEAPON_PERCENT_DAMAGE",
+   "handler": "EffectWeaponDmg",
+   "note": "",
+   "implemented": true,
+   "uses": 51
+  },
+  {
+   "id": 32,
+   "name": "SPELL_EFFECT_TRIGGER_MISSILE",
+   "handler": "EffectTriggerMissileSpell",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 33,
+   "name": "SPELL_EFFECT_OPEN_LOCK",
+   "handler": "EffectOpenLock",
+   "note": "",
+   "implemented": true,
+   "uses": 51
+  },
+  {
+   "id": 34,
+   "name": "SPELL_EFFECT_SUMMON_CHANGE_ITEM",
+   "handler": "EffectSummonChangeItem",
+   "note": "",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 35,
+   "name": "SPELL_EFFECT_APPLY_AREA_AURA_PARTY",
+   "handler": "EffectApplyAreaAura",
+   "note": "",
+   "implemented": true,
+   "uses": 176
+  },
+  {
+   "id": 36,
+   "name": "SPELL_EFFECT_LEARN_SPELL",
+   "handler": "EffectLearnSpell",
+   "note": "",
+   "implemented": true,
+   "uses": 4751
+  },
+  {
+   "id": 37,
+   "name": "SPELL_EFFECT_SPELL_DEFENSE",
+   "handler": "EffectEmpty",
+   "note": "one spell: SPELLDEFENSE (DND)",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 38,
+   "name": "SPELL_EFFECT_DISPEL",
+   "handler": "EffectDispel",
+   "note": "",
+   "implemented": true,
+   "uses": 99
+  },
+  {
+   "id": 39,
+   "name": "SPELL_EFFECT_LANGUAGE",
+   "handler": "EffectLanguage",
+   "note": "misc store lang id",
+   "implemented": true,
+   "uses": 14
+  },
+  {
+   "id": 40,
+   "name": "SPELL_EFFECT_DUAL_WIELD",
+   "handler": "EffectDualWield",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 41,
+   "name": "SPELL_EFFECT_SUMMON_WILD",
+   "handler": "EffectSummonWild",
+   "note": "",
+   "implemented": true,
+   "uses": 372
+  },
+  {
+   "id": 42,
+   "name": "SPELL_EFFECT_SUMMON_GUARDIAN",
+   "handler": "EffectSummonGuardian",
+   "note": "",
+   "implemented": true,
+   "uses": 211
+  },
+  {
+   "id": 43,
+   "name": "SPELL_EFFECT_TELEPORT_UNITS_FACE_CASTER",
+   "handler": "EffectTeleUnitsFaceCaster",
+   "note": "",
+   "implemented": true,
+   "uses": 14
+  },
+  {
+   "id": 44,
+   "name": "SPELL_EFFECT_SKILL_STEP",
+   "handler": "EffectLearnSkill",
+   "note": "",
+   "implemented": true,
+   "uses": 81
+  },
+  {
+   "id": 45,
+   "name": "SPELL_EFFECT_ADD_HONOR",
+   "handler": "EffectAddHonor",
+   "note": "honor/pvp related",
+   "implemented": true,
+   "uses": 17
+  },
+  {
+   "id": 46,
+   "name": "SPELL_EFFECT_SPAWN",
+   "handler": "EffectSpawn",
+   "note": "spawn/login animation, expected by spawn unit cast, also base points store some dynflags",
+   "implemented": true,
+   "uses": 32
+  },
+  {
+   "id": 47,
+   "name": "SPELL_EFFECT_TRADE_SKILL",
+   "handler": "EffectTradeSkill",
+   "note": "",
+   "implemented": true,
+   "uses": 46
+  },
+  {
+   "id": 48,
+   "name": "SPELL_EFFECT_STEALTH",
+   "handler": "EffectUnused",
+   "note": "one spell: Base Stealth",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 49,
+   "name": "SPELL_EFFECT_DETECT",
+   "handler": "EffectUnused",
+   "note": "one spell: Detect",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 50,
+   "name": "SPELL_EFFECT_TRANS_DOOR",
+   "handler": "EffectTransmitted",
+   "note": "",
+   "implemented": true,
+   "uses": 60
+  },
+  {
+   "id": 51,
+   "name": "SPELL_EFFECT_FORCE_CRITICAL_HIT",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 52,
+   "name": "SPELL_EFFECT_GUARANTEE_HIT",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 53,
+   "name": "SPELL_EFFECT_ENCHANT_ITEM",
+   "handler": "EffectEnchantItemPerm",
+   "note": "",
+   "implemented": true,
+   "uses": 274
+  },
+  {
+   "id": 54,
+   "name": "SPELL_EFFECT_ENCHANT_ITEM_TEMPORARY",
+   "handler": "EffectEnchantItemTmp",
+   "note": "",
+   "implemented": true,
+   "uses": 86
+  },
+  {
+   "id": 55,
+   "name": "SPELL_EFFECT_TAMECREATURE",
+   "handler": "EffectTameCreature",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 56,
+   "name": "SPELL_EFFECT_SUMMON_PET",
+   "handler": "EffectSummonPet",
+   "note": "",
+   "implemented": true,
+   "uses": 34
+  },
+  {
+   "id": 57,
+   "name": "SPELL_EFFECT_LEARN_PET_SPELL",
+   "handler": "EffectLearnPetSpell",
+   "note": "",
+   "implemented": true,
+   "uses": 73
+  },
+  {
+   "id": 58,
+   "name": "SPELL_EFFECT_WEAPON_DAMAGE",
+   "handler": "EffectWeaponDmg",
+   "note": "",
+   "implemented": true,
+   "uses": 272
+  },
+  {
+   "id": 59,
+   "name": "SPELL_EFFECT_OPEN_LOCK_ITEM",
+   "handler": "EffectOpenLock",
+   "note": "",
+   "implemented": true,
+   "uses": 75
+  },
+  {
+   "id": 60,
+   "name": "SPELL_EFFECT_PROFICIENCY",
+   "handler": "EffectProficiency",
+   "note": "",
+   "implemented": true,
+   "uses": 28
+  },
+  {
+   "id": 61,
+   "name": "SPELL_EFFECT_SEND_EVENT",
+   "handler": "EffectSendEvent",
+   "note": "",
+   "implemented": true,
+   "uses": 177
+  },
+  {
+   "id": 62,
+   "name": "SPELL_EFFECT_POWER_BURN",
+   "handler": "EffectPowerBurn",
+   "note": "",
+   "implemented": true,
+   "uses": 48
+  },
+  {
+   "id": 63,
+   "name": "SPELL_EFFECT_THREAT",
+   "handler": "EffectThreat",
+   "note": "",
+   "implemented": true,
+   "uses": 118
+  },
+  {
+   "id": 64,
+   "name": "SPELL_EFFECT_TRIGGER_SPELL",
+   "handler": "EffectTriggerSpell",
+   "note": "",
+   "implemented": true,
+   "uses": 303
+  },
+  {
+   "id": 65,
+   "name": "SPELL_EFFECT_HEALTH_FUNNEL",
+   "handler": "EffectUnused",
+   "note": "unused",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 66,
+   "name": "SPELL_EFFECT_POWER_FUNNEL",
+   "handler": "EffectUnused",
+   "note": "unused from pre-1.2.1",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 67,
+   "name": "SPELL_EFFECT_HEAL_MAX_HEALTH",
+   "handler": "EffectHealMaxHealth",
+   "note": "",
+   "implemented": true,
+   "uses": 22
+  },
+  {
+   "id": 68,
+   "name": "SPELL_EFFECT_INTERRUPT_CAST",
+   "handler": "EffectInterruptCast",
+   "note": "",
+   "implemented": true,
+   "uses": 51
+  },
+  {
+   "id": 69,
+   "name": "SPELL_EFFECT_DISTRACT",
+   "handler": "EffectDistract",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 70,
+   "name": "SPELL_EFFECT_PULL",
+   "handler": "EffectPull",
+   "note": "one spell: Distract Move",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 71,
+   "name": "SPELL_EFFECT_PICKPOCKET",
+   "handler": "EffectPickPocket",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 72,
+   "name": "SPELL_EFFECT_ADD_FARSIGHT",
+   "handler": "EffectAddFarsight",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 73,
+   "name": "SPELL_EFFECT_SUMMON_POSSESSED",
+   "handler": "EffectSummonPossessed",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 74,
+   "name": "SPELL_EFFECT_SUMMON_TOTEM",
+   "handler": "EffectSummonTotem",
+   "note": "",
+   "implemented": true,
+   "uses": 13
+  },
+  {
+   "id": 75,
+   "name": "SPELL_EFFECT_HEAL_MECHANICAL",
+   "handler": "EffectHealMechanical",
+   "note": "one spell: Mechanical Patch Kit",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 76,
+   "name": "SPELL_EFFECT_SUMMON_OBJECT_WILD",
+   "handler": "EffectSummonObjectWild",
+   "note": "",
+   "implemented": true,
+   "uses": 174
+  },
+  {
+   "id": 77,
+   "name": "SPELL_EFFECT_SCRIPT_EFFECT",
+   "handler": "EffectScriptEffect",
+   "note": "",
+   "implemented": true,
+   "uses": 325
+  },
+  {
+   "id": 78,
+   "name": "SPELL_EFFECT_ATTACK",
+   "handler": "EffectUnused",
+   "note": "",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 79,
+   "name": "SPELL_EFFECT_SANCTUARY",
+   "handler": "EffectSanctuary",
+   "note": "",
+   "implemented": true,
+   "uses": 11
+  },
+  {
+   "id": 80,
+   "name": "SPELL_EFFECT_ADD_COMBO_POINTS",
+   "handler": "EffectAddComboPoints",
+   "note": "",
+   "implemented": true,
+   "uses": 75
+  },
+  {
+   "id": 81,
+   "name": "SPELL_EFFECT_CREATE_HOUSE",
+   "handler": "EffectCreateHouse",
+   "note": "one spell: Create House (TEST)",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 82,
+   "name": "SPELL_EFFECT_BIND_SIGHT",
+   "handler": "EffectNULL",
+   "note": "",
+   "implemented": false,
+   "uses": 2
+  },
+  {
+   "id": 83,
+   "name": "SPELL_EFFECT_DUEL",
+   "handler": "EffectDuel",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 84,
+   "name": "SPELL_EFFECT_STUCK",
+   "handler": "EffectStuck",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 85,
+   "name": "SPELL_EFFECT_SUMMON_PLAYER",
+   "handler": "EffectSummonPlayer",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 86,
+   "name": "SPELL_EFFECT_ACTIVATE_OBJECT",
+   "handler": "EffectActivateObject",
+   "note": "",
+   "implemented": true,
+   "uses": 150
+  },
+  {
+   "id": 87,
+   "name": "SPELL_EFFECT_SUMMON_TOTEM_SLOT1",
+   "handler": "EffectSummonTotem",
+   "note": "",
+   "implemented": true,
+   "uses": 34
+  },
+  {
+   "id": 88,
+   "name": "SPELL_EFFECT_SUMMON_TOTEM_SLOT2",
+   "handler": "EffectSummonTotem",
+   "note": "",
+   "implemented": true,
+   "uses": 23
+  },
+  {
+   "id": 89,
+   "name": "SPELL_EFFECT_SUMMON_TOTEM_SLOT3",
+   "handler": "EffectSummonTotem",
+   "note": "",
+   "implemented": true,
+   "uses": 20
+  },
+  {
+   "id": 90,
+   "name": "SPELL_EFFECT_SUMMON_TOTEM_SLOT4",
+   "handler": "EffectSummonTotem",
+   "note": "",
+   "implemented": true,
+   "uses": 18
+  },
+  {
+   "id": 91,
+   "name": "SPELL_EFFECT_THREAT_ALL",
+   "handler": "EffectUnused",
+   "note": "one spell: zzOLDBrainwash",
+   "implemented": false,
+   "uses": 2
+  },
+  {
+   "id": 92,
+   "name": "SPELL_EFFECT_ENCHANT_HELD_ITEM",
+   "handler": "EffectEnchantHeldItem",
+   "note": "",
+   "implemented": true,
+   "uses": 13
+  },
+  {
+   "id": 93,
+   "name": "SPELL_EFFECT_SUMMON_PHANTASM",
+   "handler": "EffectUnused",
+   "note": "",
+   "implemented": false,
+   "uses": 4
+  },
+  {
+   "id": 94,
+   "name": "SPELL_EFFECT_SELF_RESURRECT",
+   "handler": "EffectSelfResurrect",
+   "note": "",
+   "implemented": true,
+   "uses": 11
+  },
+  {
+   "id": 95,
+   "name": "SPELL_EFFECT_SKINNING",
+   "handler": "EffectSkinning",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 96,
+   "name": "SPELL_EFFECT_CHARGE",
+   "handler": "EffectCharge",
+   "note": "",
+   "implemented": true,
+   "uses": 45
+  },
+  {
+   "id": 97,
+   "name": "SPELL_EFFECT_SUMMON_CRITTER",
+   "handler": "EffectSummonCritter",
+   "note": "",
+   "implemented": true,
+   "uses": 100
+  },
+  {
+   "id": 98,
+   "name": "SPELL_EFFECT_KNOCK_BACK",
+   "handler": "EffectKnockBack",
+   "note": "",
+   "implemented": true,
+   "uses": 133
+  },
+  {
+   "id": 99,
+   "name": "SPELL_EFFECT_DISENCHANT",
+   "handler": "EffectDisEnchant",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 100,
+   "name": "SPELL_EFFECT_INEBRIATE",
+   "handler": "EffectInebriate",
+   "note": "",
+   "implemented": true,
+   "uses": 16
+  },
+  {
+   "id": 101,
+   "name": "SPELL_EFFECT_FEED_PET",
+   "handler": "EffectFeedPet",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 102,
+   "name": "SPELL_EFFECT_DISMISS_PET",
+   "handler": "EffectDismissPet",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 103,
+   "name": "SPELL_EFFECT_REPUTATION",
+   "handler": "EffectReputation",
+   "note": "",
+   "implemented": true,
+   "uses": 63
+  },
+  {
+   "id": 104,
+   "name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT1",
+   "handler": "EffectSummonObject",
+   "note": "",
+   "implemented": true,
+   "uses": 15
+  },
+  {
+   "id": 105,
+   "name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT2",
+   "handler": "EffectSummonObject",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 106,
+   "name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT3",
+   "handler": "EffectSummonObject",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 107,
+   "name": "SPELL_EFFECT_SUMMON_OBJECT_SLOT4",
+   "handler": "EffectSummonObject",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 108,
+   "name": "SPELL_EFFECT_DISPEL_MECHANIC",
+   "handler": "EffectDispelMechanic",
+   "note": "",
+   "implemented": true,
+   "uses": 29
+  },
+  {
+   "id": 109,
+   "name": "SPELL_EFFECT_SUMMON_DEAD_PET",
+   "handler": "EffectSummonDeadPet",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 110,
+   "name": "SPELL_EFFECT_DESTROY_ALL_TOTEMS",
+   "handler": "EffectDestroyAllTotems",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 111,
+   "name": "SPELL_EFFECT_DURABILITY_DAMAGE",
+   "handler": "EffectDurabilityDamage",
+   "note": "",
+   "implemented": true,
+   "uses": 7
+  },
+  {
+   "id": 112,
+   "name": "SPELL_EFFECT_SUMMON_DEMON",
+   "handler": "EffectSummonDemon",
+   "note": "",
+   "implemented": true,
+   "uses": 10
+  },
+  {
+   "id": 113,
+   "name": "SPELL_EFFECT_RESURRECT_NEW",
+   "handler": "EffectResurrectNew",
+   "note": "",
+   "implemented": true,
+   "uses": 21
+  },
+  {
+   "id": 114,
+   "name": "SPELL_EFFECT_ATTACK_ME",
+   "handler": "EffectTaunt",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 115,
+   "name": "SPELL_EFFECT_DURABILITY_DAMAGE_PCT",
+   "handler": "EffectDurabilityDamagePCT",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 116,
+   "name": "SPELL_EFFECT_SKIN_PLAYER_CORPSE",
+   "handler": "EffectSkinPlayerCorpse",
+   "note": "one spell: Remove Insignia, bg usage, required special corpse flags...",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 117,
+   "name": "SPELL_EFFECT_SPIRIT_HEAL",
+   "handler": "EffectSpiritHeal",
+   "note": "one spell: Spirit Heal",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 118,
+   "name": "SPELL_EFFECT_SKILL",
+   "handler": "EffectSkill",
+   "note": "professions and more",
+   "implemented": true,
+   "uses": 58
+  },
+  {
+   "id": 119,
+   "name": "SPELL_EFFECT_APPLY_AREA_AURA_PET",
+   "handler": "EffectApplyAreaAura",
+   "note": "",
+   "implemented": true,
+   "uses": 28
+  },
+  {
+   "id": 120,
+   "name": "SPELL_EFFECT_TELEPORT_GRAVEYARD",
+   "handler": "EffectUnused",
+   "note": "one spell: Graveyard Teleport Test",
+   "implemented": false,
+   "uses": 2
+  },
+  {
+   "id": 121,
+   "name": "SPELL_EFFECT_NORMALIZED_WEAPON_DMG",
+   "handler": "EffectWeaponDmg",
+   "note": "",
+   "implemented": true,
+   "uses": 48
+  },
+  {
+   "id": 122,
+   "name": "SPELL_EFFECT_122",
+   "handler": "EffectUnused",
+   "note": "unused",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 123,
+   "name": "SPELL_EFFECT_SEND_TAXI",
+   "handler": "EffectSendTaxi",
+   "note": "taxi/flight related (misc value is taxi path id)",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 124,
+   "name": "SPELL_EFFECT_PLAYER_PULL",
+   "handler": "EffectPlayerPull",
+   "note": "opposite of knockback effect (pulls player twoard caster)",
+   "implemented": true,
+   "uses": 7
+  },
+  {
+   "id": 125,
+   "name": "SPELL_EFFECT_MODIFY_THREAT_PERCENT",
+   "handler": "EffectModifyThreatPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 126,
+   "name": "SPELL_EFFECT_126",
+   "handler": "EffectUnused",
+   "note": "future spell steal effect? now only used one test spell",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 127,
+   "name": "SPELL_EFFECT_127",
+   "handler": "EffectUnused",
+   "note": "future Prospecting spell, not have spells",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 128,
+   "name": "SPELL_EFFECT_APPLY_AREA_AURA_FRIEND",
+   "handler": "EffectApplyAreaAura",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 129,
+   "name": "SPELL_EFFECT_APPLY_AREA_AURA_ENEMY",
+   "handler": "EffectApplyAreaAura",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 130,
+   "name": "SPELL_EFFECT_DESPAWN_OBJECT",
+   "handler": "EffectDespawnObject",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 131,
+   "name": "SPELL_EFFECT_NOSTALRIUS",
+   "handler": "EffectNostalrius",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 132,
+   "name": "",
+   "handler": "(none - past the end of the table)",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 133,
+   "name": "",
+   "handler": "(none - past the end of the table)",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  }
+ ],
+ "auras": [
+  {
+   "id": 0,
+   "name": "SPELL_AURA_NONE",
+   "handler": "HandleNULL",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 1,
+   "name": "SPELL_AURA_BIND_SIGHT",
+   "handler": "HandleBindSight",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 2,
+   "name": "SPELL_AURA_MOD_POSSESS",
+   "handler": "HandleModPossess",
+   "note": "",
+   "implemented": true,
+   "uses": 13
+  },
+  {
+   "id": 3,
+   "name": "SPELL_AURA_PERIODIC_DAMAGE",
+   "handler": "HandlePeriodicDamage",
+   "note": "",
+   "implemented": true,
+   "uses": 721
+  },
+  {
+   "id": 4,
+   "name": "SPELL_AURA_DUMMY",
+   "handler": "HandleAuraDummy",
+   "note": "",
+   "implemented": true,
+   "uses": 524
+  },
+  {
+   "id": 5,
+   "name": "SPELL_AURA_MOD_CONFUSE",
+   "handler": "HandleModConfuse",
+   "note": "",
+   "implemented": true,
+   "uses": 44
+  },
+  {
+   "id": 6,
+   "name": "SPELL_AURA_MOD_CHARM",
+   "handler": "HandleModCharm",
+   "note": "",
+   "implemented": true,
+   "uses": 49
+  },
+  {
+   "id": 7,
+   "name": "SPELL_AURA_MOD_FEAR",
+   "handler": "HandleModFear",
+   "note": "",
+   "implemented": true,
+   "uses": 74
+  },
+  {
+   "id": 8,
+   "name": "SPELL_AURA_PERIODIC_HEAL",
+   "handler": "HandlePeriodicHeal",
+   "note": "",
+   "implemented": true,
+   "uses": 161
+  },
+  {
+   "id": 9,
+   "name": "SPELL_AURA_MOD_ATTACKSPEED",
+   "handler": "HandleModAttackSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 29
+  },
+  {
+   "id": 10,
+   "name": "SPELL_AURA_MOD_THREAT",
+   "handler": "HandleModThreat",
+   "note": "",
+   "implemented": true,
+   "uses": 49
+  },
+  {
+   "id": 11,
+   "name": "SPELL_AURA_MOD_TAUNT",
+   "handler": "HandleModTaunt",
+   "note": "",
+   "implemented": true,
+   "uses": 20
+  },
+  {
+   "id": 12,
+   "name": "SPELL_AURA_MOD_STUN",
+   "handler": "HandleAuraModStun",
+   "note": "",
+   "implemented": true,
+   "uses": 411
+  },
+  {
+   "id": 13,
+   "name": "SPELL_AURA_MOD_DAMAGE_DONE",
+   "handler": "HandleModDamageDone",
+   "note": "",
+   "implemented": true,
+   "uses": 950
+  },
+  {
+   "id": 14,
+   "name": "SPELL_AURA_MOD_DAMAGE_TAKEN",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusTaken and Unit::SpellBaseDamageBonusTaken",
+   "implemented": true,
+   "uses": 106
+  },
+  {
+   "id": 15,
+   "name": "SPELL_AURA_DAMAGE_SHIELD",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::DealMeleeDamage",
+   "implemented": true,
+   "uses": 80
+  },
+  {
+   "id": 16,
+   "name": "SPELL_AURA_MOD_STEALTH",
+   "handler": "HandleModStealth",
+   "note": "",
+   "implemented": true,
+   "uses": 39
+  },
+  {
+   "id": 17,
+   "name": "SPELL_AURA_MOD_STEALTH_DETECT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "",
+   "implemented": true,
+   "uses": 20
+  },
+  {
+   "id": 18,
+   "name": "SPELL_AURA_MOD_INVISIBILITY",
+   "handler": "HandleInvisibility",
+   "note": "",
+   "implemented": true,
+   "uses": 39
+  },
+  {
+   "id": 19,
+   "name": "SPELL_AURA_MOD_INVISIBILITY_DETECTION",
+   "handler": "HandleInvisibilityDetect",
+   "note": "",
+   "implemented": true,
+   "uses": 25
+  },
+  {
+   "id": 20,
+   "name": "SPELL_AURA_OBS_MOD_HEALTH",
+   "handler": "HandleAuraModTotalHealthPercentRegen",
+   "note": "",
+   "implemented": true,
+   "uses": 15
+  },
+  {
+   "id": 21,
+   "name": "SPELL_AURA_OBS_MOD_MANA",
+   "handler": "HandleAuraModTotalManaPercentRegen",
+   "note": "",
+   "implemented": true,
+   "uses": 7
+  },
+  {
+   "id": 22,
+   "name": "SPELL_AURA_MOD_RESISTANCE",
+   "handler": "HandleAuraModResistance",
+   "note": "",
+   "implemented": true,
+   "uses": 752
+  },
+  {
+   "id": 23,
+   "name": "SPELL_AURA_PERIODIC_TRIGGER_SPELL",
+   "handler": "HandlePeriodicTriggerSpell",
+   "note": "",
+   "implemented": true,
+   "uses": 484
+  },
+  {
+   "id": 24,
+   "name": "SPELL_AURA_PERIODIC_ENERGIZE",
+   "handler": "HandlePeriodicEnergize",
+   "note": "",
+   "implemented": true,
+   "uses": 59
+  },
+  {
+   "id": 25,
+   "name": "SPELL_AURA_MOD_PACIFY",
+   "handler": "HandleAuraModPacify",
+   "note": "",
+   "implemented": true,
+   "uses": 23
+  },
+  {
+   "id": 26,
+   "name": "SPELL_AURA_MOD_ROOT",
+   "handler": "HandleAuraModRoot",
+   "note": "",
+   "implemented": true,
+   "uses": 148
+  },
+  {
+   "id": 27,
+   "name": "SPELL_AURA_MOD_SILENCE",
+   "handler": "HandleAuraModSilence",
+   "note": "",
+   "implemented": true,
+   "uses": 50
+  },
+  {
+   "id": 28,
+   "name": "SPELL_AURA_REFLECT_SPELLS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implement in Unit::SpellHitResult",
+   "implemented": true,
+   "uses": 25
+  },
+  {
+   "id": 29,
+   "name": "SPELL_AURA_MOD_STAT",
+   "handler": "HandleAuraModStat",
+   "note": "",
+   "implemented": true,
+   "uses": 765
+  },
+  {
+   "id": 30,
+   "name": "SPELL_AURA_MOD_SKILL",
+   "handler": "HandleAuraModSkill",
+   "note": "",
+   "implemented": true,
+   "uses": 279
+  },
+  {
+   "id": 31,
+   "name": "SPELL_AURA_MOD_INCREASE_SPEED",
+   "handler": "HandleAuraModIncreaseSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 127
+  },
+  {
+   "id": 32,
+   "name": "SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED",
+   "handler": "HandleAuraModIncreaseMountedSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 121
+  },
+  {
+   "id": 33,
+   "name": "SPELL_AURA_MOD_DECREASE_SPEED",
+   "handler": "HandleAuraModDecreaseSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 275
+  },
+  {
+   "id": 34,
+   "name": "SPELL_AURA_MOD_INCREASE_HEALTH",
+   "handler": "HandleAuraModIncreaseHealth",
+   "note": "",
+   "implemented": true,
+   "uses": 46
+  },
+  {
+   "id": 35,
+   "name": "SPELL_AURA_MOD_INCREASE_ENERGY",
+   "handler": "HandleAuraModIncreaseEnergy",
+   "note": "",
+   "implemented": true,
+   "uses": 22
+  },
+  {
+   "id": 36,
+   "name": "SPELL_AURA_MOD_SHAPESHIFT",
+   "handler": "HandleAuraModShapeshift",
+   "note": "",
+   "implemented": true,
+   "uses": 37
+  },
+  {
+   "id": 37,
+   "name": "SPELL_AURA_EFFECT_IMMUNITY",
+   "handler": "HandleAuraModEffectImmunity",
+   "note": "",
+   "implemented": true,
+   "uses": 13
+  },
+  {
+   "id": 38,
+   "name": "SPELL_AURA_STATE_IMMUNITY",
+   "handler": "HandleAuraModStateImmunity",
+   "note": "",
+   "implemented": true,
+   "uses": 26
+  },
+  {
+   "id": 39,
+   "name": "SPELL_AURA_SCHOOL_IMMUNITY",
+   "handler": "HandleAuraModSchoolImmunity",
+   "note": "",
+   "implemented": true,
+   "uses": 86
+  },
+  {
+   "id": 40,
+   "name": "SPELL_AURA_DAMAGE_IMMUNITY",
+   "handler": "HandleAuraModDmgImmunity",
+   "note": "",
+   "implemented": true,
+   "uses": 17
+  },
+  {
+   "id": 41,
+   "name": "SPELL_AURA_DISPEL_IMMUNITY",
+   "handler": "HandleAuraModDispelImmunity",
+   "note": "",
+   "implemented": true,
+   "uses": 48
+  },
+  {
+   "id": 42,
+   "name": "SPELL_AURA_PROC_TRIGGER_SPELL",
+   "handler": "HandleAuraProcTriggerSpell",
+   "note": "implemented in Unit::ProcDamageAndSpellFor and Unit::HandleProcTriggerSpell",
+   "implemented": true,
+   "uses": 713
+  },
+  {
+   "id": 43,
+   "name": "SPELL_AURA_PROC_TRIGGER_DAMAGE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::ProcDamageAndSpellFor",
+   "implemented": true,
+   "uses": 47
+  },
+  {
+   "id": 44,
+   "name": "SPELL_AURA_TRACK_CREATURES",
+   "handler": "HandleAuraTrackCreatures",
+   "note": "",
+   "implemented": true,
+   "uses": 26
+  },
+  {
+   "id": 45,
+   "name": "SPELL_AURA_TRACK_RESOURCES",
+   "handler": "HandleAuraTrackResources",
+   "note": "",
+   "implemented": true,
+   "uses": 7
+  },
+  {
+   "id": 46,
+   "name": "SPELL_AURA_MOD_PARRY_SKILL",
+   "handler": "HandleUnused",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 47,
+   "name": "SPELL_AURA_MOD_PARRY_PERCENT",
+   "handler": "HandleAuraModParryPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 66
+  },
+  {
+   "id": 48,
+   "name": "SPELL_AURA_MOD_DODGE_SKILL",
+   "handler": "HandleUnused",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 49,
+   "name": "SPELL_AURA_MOD_DODGE_PERCENT",
+   "handler": "HandleAuraModDodgePercent",
+   "note": "",
+   "implemented": true,
+   "uses": 49
+  },
+  {
+   "id": 50,
+   "name": "SPELL_AURA_MOD_BLOCK_SKILL",
+   "handler": "HandleUnused",
+   "note": "obsolete?",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 51,
+   "name": "SPELL_AURA_MOD_BLOCK_PERCENT",
+   "handler": "HandleAuraModBlockPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 76
+  },
+  {
+   "id": 52,
+   "name": "SPELL_AURA_MOD_CRIT_PERCENT",
+   "handler": "HandleAuraModCritPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 137
+  },
+  {
+   "id": 53,
+   "name": "SPELL_AURA_PERIODIC_LEECH",
+   "handler": "HandlePeriodicLeech",
+   "note": "",
+   "implemented": true,
+   "uses": 38
+  },
+  {
+   "id": 54,
+   "name": "SPELL_AURA_MOD_HIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in SpellCaster::MeleeSpellMissChance and Unit::MeleeMissChanceCalc",
+   "implemented": true,
+   "uses": 73
+  },
+  {
+   "id": 55,
+   "name": "SPELL_AURA_MOD_SPELL_HIT_CHANCE",
+   "handler": "HandleModSpellHitChance",
+   "note": "",
+   "implemented": true,
+   "uses": 9
+  },
+  {
+   "id": 56,
+   "name": "SPELL_AURA_TRANSFORM",
+   "handler": "HandleAuraTransform",
+   "note": "",
+   "implemented": true,
+   "uses": 219
+  },
+  {
+   "id": 57,
+   "name": "SPELL_AURA_MOD_SPELL_CRIT_CHANCE",
+   "handler": "HandleModSpellCritChance",
+   "note": "",
+   "implemented": true,
+   "uses": 21
+  },
+  {
+   "id": 58,
+   "name": "SPELL_AURA_MOD_INCREASE_SWIM_SPEED",
+   "handler": "HandleAuraModIncreaseSwimSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 15
+  },
+  {
+   "id": 59,
+   "name": "SPELL_AURA_MOD_DAMAGE_DONE_CREATURE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusDone and Unit::SpellDamageBonusDone",
+   "implemented": true,
+   "uses": 59
+  },
+  {
+   "id": 60,
+   "name": "SPELL_AURA_MOD_PACIFY_SILENCE",
+   "handler": "HandleAuraModPacifyAndSilence",
+   "note": "",
+   "implemented": true,
+   "uses": 13
+  },
+  {
+   "id": 61,
+   "name": "SPELL_AURA_MOD_SCALE",
+   "handler": "HandleAuraModScale",
+   "note": "",
+   "implemented": true,
+   "uses": 111
+  },
+  {
+   "id": 62,
+   "name": "SPELL_AURA_PERIODIC_HEALTH_FUNNEL",
+   "handler": "HandlePeriodicHealthFunnel",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 63,
+   "name": "SPELL_AURA_PERIODIC_MANA_FUNNEL",
+   "handler": "HandleUnused",
+   "note": "obsolete?",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 64,
+   "name": "SPELL_AURA_PERIODIC_MANA_LEECH",
+   "handler": "HandlePeriodicManaLeech",
+   "note": "",
+   "implemented": true,
+   "uses": 26
+  },
+  {
+   "id": 65,
+   "name": "SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK",
+   "handler": "HandleModCastingSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 49
+  },
+  {
+   "id": 66,
+   "name": "SPELL_AURA_FEIGN_DEATH",
+   "handler": "HandleFeignDeath",
+   "note": "",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 67,
+   "name": "SPELL_AURA_MOD_DISARM",
+   "handler": "HandleAuraModDisarm",
+   "note": "",
+   "implemented": true,
+   "uses": 22
+  },
+  {
+   "id": 68,
+   "name": "SPELL_AURA_MOD_STALKED",
+   "handler": "HandleAuraModStalked",
+   "note": "",
+   "implemented": true,
+   "uses": 7
+  },
+  {
+   "id": 69,
+   "name": "SPELL_AURA_SCHOOL_ABSORB",
+   "handler": "HandleSchoolAbsorb",
+   "note": "implemented in Unit::CalculateAbsorbAndResist",
+   "implemented": true,
+   "uses": 125
+  },
+  {
+   "id": 70,
+   "name": "SPELL_AURA_EXTRA_ATTACKS",
+   "handler": "HandleUnused",
+   "note": "Useless, used by only one spell that has only visual effect",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 71,
+   "name": "SPELL_AURA_MOD_SPELL_CRIT_CHANCE_SCHOOL",
+   "handler": "HandleModSpellCritChanceSchool",
+   "note": "",
+   "implemented": true,
+   "uses": 34
+  },
+  {
+   "id": 72,
+   "name": "SPELL_AURA_MOD_POWER_COST_SCHOOL_PCT",
+   "handler": "HandleModPowerCostPCT",
+   "note": "",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 73,
+   "name": "SPELL_AURA_MOD_POWER_COST_SCHOOL",
+   "handler": "HandleModPowerCost",
+   "note": "",
+   "implemented": true,
+   "uses": 20
+  },
+  {
+   "id": 74,
+   "name": "SPELL_AURA_REFLECT_SPELLS_SCHOOL",
+   "handler": "HandleReflectSpellsSchool",
+   "note": "implemented in Unit::SpellHitResult",
+   "implemented": true,
+   "uses": 38
+  },
+  {
+   "id": 75,
+   "name": "SPELL_AURA_MOD_LANGUAGE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "",
+   "implemented": true,
+   "uses": 8
+  },
+  {
+   "id": 76,
+   "name": "SPELL_AURA_FAR_SIGHT",
+   "handler": "HandleFarSight",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 77,
+   "name": "SPELL_AURA_MECHANIC_IMMUNITY",
+   "handler": "HandleModMechanicImmunity",
+   "note": "",
+   "implemented": true,
+   "uses": 119
+  },
+  {
+   "id": 78,
+   "name": "SPELL_AURA_MOUNTED",
+   "handler": "HandleAuraMounted",
+   "note": "",
+   "implemented": true,
+   "uses": 126
+  },
+  {
+   "id": 79,
+   "name": "SPELL_AURA_MOD_DAMAGE_PERCENT_DONE",
+   "handler": "HandleModDamagePercentDone",
+   "note": "",
+   "implemented": true,
+   "uses": 183
+  },
+  {
+   "id": 80,
+   "name": "SPELL_AURA_MOD_PERCENT_STAT",
+   "handler": "HandleModPercentStat",
+   "note": "",
+   "implemented": true,
+   "uses": 18
+  },
+  {
+   "id": 81,
+   "name": "SPELL_AURA_SPLIT_DAMAGE_PCT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::CalculateAbsorbAndResist",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 82,
+   "name": "SPELL_AURA_WATER_BREATHING",
+   "handler": "HandleWaterBreathing",
+   "note": "",
+   "implemented": true,
+   "uses": 14
+  },
+  {
+   "id": 83,
+   "name": "SPELL_AURA_MOD_BASE_RESISTANCE",
+   "handler": "HandleModBaseResistance",
+   "note": "",
+   "implemented": true,
+   "uses": 12
+  },
+  {
+   "id": 84,
+   "name": "SPELL_AURA_MOD_REGEN",
+   "handler": "HandleModRegen",
+   "note": "",
+   "implemented": true,
+   "uses": 55
+  },
+  {
+   "id": 85,
+   "name": "SPELL_AURA_MOD_POWER_REGEN",
+   "handler": "HandleModPowerRegen",
+   "note": "",
+   "implemented": true,
+   "uses": 85
+  },
+  {
+   "id": 86,
+   "name": "SPELL_AURA_CHANNEL_DEATH_ITEM",
+   "handler": "HandleChannelDeathItem",
+   "note": "",
+   "implemented": true,
+   "uses": 14
+  },
+  {
+   "id": 87,
+   "name": "SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusTaken and Unit::SpellDamageBonusTaken",
+   "implemented": true,
+   "uses": 85
+  },
+  {
+   "id": 88,
+   "name": "SPELL_AURA_MOD_HEALTH_REGEN_PERCENT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Player::RegenerateHealth",
+   "implemented": true,
+   "uses": 17
+  },
+  {
+   "id": 89,
+   "name": "SPELL_AURA_PERIODIC_DAMAGE_PERCENT",
+   "handler": "HandlePeriodicDamagePCT",
+   "note": "",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 90,
+   "name": "SPELL_AURA_MOD_RESIST_CHANCE",
+   "handler": "HandleUnused",
+   "note": "Useless",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 91,
+   "name": "SPELL_AURA_MOD_DETECT_RANGE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Creature::GetAttackDistance",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 92,
+   "name": "SPELL_AURA_PREVENTS_FLEEING",
+   "handler": "HandlePreventFleeing",
+   "note": "",
+   "implemented": true,
+   "uses": 7
+  },
+  {
+   "id": 93,
+   "name": "SPELL_AURA_MOD_UNATTACKABLE",
+   "handler": "HandleModUnattackable",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 94,
+   "name": "SPELL_AURA_INTERRUPT_REGEN",
+   "handler": "HandleInterruptRegen",
+   "note": "implemented in Player::RegenerateAll",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 95,
+   "name": "SPELL_AURA_GHOST",
+   "handler": "HandleAuraGhost",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 96,
+   "name": "SPELL_AURA_SPELL_MAGNET",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SelectMagnetTarget",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 97,
+   "name": "SPELL_AURA_MANA_SHIELD",
+   "handler": "HandleManaShield",
+   "note": "implemented in Unit::CalculateAbsorbAndResist",
+   "implemented": true,
+   "uses": 10
+  },
+  {
+   "id": 98,
+   "name": "SPELL_AURA_MOD_SKILL_TALENT",
+   "handler": "HandleAuraModSkill",
+   "note": "",
+   "implemented": true,
+   "uses": 93
+  },
+  {
+   "id": 99,
+   "name": "SPELL_AURA_MOD_ATTACK_POWER",
+   "handler": "HandleAuraModAttackPower",
+   "note": "",
+   "implemented": true,
+   "uses": 194
+  },
+  {
+   "id": 100,
+   "name": "SPELL_AURA_AURAS_VISIBLE",
+   "handler": "HandleAurasVisible",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 101,
+   "name": "SPELL_AURA_MOD_RESISTANCE_PCT",
+   "handler": "HandleModResistancePercent",
+   "note": "",
+   "implemented": true,
+   "uses": 42
+  },
+  {
+   "id": 102,
+   "name": "SPELL_AURA_MOD_MELEE_ATTACK_POWER_VERSUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusDone",
+   "implemented": true,
+   "uses": 52
+  },
+  {
+   "id": 103,
+   "name": "SPELL_AURA_MOD_TOTAL_THREAT",
+   "handler": "HandleAuraModTotalThreat",
+   "note": "",
+   "implemented": true,
+   "uses": 10
+  },
+  {
+   "id": 104,
+   "name": "SPELL_AURA_WATER_WALK",
+   "handler": "HandleAuraWaterWalk",
+   "note": "",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 105,
+   "name": "SPELL_AURA_FEATHER_FALL",
+   "handler": "HandleAuraFeatherFall",
+   "note": "",
+   "implemented": true,
+   "uses": 14
+  },
+  {
+   "id": 106,
+   "name": "SPELL_AURA_HOVER",
+   "handler": "HandleAuraHover",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 107,
+   "name": "SPELL_AURA_ADD_FLAT_MODIFIER",
+   "handler": "HandleAddModifier",
+   "note": "",
+   "implemented": true,
+   "uses": 634
+  },
+  {
+   "id": 108,
+   "name": "SPELL_AURA_ADD_PCT_MODIFIER",
+   "handler": "HandleAddModifier",
+   "note": "",
+   "implemented": true,
+   "uses": 675
+  },
+  {
+   "id": 109,
+   "name": "SPELL_AURA_ADD_TARGET_TRIGGER",
+   "handler": "HandleNoImmediateEffect",
+   "note": "",
+   "implemented": true,
+   "uses": 51
+  },
+  {
+   "id": 110,
+   "name": "SPELL_AURA_MOD_POWER_REGEN_PERCENT",
+   "handler": "HandleModPowerRegenPCT",
+   "note": "",
+   "implemented": true,
+   "uses": 12
+  },
+  {
+   "id": 111,
+   "name": "SPELL_AURA_ADD_CASTER_HIT_TRIGGER",
+   "handler": "HandleUnused",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 112,
+   "name": "SPELL_AURA_OVERRIDE_CLASS_SCRIPTS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in diff functions.",
+   "implemented": true,
+   "uses": 66
+  },
+  {
+   "id": 113,
+   "name": "SPELL_AURA_MOD_RANGED_DAMAGE_TAKEN",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusTaken",
+   "implemented": true,
+   "uses": 8
+  },
+  {
+   "id": 114,
+   "name": "SPELL_AURA_MOD_RANGED_DAMAGE_TAKEN_PCT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusTaken",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 115,
+   "name": "SPELL_AURA_MOD_HEALING",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SpellBaseHealingBonusTaken",
+   "implemented": true,
+   "uses": 14
+  },
+  {
+   "id": 116,
+   "name": "SPELL_AURA_MOD_REGEN_DURING_COMBAT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "imppemented in Player::RegenerateAll and Player::RegenerateHealth",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 117,
+   "name": "SPELL_AURA_MOD_MECHANIC_RESISTANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MagicSpellHitResult",
+   "implemented": true,
+   "uses": 63
+  },
+  {
+   "id": 118,
+   "name": "SPELL_AURA_MOD_HEALING_PCT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SpellHealingBonusTaken",
+   "implemented": true,
+   "uses": 35
+  },
+  {
+   "id": 119,
+   "name": "SPELL_AURA_SHARE_PET_TRACKING",
+   "handler": "HandleUnused",
+   "note": "useless",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 120,
+   "name": "SPELL_AURA_UNTRACKABLE",
+   "handler": "HandleAuraUntrackable",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 121,
+   "name": "SPELL_AURA_EMPATHY",
+   "handler": "HandleAuraEmpathy",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 122,
+   "name": "SPELL_AURA_MOD_OFFHAND_DAMAGE_PCT",
+   "handler": "HandleModOffhandDamagePercent",
+   "note": "",
+   "implemented": true,
+   "uses": 11
+  },
+  {
+   "id": 123,
+   "name": "SPELL_AURA_MOD_TARGET_RESISTANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::CalculateAbsorbAndResist and Unit::CalcArmorReducedDamage",
+   "implemented": true,
+   "uses": 22
+  },
+  {
+   "id": 124,
+   "name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER",
+   "handler": "HandleAuraModRangedAttackPower",
+   "note": "",
+   "implemented": true,
+   "uses": 118
+  },
+  {
+   "id": 125,
+   "name": "SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusTaken",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 126,
+   "name": "SPELL_AURA_MOD_MELEE_DAMAGE_TAKEN_PCT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusTaken",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 127,
+   "name": "SPELL_AURA_RANGED_ATTACK_POWER_ATTACKER_BONUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusDone",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 128,
+   "name": "SPELL_AURA_MOD_POSSESS_PET",
+   "handler": "HandleModPossessPet",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 129,
+   "name": "SPELL_AURA_MOD_SPEED_ALWAYS",
+   "handler": "HandleAuraModIncreaseSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 130,
+   "name": "SPELL_AURA_MOD_MOUNTED_SPEED_ALWAYS",
+   "handler": "HandleAuraModIncreaseMountedSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 131,
+   "name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER_VERSUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusDone",
+   "implemented": true,
+   "uses": 42
+  },
+  {
+   "id": 132,
+   "name": "SPELL_AURA_MOD_INCREASE_ENERGY_PERCENT",
+   "handler": "HandleAuraModIncreaseEnergyPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 19
+  },
+  {
+   "id": 133,
+   "name": "SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT",
+   "handler": "HandleAuraModIncreaseHealthPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 47
+  },
+  {
+   "id": 134,
+   "name": "SPELL_AURA_MOD_MANA_REGEN_INTERRUPT",
+   "handler": "HandleAuraModRegenInterrupt",
+   "note": "",
+   "implemented": true,
+   "uses": 29
+  },
+  {
+   "id": 135,
+   "name": "SPELL_AURA_MOD_HEALING_DONE",
+   "handler": "HandleModHealingDone",
+   "note": "",
+   "implemented": true,
+   "uses": 156
+  },
+  {
+   "id": 136,
+   "name": "SPELL_AURA_MOD_HEALING_DONE_PERCENT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SpellHealingBonusDone",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 137,
+   "name": "SPELL_AURA_MOD_TOTAL_STAT_PERCENTAGE",
+   "handler": "HandleModTotalPercentStat",
+   "note": "",
+   "implemented": true,
+   "uses": 69
+  },
+  {
+   "id": 138,
+   "name": "SPELL_AURA_MOD_MELEE_HASTE",
+   "handler": "HandleModMeleeSpeedPct",
+   "note": "",
+   "implemented": true,
+   "uses": 253
+  },
+  {
+   "id": 139,
+   "name": "SPELL_AURA_FORCE_REACTION",
+   "handler": "HandleForceReaction",
+   "note": "",
+   "implemented": true,
+   "uses": 16
+  },
+  {
+   "id": 140,
+   "name": "SPELL_AURA_MOD_RANGED_HASTE",
+   "handler": "HandleAuraModRangedHaste",
+   "note": "",
+   "implemented": true,
+   "uses": 12
+  },
+  {
+   "id": 141,
+   "name": "SPELL_AURA_MOD_RANGED_AMMO_HASTE",
+   "handler": "HandleRangedAmmoHaste",
+   "note": "",
+   "implemented": true,
+   "uses": 12
+  },
+  {
+   "id": 142,
+   "name": "SPELL_AURA_MOD_BASE_RESISTANCE_PCT",
+   "handler": "HandleAuraModBaseResistancePercent",
+   "note": "",
+   "implemented": true,
+   "uses": 48
+  },
+  {
+   "id": 143,
+   "name": "SPELL_AURA_MOD_RESISTANCE_EXCLUSIVE",
+   "handler": "HandleAuraModResistanceExclusive",
+   "note": "",
+   "implemented": true,
+   "uses": 40
+  },
+  {
+   "id": 144,
+   "name": "SPELL_AURA_SAFE_FALL",
+   "handler": "HandleAuraSafeFall",
+   "note": "implemented in WorldSession::HandleMovementOpcodes",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 145,
+   "name": "SPELL_AURA_CHARISMA",
+   "handler": "HandleUnused",
+   "note": "obsolete?",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 146,
+   "name": "SPELL_AURA_PERSUADED",
+   "handler": "HandleUnused",
+   "note": "obsolete?",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 147,
+   "name": "SPELL_AURA_MECHANIC_IMMUNITY_MASK",
+   "handler": "HandleModMechanicImmunityMask",
+   "note": "implemented in Unit::IsImmuneToSpell and Unit::IsImmuneToSpellEffect (check part)",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 148,
+   "name": "SPELL_AURA_RETAIN_COMBO_POINTS",
+   "handler": "HandleAuraRetainComboPoints",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 149,
+   "name": "SPELL_AURA_RESIST_PUSHBACK",
+   "handler": "HandleNoImmediateEffect",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 150,
+   "name": "SPELL_AURA_MOD_SHIELD_BLOCKVALUE_PCT",
+   "handler": "HandleShieldBlockValue",
+   "note": "",
+   "implemented": true,
+   "uses": 10
+  },
+  {
+   "id": 151,
+   "name": "SPELL_AURA_TRACK_STEALTHED",
+   "handler": "HandleAuraTrackStealthed",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 152,
+   "name": "SPELL_AURA_MOD_DETECTED_RANGE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Creature::GetAttackDistance",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 153,
+   "name": "SPELL_AURA_SPLIT_DAMAGE_FLAT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::CalculateAbsorbAndResist",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 154,
+   "name": "SPELL_AURA_MOD_STEALTH_LEVEL",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::IsVisibleForOrDetect",
+   "implemented": true,
+   "uses": 16
+  },
+  {
+   "id": 155,
+   "name": "SPELL_AURA_MOD_WATER_BREATHING",
+   "handler": "HandleModWaterBreathing",
+   "note": "",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 156,
+   "name": "SPELL_AURA_MOD_REPUTATION_GAIN",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Player::CalculateReputationGain",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 157,
+   "name": "SPELL_AURA_PET_DAMAGE_MULTI",
+   "handler": "HandleUnused",
+   "note": "(single test like spell 20782, also single for 214 aura)",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 158,
+   "name": "SPELL_AURA_MOD_SHIELD_BLOCKVALUE",
+   "handler": "HandleShieldBlockValue",
+   "note": "",
+   "implemented": true,
+   "uses": 17
+  },
+  {
+   "id": 159,
+   "name": "SPELL_AURA_NO_PVP_CREDIT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "only for Honorless Target spell",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 160,
+   "name": "SPELL_AURA_MOD_AOE_AVOIDANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MagicSpellHitResult",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 161,
+   "name": "SPELL_AURA_MOD_HEALTH_REGEN_IN_COMBAT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "",
+   "implemented": true,
+   "uses": 54
+  },
+  {
+   "id": 162,
+   "name": "SPELL_AURA_POWER_BURN_MANA",
+   "handler": "HandleAuraPowerBurn",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 163,
+   "name": "SPELL_AURA_MOD_CRIT_DAMAGE_BONUS",
+   "handler": "HandleUnused",
+   "note": "",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 164,
+   "name": "useless",
+   "handler": "HandleUnused",
+   "note": ", only one test spell",
+   "implemented": false,
+   "uses": 1
+  },
+  {
+   "id": 165,
+   "name": "SPELL_AURA_MELEE_ATTACK_POWER_ATTACKER_BONUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MeleeDamageBonusDone",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 166,
+   "name": "SPELL_AURA_MOD_ATTACK_POWER_PCT",
+   "handler": "HandleAuraModAttackPowerPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 11
+  },
+  {
+   "id": 167,
+   "name": "SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT",
+   "handler": "HandleAuraModRangedAttackPowerPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 168,
+   "name": "SPELL_AURA_MOD_DAMAGE_DONE_VERSUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SpellDamageBonusDone, Unit::MeleeDamageBonusDone",
+   "implemented": true,
+   "uses": 19
+  },
+  {
+   "id": 169,
+   "name": "SPELL_AURA_MOD_CRIT_PERCENT_VERSUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::DealDamageBySchool, Unit::DoAttackDamage, Unit::SpellCriticalBonus",
+   "implemented": true,
+   "uses": 6
+  },
+  {
+   "id": 170,
+   "name": "SPELL_AURA_DETECT_AMORE",
+   "handler": "HandleDetectAmore",
+   "note": "only for Detect Amore spell",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 171,
+   "name": "SPELL_AURA_MOD_SPEED_NOT_STACK",
+   "handler": "HandleAuraModIncreaseSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 172,
+   "name": "SPELL_AURA_MOD_MOUNTED_SPEED_NOT_STACK",
+   "handler": "HandleAuraModIncreaseMountedSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 173,
+   "name": "SPELL_AURA_ALLOW_CHAMPION_SPELLS",
+   "handler": "HandleUnused",
+   "note": "only for Proclaim Champion spell",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 174,
+   "name": "SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT",
+   "handler": "HandleModSpellDamagePercentFromStat",
+   "note": "implemented in Unit::SpellBaseDamageBonusDone (in 1.12.* only spirit)",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 175,
+   "name": "SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT",
+   "handler": "HandleModSpellHealingPercentFromStat",
+   "note": "implemented in Unit::SpellBaseHealingBonusDone (in 1.12.* only spirit)",
+   "implemented": true,
+   "uses": 5
+  },
+  {
+   "id": 176,
+   "name": "SPELL_AURA_SPIRIT_OF_REDEMPTION",
+   "handler": "HandleSpiritOfRedemption",
+   "note": "only for Spirit of Redemption spell, die at aura end",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 177,
+   "name": "SPELL_AURA_AOE_CHARM",
+   "handler": "HandleAuraAoeCharm",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 178,
+   "name": "SPELL_AURA_MOD_DEBUFF_RESISTANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MagicSpellHitResult",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 179,
+   "name": "SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SpellCriticalBonus",
+   "implemented": true,
+   "uses": 4
+  },
+  {
+   "id": 180,
+   "name": "SPELL_AURA_MOD_FLAT_SPELL_DAMAGE_VERSUS",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::SpellDamageBonusDone",
+   "implemented": true,
+   "uses": 9
+  },
+  {
+   "id": 181,
+   "name": "SPELL_AURA_MOD_FLAT_SPELL_CRIT_DAMAGE_VERSUS",
+   "handler": "HandleUnused",
+   "note": "unused",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 182,
+   "name": "SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT",
+   "handler": "HandleAuraModResistenceOfStatPercent",
+   "note": "",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 183,
+   "name": "SPELL_AURA_MOD_CRITICAL_THREAT",
+   "handler": "HandleNoImmediateEffect",
+   "note": "only used in 28746, implemented in ThreatCalcHelper::CalcThreat",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 184,
+   "name": "SPELL_AURA_MOD_ATTACKER_MELEE_HIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::RollMeleeOutcomeAgainst",
+   "implemented": true,
+   "uses": 0
+  },
+  {
+   "id": 185,
+   "name": "SPELL_AURA_MOD_ATTACKER_RANGED_HIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::RollMeleeOutcomeAgainst",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 186,
+   "name": "SPELL_AURA_MOD_ATTACKER_SPELL_HIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::MagicSpellHitResult",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 187,
+   "name": "SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::GetUnitCriticalChance",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 188,
+   "name": "SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_CHANCE",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Unit::GetUnitCriticalChance",
+   "implemented": true,
+   "uses": 2
+  },
+  {
+   "id": 189,
+   "name": "SPELL_AURA_MOD_RATING",
+   "handler": "HandleUnused",
+   "note": "(not used in 1.12.1)",
+   "implemented": false,
+   "uses": 0
+  },
+  {
+   "id": 190,
+   "name": "SPELL_AURA_MOD_FACTION_REPUTATION_GAIN",
+   "handler": "HandleNoImmediateEffect",
+   "note": "implemented in Player::CalculateReputationGain",
+   "implemented": true,
+   "uses": 1
+  },
+  {
+   "id": 191,
+   "name": "SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED",
+   "handler": "HandleAuraModUseNormalSpeed",
+   "note": "",
+   "implemented": true,
+   "uses": 3
+  },
+  {
+   "id": 192,
+   "name": "",
+   "handler": "HandleAuraAuraSpell",
+   "note": "",
+   "implemented": true,
+   "uses": 0
+  }
+ ],
+ "targets": [
+  {
+   "id": 0,
+   "name": "TARGET_NONE",
+   "note": "",
+   "uses": 4657
+  },
+  {
+   "id": 1,
+   "name": "TARGET_UNIT_CASTER",
+   "note": "",
+   "uses": 12652
+  },
+  {
+   "id": 2,
+   "name": "TARGET_UNIT_ENEMY_NEAR_CASTER",
+   "note": "",
+   "uses": 0
+  },
+  {
+   "id": 3,
+   "name": "TARGET_UNIT_FRIEND_NEAR_CASTER",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 4,
+   "name": "TARGET_UNIT_NEAR_CASTER",
+   "note": "",
+   "uses": 12
+  },
+  {
+   "id": 5,
+   "name": "TARGET_UNIT_CASTER_PET",
+   "note": "",
+   "uses": 326
+  },
+  {
+   "id": 6,
+   "name": "TARGET_UNIT_ENEMY",
+   "note": "",
+   "uses": 4066
+  },
+  {
+   "id": 7,
+   "name": "TARGET_ENUM_UNITS_SCRIPT_AOE_AT_SRC_LOC",
+   "note": "",
+   "uses": 176
+  },
+  {
+   "id": 8,
+   "name": "TARGET_ENUM_UNITS_SCRIPT_AOE_AT_DEST_LOC",
+   "note": "",
+   "uses": 27
+  },
+  {
+   "id": 9,
+   "name": "TARGET_LOCATION_CASTER_HOME_BIND",
+   "note": "",
+   "uses": 4
+  },
+  {
+   "id": 10,
+   "name": "TARGET_LOCATION_CASTER_DIVINE_BIND_NYI",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 11,
+   "name": "TARGET_PLAYER_NYI",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 12,
+   "name": "TARGET_PLAYER_NEAR_CASTER_NYI",
+   "note": "",
+   "uses": 0
+  },
+  {
+   "id": 13,
+   "name": "TARGET_PLAYER_ENEMY_NYI",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 14,
+   "name": "TARGET_PLAYER_FRIEND_NYI",
+   "note": "",
+   "uses": 0
+  },
+  {
+   "id": 15,
+   "name": "TARGET_ENUM_UNITS_ENEMY_AOE_AT_SRC_LOC",
+   "note": "",
+   "uses": 1017
+  },
+  {
+   "id": 16,
+   "name": "TARGET_ENUM_UNITS_ENEMY_AOE_AT_DEST_LOC",
+   "note": "",
+   "uses": 381
+  },
+  {
+   "id": 17,
+   "name": "TARGET_LOCATION_DATABASE",
+   "note": "",
+   "uses": 398
+  },
+  {
+   "id": 18,
+   "name": "TARGET_LOCATION_CASTER_DEST",
+   "note": "",
+   "uses": 468
+  },
+  {
+   "id": 19,
+   "name": "TARGET_UNK_19",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 20,
+   "name": "TARGET_ENUM_UNITS_PARTY_WITHIN_CASTER_RANGE",
+   "note": "",
+   "uses": 79
+  },
+  {
+   "id": 21,
+   "name": "TARGET_UNIT_FRIEND",
+   "note": "",
+   "uses": 704
+  },
+  {
+   "id": 22,
+   "name": "TARGET_LOCATION_CASTER_SRC",
+   "note": "",
+   "uses": 1382
+  },
+  {
+   "id": 23,
+   "name": "TARGET_GAMEOBJECT",
+   "note": "",
+   "uses": 100
+  },
+  {
+   "id": 24,
+   "name": "TARGET_ENUM_UNITS_ENEMY_IN_CONE_24",
+   "note": "",
+   "uses": 181
+  },
+  {
+   "id": 25,
+   "name": "TARGET_UNIT",
+   "note": "",
+   "uses": 615
+  },
+  {
+   "id": 26,
+   "name": "TARGET_LOCKED",
+   "note": "",
+   "uses": 23
+  },
+  {
+   "id": 27,
+   "name": "TARGET_UNIT_CASTER_MASTER",
+   "note": "",
+   "uses": 24
+  },
+  {
+   "id": 28,
+   "name": "TARGET_ENUM_UNITS_ENEMY_AOE_AT_DYNOBJ_LOC",
+   "note": "",
+   "uses": 88
+  },
+  {
+   "id": 29,
+   "name": "TARGET_ENUM_UNITS_FRIEND_AOE_AT_DYNOBJ_LOC",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 30,
+   "name": "TARGET_ENUM_UNITS_FRIEND_AOE_AT_SRC_LOC",
+   "note": "",
+   "uses": 131
+  },
+  {
+   "id": 31,
+   "name": "TARGET_ENUM_UNITS_FRIEND_AOE_AT_DEST_LOC",
+   "note": "",
+   "uses": 15
+  },
+  {
+   "id": 32,
+   "name": "TARGET_LOCATION_UNIT_MINION_POSITION",
+   "note": "",
+   "uses": 361
+  },
+  {
+   "id": 33,
+   "name": "TARGET_ENUM_UNITS_PARTY_AOE_AT_SRC_LOC",
+   "note": "",
+   "uses": 14
+  },
+  {
+   "id": 34,
+   "name": "TARGET_ENUM_UNITS_PARTY_AOE_AT_DEST_LOC",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 35,
+   "name": "TARGET_UNIT_PARTY",
+   "note": "",
+   "uses": 17
+  },
+  {
+   "id": 36,
+   "name": "TARGET_ENUM_UNITS_ENEMY_WITHIN_CASTER_RANGE",
+   "note": "TODO: only used with dest-effects - reinvestigate naming",
+   "uses": 6
+  },
+  {
+   "id": 37,
+   "name": "TARGET_UNIT_FRIEND_AND_PARTY",
+   "note": "",
+   "uses": 15
+  },
+  {
+   "id": 38,
+   "name": "TARGET_UNIT_SCRIPT_NEAR_CASTER",
+   "note": "",
+   "uses": 233
+  },
+  {
+   "id": 39,
+   "name": "TARGET_LOCATION_CASTER_FISHING_SPOT",
+   "note": "",
+   "uses": 4
+  },
+  {
+   "id": 40,
+   "name": "TARGET_GAMEOBJECT_SCRIPT_NEAR_CASTER",
+   "note": "",
+   "uses": 127
+  },
+  {
+   "id": 41,
+   "name": "TARGET_LOCATION_CASTER_FRONT_RIGHT",
+   "note": "",
+   "uses": 30
+  },
+  {
+   "id": 42,
+   "name": "TARGET_LOCATION_CASTER_BACK_RIGHT",
+   "note": "",
+   "uses": 23
+  },
+  {
+   "id": 43,
+   "name": "TARGET_LOCATION_CASTER_BACK_LEFT",
+   "note": "",
+   "uses": 21
+  },
+  {
+   "id": 44,
+   "name": "TARGET_LOCATION_CASTER_FRONT_LEFT",
+   "note": "",
+   "uses": 37
+  },
+  {
+   "id": 45,
+   "name": "TARGET_UNIT_FRIEND_CHAIN_HEAL",
+   "note": "",
+   "uses": 16
+  },
+  {
+   "id": 46,
+   "name": "TARGET_LOCATION_SCRIPT_NEAR_CASTER",
+   "note": "",
+   "uses": 142
+  },
+  {
+   "id": 47,
+   "name": "TARGET_LOCATION_CASTER_FRONT",
+   "note": "",
+   "uses": 106
+  },
+  {
+   "id": 48,
+   "name": "TARGET_LOCATION_CASTER_BACK",
+   "note": "",
+   "uses": 12
+  },
+  {
+   "id": 49,
+   "name": "TARGET_LOCATION_CASTER_LEFT",
+   "note": "",
+   "uses": 10
+  },
+  {
+   "id": 50,
+   "name": "TARGET_LOCATION_CASTER_RIGHT",
+   "note": "",
+   "uses": 9
+  },
+  {
+   "id": 51,
+   "name": "TARGET_ENUM_GAMEOBJECTS_SCRIPT_AOE_AT_SRC_LOC",
+   "note": "",
+   "uses": 18
+  },
+  {
+   "id": 52,
+   "name": "TARGET_ENUM_GAMEOBJECTS_SCRIPT_AOE_AT_DEST_LOC",
+   "note": "",
+   "uses": 10
+  },
+  {
+   "id": 53,
+   "name": "TARGET_LOCATION_CASTER_TARGET_POSITION",
+   "note": "",
+   "uses": 38
+  },
+  {
+   "id": 54,
+   "name": "TARGET_ENUM_UNITS_ENEMY_IN_CONE_54",
+   "note": "",
+   "uses": 12
+  },
+  {
+   "id": 55,
+   "name": "TARGET_LOCATION_CASTER_FRONT_LEAP",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 56,
+   "name": "TARGET_ENUM_UNITS_RAID_WITHIN_CASTER_RANGE",
+   "note": "",
+   "uses": 2
+  },
+  {
+   "id": 57,
+   "name": "TARGET_UNIT_RAID",
+   "note": "",
+   "uses": 52
+  },
+  {
+   "id": 58,
+   "name": "TARGET_UNIT_RAID_NEAR_CASTER",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 59,
+   "name": "TARGET_ENUM_UNITS_FRIEND_IN_CONE",
+   "note": "",
+   "uses": 0
+  },
+  {
+   "id": 60,
+   "name": "TARGET_ENUM_UNITS_SCRIPT_IN_CONE_60",
+   "note": "",
+   "uses": 8
+  },
+  {
+   "id": 61,
+   "name": "TARGET_UNIT_RAID_AND_CLASS",
+   "note": "",
+   "uses": 10
+  },
+  {
+   "id": 62,
+   "name": "TARGET_PLAYER_RAID_NYI",
+   "note": "",
+   "uses": 1
+  },
+  {
+   "id": 63,
+   "name": "TARGET_LOCATION_UNIT_POSITION",
+   "note": "",
+   "uses": 1
+  }
+ ],
+ "combos": [
+  {
+   "effect": 36,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 3223,
+   "example": 479
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1443,
+   "example": 587
+  },
+  {
+   "effect": 36,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1264,
+   "example": 476
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1099,
+   "example": 59
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 1,
+   "b": 0,
+   "uses": 874,
+   "example": 43
+  },
+  {
+   "effect": 6,
+   "aura": 108,
+   "a": 1,
+   "b": 0,
+   "uses": 667,
+   "example": 11083
+  },
+  {
+   "effect": 6,
+   "aura": 107,
+   "a": 1,
+   "b": 0,
+   "uses": 628,
+   "example": 11069
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 1,
+   "b": 0,
+   "uses": 625,
+   "example": 168
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 1,
+   "b": 0,
+   "uses": 564,
+   "example": 77
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 1,
+   "b": 0,
+   "uses": 502,
+   "example": 806
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 6,
+   "b": 0,
+   "uses": 479,
+   "example": 96
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 1,
+   "b": 0,
+   "uses": 355,
+   "example": 758
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 1,
+   "b": 0,
+   "uses": 345,
+   "example": 126
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 312,
+   "example": 122
+  },
+  {
+   "effect": 6,
+   "aura": 30,
+   "a": 1,
+   "b": 0,
+   "uses": 274,
+   "example": 1731
+  },
+  {
+   "effect": 53,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 274,
+   "example": 2605
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 267,
+   "example": 84
+  },
+  {
+   "effect": 36,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 264,
+   "example": 850
+  },
+  {
+   "effect": 58,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 226,
+   "example": 75
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 6,
+   "b": 0,
+   "uses": 216,
+   "example": 25
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 185,
+   "example": 3286
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 1,
+   "b": 0,
+   "uses": 156,
+   "example": 3245
+  },
+  {
+   "effect": 6,
+   "aura": 135,
+   "a": 1,
+   "b": 0,
+   "uses": 153,
+   "example": 7675
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 6,
+   "b": 0,
+   "uses": 152,
+   "example": 89
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 151,
+   "example": 3428
+  },
+  {
+   "effect": 61,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 151,
+   "example": 4141
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 1,
+   "b": 0,
+   "uses": 135,
+   "example": 6057
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 127,
+   "example": 110
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 1,
+   "b": 0,
+   "uses": 126,
+   "example": 19
+  },
+  {
+   "effect": 6,
+   "aura": 78,
+   "a": 1,
+   "b": 0,
+   "uses": 126,
+   "example": 458
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 124,
+   "example": 6664
+  },
+  {
+   "effect": 86,
+   "aura": 0,
+   "a": 40,
+   "b": 0,
+   "uses": 124,
+   "example": 7728
+  },
+  {
+   "effect": 6,
+   "aura": 32,
+   "a": 1,
+   "b": 0,
+   "uses": 121,
+   "example": 454
+  },
+  {
+   "effect": 30,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 117,
+   "example": 100
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 116,
+   "example": 18
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 1,
+   "b": 0,
+   "uses": 113,
+   "example": 65
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 1,
+   "b": 0,
+   "uses": 111,
+   "example": 1178
+  },
+  {
+   "effect": 6,
+   "aura": 124,
+   "a": 1,
+   "b": 0,
+   "uses": 109,
+   "example": 9136
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 109,
+   "example": 1856
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 17,
+   "b": 16,
+   "uses": 107,
+   "example": 17086
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 107,
+   "example": 2050
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 106,
+   "example": 3730
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 96,
+   "example": 765
+  },
+  {
+   "effect": 6,
+   "aura": 69,
+   "a": 1,
+   "b": 0,
+   "uses": 95,
+   "example": 128
+  },
+  {
+   "effect": 97,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 94,
+   "example": 4055
+  },
+  {
+   "effect": 6,
+   "aura": 98,
+   "a": 1,
+   "b": 0,
+   "uses": 93,
+   "example": 601
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 6,
+   "b": 0,
+   "uses": 89,
+   "example": 91
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 1,
+   "b": 0,
+   "uses": 89,
+   "example": 768
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 89,
+   "example": 799
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 1,
+   "b": 0,
+   "uses": 86,
+   "example": 11
+  },
+  {
+   "effect": 54,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 85,
+   "example": 2823
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 1,
+   "b": 17,
+   "uses": 82,
+   "example": 31
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 81,
+   "example": 711
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 80,
+   "example": 781
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 79,
+   "example": 120
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 1,
+   "b": 0,
+   "uses": 79,
+   "example": 775
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 6,
+   "b": 0,
+   "uses": 79,
+   "example": 457
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 21,
+   "b": 0,
+   "uses": 79,
+   "example": 344
+  },
+  {
+   "effect": 6,
+   "aura": 85,
+   "a": 1,
+   "b": 0,
+   "uses": 78,
+   "example": 430
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 76,
+   "example": 1826
+  },
+  {
+   "effect": 44,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 75,
+   "example": 1290
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 46,
+   "b": 0,
+   "uses": 75,
+   "example": 16054
+  },
+  {
+   "effect": 80,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 75,
+   "example": 53
+  },
+  {
+   "effect": 6,
+   "aura": 51,
+   "a": 1,
+   "b": 0,
+   "uses": 74,
+   "example": 2565
+  },
+  {
+   "effect": 59,
+   "aura": 0,
+   "a": 23,
+   "b": 0,
+   "uses": 74,
+   "example": 1538
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 21,
+   "b": 0,
+   "uses": 73,
+   "example": 139
+  },
+  {
+   "effect": 57,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 73,
+   "example": 2817
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 1,
+   "b": 0,
+   "uses": 70,
+   "example": 3019
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 67,
+   "example": 5251
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 67,
+   "example": 1881
+  },
+  {
+   "effect": 6,
+   "aura": 47,
+   "a": 1,
+   "b": 0,
+   "uses": 66,
+   "example": 2566
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 6,
+   "b": 0,
+   "uses": 64,
+   "example": 113
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 6,
+   "b": 0,
+   "uses": 64,
+   "example": 89
+  },
+  {
+   "effect": 27,
+   "aura": 3,
+   "a": 28,
+   "b": 0,
+   "uses": 64,
+   "example": 10
+  },
+  {
+   "effect": 6,
+   "aura": 112,
+   "a": 1,
+   "b": 0,
+   "uses": 62,
+   "example": 11170
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 62,
+   "example": 21110
+  },
+  {
+   "effect": 6,
+   "aura": 117,
+   "a": 1,
+   "b": 0,
+   "uses": 61,
+   "example": 9453
+  },
+  {
+   "effect": 17,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 61,
+   "example": 78
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 60,
+   "example": 3204
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 6,
+   "b": 0,
+   "uses": 60,
+   "example": 2583
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 22,
+   "b": 15,
+   "uses": 60,
+   "example": 949
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 60,
+   "example": 7585
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 59,
+   "example": 1574
+  },
+  {
+   "effect": 6,
+   "aura": 59,
+   "a": 1,
+   "b": 0,
+   "uses": 59,
+   "example": 2635
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 1,
+   "b": 0,
+   "uses": 58,
+   "example": 498
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 58,
+   "example": 9949
+  },
+  {
+   "effect": 118,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 58,
+   "example": 824
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 22,
+   "b": 15,
+   "uses": 57,
+   "example": 3485
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 6,
+   "b": 0,
+   "uses": 57,
+   "example": 2537
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 22,
+   "b": 15,
+   "uses": 54,
+   "example": 568
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 6,
+   "b": 0,
+   "uses": 54,
+   "example": 1707
+  },
+  {
+   "effect": 6,
+   "aura": 161,
+   "a": 1,
+   "b": 0,
+   "uses": 51,
+   "example": 687
+  },
+  {
+   "effect": 31,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 50,
+   "example": 53
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 49,
+   "example": 7
+  },
+  {
+   "effect": 6,
+   "aura": 84,
+   "a": 1,
+   "b": 0,
+   "uses": 49,
+   "example": 433
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 1,
+   "b": 0,
+   "uses": 48,
+   "example": 22
+  },
+  {
+   "effect": 16,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 48,
+   "example": 4975
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 48,
+   "example": 45
+  },
+  {
+   "effect": 6,
+   "aura": 49,
+   "a": 1,
+   "b": 0,
+   "uses": 47,
+   "example": 1114
+  },
+  {
+   "effect": 6,
+   "aura": 54,
+   "a": 1,
+   "b": 0,
+   "uses": 47,
+   "example": 1491
+  },
+  {
+   "effect": 6,
+   "aura": 102,
+   "a": 1,
+   "b": 0,
+   "uses": 47,
+   "example": 11406
+  },
+  {
+   "effect": 68,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 47,
+   "example": 72
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 47,
+   "example": 6464
+  },
+  {
+   "effect": 6,
+   "aura": 6,
+   "a": 6,
+   "b": 0,
+   "uses": 46,
+   "example": 771
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 21,
+   "b": 0,
+   "uses": 46,
+   "example": 179
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 6,
+   "b": 0,
+   "uses": 46,
+   "example": 1009
+  },
+  {
+   "effect": 47,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 46,
+   "example": 2018
+  },
+  {
+   "effect": 121,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 46,
+   "example": 53
+  },
+  {
+   "effect": 6,
+   "aura": 15,
+   "a": 1,
+   "b": 0,
+   "uses": 44,
+   "example": 767
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 44,
+   "example": 100
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 44,
+   "example": 10101
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 1,
+   "b": 0,
+   "uses": 42,
+   "example": 871
+  },
+  {
+   "effect": 6,
+   "aura": 131,
+   "a": 1,
+   "b": 0,
+   "uses": 42,
+   "example": 12822
+  },
+  {
+   "effect": 6,
+   "aura": 137,
+   "a": 1,
+   "b": 0,
+   "uses": 42,
+   "example": 15271
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 41,
+   "example": 800
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 6,
+   "b": 0,
+   "uses": 41,
+   "example": 682
+  },
+  {
+   "effect": 96,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 41,
+   "example": 100
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 40,
+   "example": 1050
+  },
+  {
+   "effect": 6,
+   "aura": 142,
+   "a": 1,
+   "b": 0,
+   "uses": 40,
+   "example": 1178
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 25,
+   "b": 0,
+   "uses": 39,
+   "example": 812
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 1,
+   "b": 0,
+   "uses": 38,
+   "example": 1178
+  },
+  {
+   "effect": 6,
+   "aura": 41,
+   "a": 6,
+   "b": 0,
+   "uses": 38,
+   "example": 770
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 25,
+   "b": 0,
+   "uses": 37,
+   "example": 6767
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 1,
+   "b": 0,
+   "uses": 37,
+   "example": 77
+  },
+  {
+   "effect": 6,
+   "aura": 16,
+   "a": 1,
+   "b": 0,
+   "uses": 36,
+   "example": 743
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 1,
+   "b": 0,
+   "uses": 36,
+   "example": 3651
+  },
+  {
+   "effect": 6,
+   "aura": 18,
+   "a": 1,
+   "b": 0,
+   "uses": 35,
+   "example": 66
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 1,
+   "b": 0,
+   "uses": 35,
+   "example": 1784
+  },
+  {
+   "effect": 6,
+   "aura": 109,
+   "a": 1,
+   "b": 0,
+   "uses": 35,
+   "example": 11071
+  },
+  {
+   "effect": 6,
+   "aura": 36,
+   "a": 1,
+   "b": 0,
+   "uses": 34,
+   "example": 71
+  },
+  {
+   "effect": 6,
+   "aura": 53,
+   "a": 6,
+   "b": 0,
+   "uses": 34,
+   "example": 689
+  },
+  {
+   "effect": 6,
+   "aura": 74,
+   "a": 1,
+   "b": 0,
+   "uses": 34,
+   "example": 543
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 34,
+   "example": 271
+  },
+  {
+   "effect": 56,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 34,
+   "example": 688
+  },
+  {
+   "effect": 6,
+   "aura": 71,
+   "a": 1,
+   "b": 0,
+   "uses": 33,
+   "example": 5812
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 1,
+   "b": 0,
+   "uses": 33,
+   "example": 7000
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 33,
+   "example": 555
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 32,
+   "example": 8136
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 22,
+   "b": 15,
+   "uses": 32,
+   "example": 122
+  },
+  {
+   "effect": 6,
+   "aura": 43,
+   "a": 1,
+   "b": 0,
+   "uses": 31,
+   "example": 7601
+  },
+  {
+   "effect": 6,
+   "aura": 118,
+   "a": 6,
+   "b": 0,
+   "uses": 31,
+   "example": 7068
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 31,
+   "example": 475
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 31,
+   "example": 10101
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 30,
+   "example": 5857
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 22,
+   "b": 15,
+   "uses": 30,
+   "example": 5246
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 30,
+   "example": 635
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 22,
+   "b": 15,
+   "uses": 29,
+   "example": 3335
+  },
+  {
+   "effect": 87,
+   "aura": 0,
+   "a": 44,
+   "b": 0,
+   "uses": 29,
+   "example": 1535
+  },
+  {
+   "effect": 103,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 29,
+   "example": 21187
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 1,
+   "b": 0,
+   "uses": 28,
+   "example": 821
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 6,
+   "b": 0,
+   "uses": 28,
+   "example": 118
+  },
+  {
+   "effect": 6,
+   "aura": 134,
+   "a": 1,
+   "b": 0,
+   "uses": 28,
+   "example": 6117
+  },
+  {
+   "effect": 60,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 28,
+   "example": 196
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 1,
+   "b": 0,
+   "uses": 27,
+   "example": 806
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 6,
+   "b": 0,
+   "uses": 27,
+   "example": 16
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 25,
+   "b": 0,
+   "uses": 27,
+   "example": 3246
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 46,
+   "b": 0,
+   "uses": 27,
+   "example": 23974
+  },
+  {
+   "effect": 58,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 27,
+   "example": 4938
+  },
+  {
+   "effect": 62,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 27,
+   "example": 2691
+  },
+  {
+   "effect": 33,
+   "aura": 0,
+   "a": 23,
+   "b": 0,
+   "uses": 26,
+   "example": 1842
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 26,
+   "example": 4045
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 26,
+   "example": 456
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 25,
+   "example": 5255
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 6,
+   "b": 0,
+   "uses": 25,
+   "example": 118
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 6,
+   "b": 0,
+   "uses": 25,
+   "example": 1098
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 22,
+   "b": 15,
+   "uses": 24,
+   "example": 3146
+  },
+  {
+   "effect": 6,
+   "aura": 44,
+   "a": 1,
+   "b": 0,
+   "uses": 24,
+   "example": 1494
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 22,
+   "b": 15,
+   "uses": 24,
+   "example": 99
+  },
+  {
+   "effect": 19,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 24,
+   "example": 677
+  },
+  {
+   "effect": 35,
+   "aura": 143,
+   "a": 1,
+   "b": 0,
+   "uses": 24,
+   "example": 3487
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 24,
+   "example": 128
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 46,
+   "b": 0,
+   "uses": 24,
+   "example": 11475
+  },
+  {
+   "effect": 61,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 24,
+   "example": 5162
+  },
+  {
+   "effect": 6,
+   "aura": 64,
+   "a": 6,
+   "b": 0,
+   "uses": 23,
+   "example": 606
+  },
+  {
+   "effect": 33,
+   "aura": 0,
+   "a": 26,
+   "b": 0,
+   "uses": 23,
+   "example": 491
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 23,
+   "example": 25687
+  },
+  {
+   "effect": 88,
+   "aura": 0,
+   "a": 41,
+   "b": 0,
+   "uses": 23,
+   "example": 2484
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 21,
+   "b": 0,
+   "uses": 22,
+   "example": 16499
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 6,
+   "b": 0,
+   "uses": 22,
+   "example": 228
+  },
+  {
+   "effect": 6,
+   "aura": 28,
+   "a": 1,
+   "b": 0,
+   "uses": 22,
+   "example": 112
+  },
+  {
+   "effect": 46,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 22,
+   "example": 836
+  },
+  {
+   "effect": 6,
+   "aura": 35,
+   "a": 1,
+   "b": 0,
+   "uses": 21,
+   "example": 4263
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 21,
+   "b": 0,
+   "uses": 21,
+   "example": 114
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 6,
+   "b": 0,
+   "uses": 21,
+   "example": 408
+  },
+  {
+   "effect": 6,
+   "aura": 123,
+   "a": 1,
+   "b": 0,
+   "uses": 21,
+   "example": 11210
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 20,
+   "b": 0,
+   "uses": 21,
+   "example": 596
+  },
+  {
+   "effect": 6,
+   "aura": 73,
+   "a": 1,
+   "b": 0,
+   "uses": 20,
+   "example": 5816
+  },
+  {
+   "effect": 25,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 20,
+   "example": 196
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 20,
+   "example": 5249
+  },
+  {
+   "effect": 89,
+   "aura": 0,
+   "a": 42,
+   "b": 0,
+   "uses": 20,
+   "example": 5394
+  },
+  {
+   "effect": 113,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 20,
+   "example": 2006
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 16,
+   "b": 0,
+   "uses": 19,
+   "example": 3109
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 22,
+   "b": 15,
+   "uses": 19,
+   "example": 3589
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 6,
+   "b": 0,
+   "uses": 19,
+   "example": 704
+  },
+  {
+   "effect": 6,
+   "aura": 132,
+   "a": 1,
+   "b": 0,
+   "uses": 19,
+   "example": 11232
+  },
+  {
+   "effect": 28,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 19,
+   "example": 513
+  },
+  {
+   "effect": 35,
+   "aura": 29,
+   "a": 1,
+   "b": 0,
+   "uses": 19,
+   "example": 6307
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 25,
+   "b": 17,
+   "uses": 18,
+   "example": 6766
+  },
+  {
+   "effect": 6,
+   "aura": 54,
+   "a": 6,
+   "b": 0,
+   "uses": 18,
+   "example": 593
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 18,
+   "example": 1708
+  },
+  {
+   "effect": 27,
+   "aura": 3,
+   "a": 16,
+   "b": 0,
+   "uses": 18,
+   "example": 269
+  },
+  {
+   "effect": 86,
+   "aura": 0,
+   "a": 22,
+   "b": 51,
+   "uses": 18,
+   "example": 21767
+  },
+  {
+   "effect": 90,
+   "aura": 0,
+   "a": 43,
+   "b": 0,
+   "uses": 18,
+   "example": 6495
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 21,
+   "b": 17,
+   "uses": 17,
+   "example": 4996
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 1,
+   "b": 0,
+   "uses": 17,
+   "example": 4154
+  },
+  {
+   "effect": 6,
+   "aura": 17,
+   "a": 1,
+   "b": 0,
+   "uses": 17,
+   "example": 2836
+  },
+  {
+   "effect": 6,
+   "aura": 19,
+   "a": 1,
+   "b": 0,
+   "uses": 17,
+   "example": 2836
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 25,
+   "b": 0,
+   "uses": 17,
+   "example": 7764
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 24,
+   "b": 0,
+   "uses": 17,
+   "example": 120
+  },
+  {
+   "effect": 6,
+   "aura": 40,
+   "a": 1,
+   "b": 0,
+   "uses": 17,
+   "example": 109
+  },
+  {
+   "effect": 6,
+   "aura": 158,
+   "a": 1,
+   "b": 0,
+   "uses": 17,
+   "example": 21539
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 17,
+   "example": 10854
+  },
+  {
+   "effect": 103,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 17,
+   "example": 17451
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 53,
+   "b": 16,
+   "uses": 16,
+   "example": 18392
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 6,
+   "b": 17,
+   "uses": 16,
+   "example": 720
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 6,
+   "b": 0,
+   "uses": 16,
+   "example": 1513
+  },
+  {
+   "effect": 6,
+   "aura": 154,
+   "a": 1,
+   "b": 0,
+   "uses": 16,
+   "example": 9590
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 45,
+   "b": 0,
+   "uses": 16,
+   "example": 331
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 16,
+   "example": 698
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 16,
+   "example": 12199
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 24,
+   "b": 0,
+   "uses": 15,
+   "example": 12533
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 38,
+   "b": 0,
+   "uses": 15,
+   "example": 10259
+  },
+  {
+   "effect": 6,
+   "aura": 9,
+   "a": 1,
+   "b": 0,
+   "uses": 15,
+   "example": 450
+  },
+  {
+   "effect": 6,
+   "aura": 15,
+   "a": 21,
+   "b": 0,
+   "uses": 15,
+   "example": 114
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 21,
+   "b": 0,
+   "uses": 15,
+   "example": 134
+  },
+  {
+   "effect": 6,
+   "aura": 43,
+   "a": 21,
+   "b": 0,
+   "uses": 15,
+   "example": 637
+  },
+  {
+   "effect": 6,
+   "aura": 67,
+   "a": 6,
+   "b": 0,
+   "uses": 15,
+   "example": 676
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 6,
+   "b": 0,
+   "uses": 15,
+   "example": 228
+  },
+  {
+   "effect": 6,
+   "aura": 101,
+   "a": 1,
+   "b": 0,
+   "uses": 15,
+   "example": 1515
+  },
+  {
+   "effect": 6,
+   "aura": 109,
+   "a": 6,
+   "b": 0,
+   "uses": 15,
+   "example": 11095
+  },
+  {
+   "effect": 6,
+   "aura": 137,
+   "a": 6,
+   "b": 0,
+   "uses": 15,
+   "example": 67
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 15,
+   "example": 16548
+  },
+  {
+   "effect": 35,
+   "aura": 8,
+   "a": 1,
+   "b": 0,
+   "uses": 15,
+   "example": 740
+  },
+  {
+   "effect": 35,
+   "aura": 24,
+   "a": 1,
+   "b": 0,
+   "uses": 15,
+   "example": 94
+  },
+  {
+   "effect": 62,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 15,
+   "example": 12745
+  },
+  {
+   "effect": 104,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 15,
+   "example": 1499
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 5,
+   "b": 0,
+   "uses": 14,
+   "example": 136
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 1,
+   "b": 0,
+   "uses": 14,
+   "example": 498
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 22,
+   "b": 15,
+   "uses": 13,
+   "example": 6558
+  },
+  {
+   "effect": 6,
+   "aura": 57,
+   "a": 1,
+   "b": 0,
+   "uses": 13,
+   "example": 2916
+  },
+  {
+   "effect": 6,
+   "aura": 86,
+   "a": 6,
+   "b": 0,
+   "uses": 13,
+   "example": 1120
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 13,
+   "example": 370
+  },
+  {
+   "effect": 39,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 13,
+   "example": 668
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 13,
+   "example": 3655
+  },
+  {
+   "effect": 6,
+   "aura": 11,
+   "a": 6,
+   "b": 0,
+   "uses": 12,
+   "example": 355
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 24,
+   "b": 0,
+   "uses": 12,
+   "example": 5106
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 22,
+   "b": 30,
+   "uses": 12,
+   "example": 7353
+  },
+  {
+   "effect": 6,
+   "aura": 38,
+   "a": 1,
+   "b": 0,
+   "uses": 12,
+   "example": 829
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 6,
+   "b": 0,
+   "uses": 12,
+   "example": 710
+  },
+  {
+   "effect": 6,
+   "aura": 88,
+   "a": 1,
+   "b": 0,
+   "uses": 12,
+   "example": 755
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 21,
+   "b": 0,
+   "uses": 12,
+   "example": 379
+  },
+  {
+   "effect": 6,
+   "aura": 141,
+   "a": 1,
+   "b": 0,
+   "uses": 12,
+   "example": 14824
+  },
+  {
+   "effect": 27,
+   "aura": 3,
+   "a": 17,
+   "b": 16,
+   "uses": 12,
+   "example": 22191
+  },
+  {
+   "effect": 35,
+   "aura": 15,
+   "a": 1,
+   "b": 0,
+   "uses": 12,
+   "example": 461
+  },
+  {
+   "effect": 35,
+   "aura": 22,
+   "a": 1,
+   "b": 0,
+   "uses": 12,
+   "example": 465
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 12,
+   "example": 518
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 12,
+   "example": 3823
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 17,
+   "b": 16,
+   "uses": 12,
+   "example": 22972
+  },
+  {
+   "effect": 103,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 12,
+   "example": 24650
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 11,
+   "example": 16806
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 54,
+   "b": 0,
+   "uses": 11,
+   "example": 19272
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 5543
+  },
+  {
+   "effect": 6,
+   "aura": 20,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 16488
+  },
+  {
+   "effect": 6,
+   "aura": 58,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 13
+  },
+  {
+   "effect": 6,
+   "aura": 69,
+   "a": 57,
+   "b": 0,
+   "uses": 11,
+   "example": 17
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 20,
+   "b": 0,
+   "uses": 11,
+   "example": 5242
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 21,
+   "b": 0,
+   "uses": 11,
+   "example": 16329
+  },
+  {
+   "effect": 6,
+   "aura": 101,
+   "a": 6,
+   "b": 0,
+   "uses": 11,
+   "example": 6016
+  },
+  {
+   "effect": 6,
+   "aura": 101,
+   "a": 21,
+   "b": 0,
+   "uses": 11,
+   "example": 9234
+  },
+  {
+   "effect": 6,
+   "aura": 105,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 130
+  },
+  {
+   "effect": 6,
+   "aura": 122,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 13715
+  },
+  {
+   "effect": 6,
+   "aura": 139,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 6405
+  },
+  {
+   "effect": 6,
+   "aura": 168,
+   "a": 1,
+   "b": 0,
+   "uses": 11,
+   "example": 14158
+  },
+  {
+   "effect": 17,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 11,
+   "example": 9633
+  },
+  {
+   "effect": 27,
+   "aura": 3,
+   "a": 18,
+   "b": 28,
+   "uses": 11,
+   "example": 10341
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 11,
+   "example": 527
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 11,
+   "example": 261
+  },
+  {
+   "effect": 58,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 11,
+   "example": 1698
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 11,
+   "example": 11756
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 11,
+   "example": 1509
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 9992
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 25,
+   "b": 0,
+   "uses": 10,
+   "example": 5165
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 22,
+   "b": 15,
+   "uses": 10,
+   "example": 8245
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 25,
+   "b": 0,
+   "uses": 10,
+   "example": 2313
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 22,
+   "b": 15,
+   "uses": 10,
+   "example": 4321
+  },
+  {
+   "effect": 6,
+   "aura": 97,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 1463
+  },
+  {
+   "effect": 6,
+   "aura": 103,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 586
+  },
+  {
+   "effect": 6,
+   "aura": 110,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 12051
+  },
+  {
+   "effect": 6,
+   "aura": 150,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 16253
+  },
+  {
+   "effect": 30,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 10,
+   "example": 455
+  },
+  {
+   "effect": 35,
+   "aura": 99,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 636
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 10,
+   "example": 3827
+  },
+  {
+   "effect": 46,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 10,
+   "example": 7762
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 10,
+   "example": 23735
+  },
+  {
+   "effect": 67,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 9235
+  },
+  {
+   "effect": 94,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 10,
+   "example": 3026
+  },
+  {
+   "effect": 100,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 10,
+   "example": 5257
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 9,
+   "example": 4984
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 22,
+   "b": 7,
+   "uses": 9,
+   "example": 10252
+  },
+  {
+   "effect": 6,
+   "aura": 9,
+   "a": 6,
+   "b": 0,
+   "uses": 9,
+   "example": 773
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 21,
+   "b": 0,
+   "uses": 9,
+   "example": 1019
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 21,
+   "b": 0,
+   "uses": 9,
+   "example": 634
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 57,
+   "b": 0,
+   "uses": 9,
+   "example": 604
+  },
+  {
+   "effect": 6,
+   "aura": 55,
+   "a": 1,
+   "b": 0,
+   "uses": 9,
+   "example": 16180
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 21,
+   "b": 0,
+   "uses": 9,
+   "example": 8365
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 25,
+   "b": 0,
+   "uses": 9,
+   "example": 5306
+  },
+  {
+   "effect": 6,
+   "aura": 80,
+   "a": 1,
+   "b": 0,
+   "uses": 9,
+   "example": 2146
+  },
+  {
+   "effect": 6,
+   "aura": 115,
+   "a": 57,
+   "b": 0,
+   "uses": 9,
+   "example": 604
+  },
+  {
+   "effect": 6,
+   "aura": 180,
+   "a": 1,
+   "b": 0,
+   "uses": 9,
+   "example": 21010
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 9,
+   "example": 5016
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 9,
+   "example": 4526
+  },
+  {
+   "effect": 43,
+   "aura": 0,
+   "a": 6,
+   "b": 47,
+   "uses": 9,
+   "example": 15734
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 9,
+   "example": 818
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 9,
+   "example": 21886
+  },
+  {
+   "effect": 79,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 9,
+   "example": 1856
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 9,
+   "example": 10689
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 9,
+   "example": 20589
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 25,
+   "b": 0,
+   "uses": 8,
+   "example": 23298
+  },
+  {
+   "effect": 6,
+   "aura": 11,
+   "a": 22,
+   "b": 15,
+   "uses": 8,
+   "example": 1161
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 25,
+   "b": 0,
+   "uses": 8,
+   "example": 6716
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 1,
+   "b": 0,
+   "uses": 8,
+   "example": 8215
+  },
+  {
+   "effect": 6,
+   "aura": 82,
+   "a": 1,
+   "b": 0,
+   "uses": 8,
+   "example": 5421
+  },
+  {
+   "effect": 6,
+   "aura": 83,
+   "a": 1,
+   "b": 0,
+   "uses": 8,
+   "example": 819
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 22,
+   "b": 15,
+   "uses": 8,
+   "example": 14532
+  },
+  {
+   "effect": 6,
+   "aura": 137,
+   "a": 22,
+   "b": 15,
+   "uses": 8,
+   "example": 7713
+  },
+  {
+   "effect": 6,
+   "aura": 140,
+   "a": 1,
+   "b": 0,
+   "uses": 8,
+   "example": 3045
+  },
+  {
+   "effect": 6,
+   "aura": 168,
+   "a": 25,
+   "b": 0,
+   "uses": 8,
+   "example": 1386
+  },
+  {
+   "effect": 7,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 8,
+   "example": 7897
+  },
+  {
+   "effect": 45,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 8,
+   "example": 24923
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 22,
+   "b": 32,
+   "uses": 8,
+   "example": 16721
+  },
+  {
+   "effect": 86,
+   "aura": 0,
+   "a": 18,
+   "b": 52,
+   "uses": 8,
+   "example": 17731
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 8,
+   "example": 118
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 46,
+   "b": 0,
+   "uses": 7,
+   "example": 12139
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 18,
+   "b": 16,
+   "uses": 7,
+   "example": 17686
+  },
+  {
+   "effect": 6,
+   "aura": 21,
+   "a": 1,
+   "b": 0,
+   "uses": 7,
+   "example": 18792
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 37,
+   "b": 0,
+   "uses": 7,
+   "example": 21562
+  },
+  {
+   "effect": 6,
+   "aura": 45,
+   "a": 1,
+   "b": 0,
+   "uses": 7,
+   "example": 2383
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 25,
+   "b": 0,
+   "uses": 7,
+   "example": 5003
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 22,
+   "b": 15,
+   "uses": 7,
+   "example": 12255
+  },
+  {
+   "effect": 6,
+   "aura": 69,
+   "a": 21,
+   "b": 0,
+   "uses": 7,
+   "example": 11835
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 22,
+   "b": 30,
+   "uses": 7,
+   "example": 3136
+  },
+  {
+   "effect": 6,
+   "aura": 143,
+   "a": 21,
+   "b": 0,
+   "uses": 7,
+   "example": 976
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 7,
+   "example": 8433
+  },
+  {
+   "effect": 27,
+   "aura": 3,
+   "a": 18,
+   "b": 16,
+   "uses": 7,
+   "example": 19099
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 7,
+   "example": 10770
+  },
+  {
+   "effect": 74,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 7,
+   "example": 5734
+  },
+  {
+   "effect": 92,
+   "aura": 0,
+   "a": 20,
+   "b": 0,
+   "uses": 7,
+   "example": 8230
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 20,
+   "b": 0,
+   "uses": 6,
+   "example": 6507
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 22,
+   "b": 15,
+   "uses": 6,
+   "example": 23009
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 21,
+   "b": 0,
+   "uses": 6,
+   "example": 19742
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 20,
+   "b": 0,
+   "uses": 6,
+   "example": 3149
+  },
+  {
+   "effect": 6,
+   "aura": 37,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 8597
+  },
+  {
+   "effect": 6,
+   "aura": 38,
+   "a": 6,
+   "b": 0,
+   "uses": 6,
+   "example": 1069
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 6,
+   "b": 0,
+   "uses": 6,
+   "example": 785
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 22,
+   "b": 7,
+   "uses": 6,
+   "example": 802
+  },
+  {
+   "effect": 6,
+   "aura": 66,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 1864
+  },
+  {
+   "effect": 6,
+   "aura": 68,
+   "a": 25,
+   "b": 0,
+   "uses": 6,
+   "example": 1130
+  },
+  {
+   "effect": 6,
+   "aura": 69,
+   "a": 22,
+   "b": 30,
+   "uses": 6,
+   "example": 16891
+  },
+  {
+   "effect": 6,
+   "aura": 69,
+   "a": 27,
+   "b": 0,
+   "uses": 6,
+   "example": 7812
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 21,
+   "b": 0,
+   "uses": 6,
+   "example": 10060
+  },
+  {
+   "effect": 6,
+   "aura": 91,
+   "a": 6,
+   "b": 0,
+   "uses": 6,
+   "example": 453
+  },
+  {
+   "effect": 6,
+   "aura": 92,
+   "a": 6,
+   "b": 0,
+   "uses": 6,
+   "example": 704
+  },
+  {
+   "effect": 6,
+   "aura": 166,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 9199
+  },
+  {
+   "effect": 6,
+   "aura": 169,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 19151
+  },
+  {
+   "effect": 18,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 6,
+   "example": 2011
+  },
+  {
+   "effect": 29,
+   "aura": 0,
+   "a": 1,
+   "b": 47,
+   "uses": 6,
+   "example": 6139
+  },
+  {
+   "effect": 34,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 6,
+   "example": 21180
+  },
+  {
+   "effect": 35,
+   "aura": 4,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 11515
+  },
+  {
+   "effect": 35,
+   "aura": 84,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 649
+  },
+  {
+   "effect": 35,
+   "aura": 125,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 8072
+  },
+  {
+   "effect": 44,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 19886
+  },
+  {
+   "effect": 45,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 6,
+   "example": 31415
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 57,
+   "b": 0,
+   "uses": 6,
+   "example": 24717
+  },
+  {
+   "effect": 97,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 6,
+   "example": 24985
+  },
+  {
+   "effect": 112,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 6,
+   "example": 18541
+  },
+  {
+   "effect": 119,
+   "aura": 22,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 23762
+  },
+  {
+   "effect": 119,
+   "aura": 79,
+   "a": 1,
+   "b": 0,
+   "uses": 6,
+   "example": 23761
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 5
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 17,
+   "b": 8,
+   "uses": 5,
+   "example": 9002
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 5,
+   "example": 6636
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 22,
+   "b": 33,
+   "uses": 5,
+   "example": 3585
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 5,
+   "example": 794
+  },
+  {
+   "effect": 6,
+   "aura": 2,
+   "a": 6,
+   "b": 0,
+   "uses": 5,
+   "example": 605
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 53,
+   "b": 16,
+   "uses": 5,
+   "example": 22937
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 38,
+   "b": 0,
+   "uses": 5,
+   "example": 10260
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 22,
+   "b": 15,
+   "uses": 5,
+   "example": 3264
+  },
+  {
+   "effect": 6,
+   "aura": 15,
+   "a": 35,
+   "b": 0,
+   "uses": 5,
+   "example": 2947
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 0,
+   "b": 0,
+   "uses": 5,
+   "example": 10670
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 8385
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 18,
+   "b": 16,
+   "uses": 5,
+   "example": 16597
+  },
+  {
+   "effect": 6,
+   "aura": 37,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 21546
+  },
+  {
+   "effect": 6,
+   "aura": 41,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 1919
+  },
+  {
+   "effect": 6,
+   "aura": 60,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 5205
+  },
+  {
+   "effect": 6,
+   "aura": 60,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 24740
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 21,
+   "b": 0,
+   "uses": 5,
+   "example": 1044
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 5,
+   "b": 0,
+   "uses": 5,
+   "example": 19574
+  },
+  {
+   "effect": 6,
+   "aura": 80,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 23735
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 22,
+   "b": 7,
+   "uses": 5,
+   "example": 25177
+  },
+  {
+   "effect": 6,
+   "aura": 102,
+   "a": 21,
+   "b": 0,
+   "uses": 5,
+   "example": 1052
+  },
+  {
+   "effect": 6,
+   "aura": 104,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 1706
+  },
+  {
+   "effect": 6,
+   "aura": 108,
+   "a": 21,
+   "b": 0,
+   "uses": 5,
+   "example": 14898
+  },
+  {
+   "effect": 6,
+   "aura": 113,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 2651
+  },
+  {
+   "effect": 6,
+   "aura": 116,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 12310
+  },
+  {
+   "effect": 6,
+   "aura": 127,
+   "a": 6,
+   "b": 0,
+   "uses": 5,
+   "example": 1130
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 24,
+   "b": 0,
+   "uses": 5,
+   "example": 20716
+  },
+  {
+   "effect": 6,
+   "aura": 142,
+   "a": 22,
+   "b": 7,
+   "uses": 5,
+   "example": 25177
+  },
+  {
+   "effect": 6,
+   "aura": 144,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 1860
+  },
+  {
+   "effect": 6,
+   "aura": 166,
+   "a": 20,
+   "b": 0,
+   "uses": 5,
+   "example": 30803
+  },
+  {
+   "effect": 6,
+   "aura": 174,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 14901
+  },
+  {
+   "effect": 6,
+   "aura": 175,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 14901
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 5,
+   "example": 7393
+  },
+  {
+   "effect": 28,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 5,
+   "example": 3621
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 22,
+   "b": 18,
+   "uses": 5,
+   "example": 17310
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 48,
+   "b": 0,
+   "uses": 5,
+   "example": 14802
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 53,
+   "b": 0,
+   "uses": 5,
+   "example": 21154
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 49,
+   "b": 0,
+   "uses": 5,
+   "example": 21963
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 50,
+   "b": 0,
+   "uses": 5,
+   "example": 21962
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 22,
+   "b": 18,
+   "uses": 5,
+   "example": 24186
+  },
+  {
+   "effect": 58,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 5,
+   "example": 8858
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 5,
+   "example": 8142
+  },
+  {
+   "effect": 67,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 5,
+   "example": 633
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 27,
+   "b": 0,
+   "uses": 5,
+   "example": 23784
+  },
+  {
+   "effect": 87,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 5,
+   "example": 4971
+  },
+  {
+   "effect": 92,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 1054
+  },
+  {
+   "effect": 119,
+   "aura": 10,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 23759
+  },
+  {
+   "effect": 119,
+   "aura": 87,
+   "a": 1,
+   "b": 0,
+   "uses": 5,
+   "example": 23760
+  },
+  {
+   "effect": 123,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 27998
+  },
+  {
+   "effect": 124,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 5,
+   "example": 28337
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 4,
+   "example": 7082
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 18,
+   "b": 31,
+   "uses": 4,
+   "example": 13238
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 4,
+   "example": 16452
+  },
+  {
+   "effect": 6,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 5012
+  },
+  {
+   "effect": 6,
+   "aura": 1,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 2096
+  },
+  {
+   "effect": 6,
+   "aura": 2,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 530
+  },
+  {
+   "effect": 6,
+   "aura": 2,
+   "a": 38,
+   "b": 0,
+   "uses": 4,
+   "example": 16053
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 22,
+   "b": 30,
+   "uses": 4,
+   "example": 7481
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 8383
+  },
+  {
+   "effect": 6,
+   "aura": 19,
+   "a": 21,
+   "b": 0,
+   "uses": 4,
+   "example": 132
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 20,
+   "b": 0,
+   "uses": 4,
+   "example": 103
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 22,
+   "b": 7,
+   "uses": 4,
+   "example": 804
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 38,
+   "b": 0,
+   "uses": 4,
+   "example": 9712
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 38,
+   "b": 0,
+   "uses": 4,
+   "example": 10805
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 3651
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 5,
+   "b": 0,
+   "uses": 4,
+   "example": 21740
+  },
+  {
+   "effect": 6,
+   "aura": 30,
+   "a": 6,
+   "b": 0,
+   "uses": 4,
+   "example": 23162
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 57,
+   "b": 0,
+   "uses": 4,
+   "example": 1022
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 29185
+  },
+  {
+   "effect": 6,
+   "aura": 54,
+   "a": 22,
+   "b": 15,
+   "uses": 4,
+   "example": 7272
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 22,
+   "b": 15,
+   "uses": 4,
+   "example": 10018
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 22,
+   "b": 30,
+   "uses": 4,
+   "example": 7481
+  },
+  {
+   "effect": 6,
+   "aura": 67,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 6608
+  },
+  {
+   "effect": 6,
+   "aura": 72,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 23553
+  },
+  {
+   "effect": 6,
+   "aura": 74,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 13022
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 6,
+   "b": 0,
+   "uses": 4,
+   "example": 14890
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 27,
+   "b": 0,
+   "uses": 4,
+   "example": 1528
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 22,
+   "b": 7,
+   "uses": 4,
+   "example": 802
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 17246
+  },
+  {
+   "effect": 6,
+   "aura": 81,
+   "a": 35,
+   "b": 0,
+   "uses": 4,
+   "example": 9930
+  },
+  {
+   "effect": 6,
+   "aura": 83,
+   "a": 5,
+   "b": 0,
+   "uses": 4,
+   "example": 21740
+  },
+  {
+   "effect": 6,
+   "aura": 89,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 23072
+  },
+  {
+   "effect": 6,
+   "aura": 94,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 5229
+  },
+  {
+   "effect": 6,
+   "aura": 106,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 1706
+  },
+  {
+   "effect": 6,
+   "aura": 115,
+   "a": 6,
+   "b": 0,
+   "uses": 4,
+   "example": 13218
+  },
+  {
+   "effect": 6,
+   "aura": 130,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 7215
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 22,
+   "b": 15,
+   "uses": 4,
+   "example": 19367
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 22,
+   "b": 7,
+   "uses": 4,
+   "example": 5628
+  },
+  {
+   "effect": 6,
+   "aura": 139,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 17734
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 4,
+   "example": 2641
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 4,
+   "example": 20789
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 4,
+   "example": 4506
+  },
+  {
+   "effect": 16,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 4,
+   "example": 23658
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 38,
+   "b": 1,
+   "uses": 4,
+   "example": 11637
+  },
+  {
+   "effect": 27,
+   "aura": 4,
+   "a": 18,
+   "b": 0,
+   "uses": 4,
+   "example": 7265
+  },
+  {
+   "effect": 27,
+   "aura": 138,
+   "a": 28,
+   "b": 0,
+   "uses": 4,
+   "example": 16914
+  },
+  {
+   "effect": 35,
+   "aura": 13,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 463
+  },
+  {
+   "effect": 35,
+   "aura": 79,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 20218
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 41,
+   "b": 0,
+   "uses": 4,
+   "example": 10870
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 44,
+   "b": 0,
+   "uses": 4,
+   "example": 9097
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 4,
+   "example": 10094
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 39,
+   "b": 0,
+   "uses": 4,
+   "example": 7620
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 23311
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 57,
+   "b": 0,
+   "uses": 4,
+   "example": 19752
+  },
+  {
+   "effect": 74,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 4,
+   "example": 23034
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 4,
+   "example": 21554
+  },
+  {
+   "effect": 93,
+   "aura": 0,
+   "a": 6,
+   "b": 32,
+   "uses": 4,
+   "example": 8429
+  },
+  {
+   "effect": 95,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 4,
+   "example": 8613
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 4,
+   "example": 15743
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 4,
+   "example": 25687
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 53,
+   "b": 16,
+   "uses": 4,
+   "example": 19196
+  },
+  {
+   "effect": 103,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 4,
+   "example": 17047
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 4,
+   "example": 16171
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 3,
+   "example": 10860
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 18,
+   "b": 8,
+   "uses": 3,
+   "example": 25031
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 3,
+   "example": 7132
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 36,
+   "b": 0,
+   "uses": 3,
+   "example": 10251
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 40,
+   "b": 0,
+   "uses": 3,
+   "example": 12512
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 60,
+   "b": 0,
+   "uses": 3,
+   "example": 25145
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 1,
+   "b": 9,
+   "uses": 3,
+   "example": 1
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 3,
+   "example": 23460
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 25,
+   "b": 18,
+   "uses": 3,
+   "example": 21463
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 0,
+   "b": 0,
+   "uses": 3,
+   "example": 12
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 16097
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 25,
+   "b": 0,
+   "uses": 3,
+   "example": 16707
+  },
+  {
+   "effect": 6,
+   "aura": 6,
+   "a": 25,
+   "b": 0,
+   "uses": 3,
+   "example": 260
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 22,
+   "b": 30,
+   "uses": 3,
+   "example": 23108
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 18,
+   "b": 16,
+   "uses": 3,
+   "example": 20549
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 4,
+   "b": 0,
+   "uses": 3,
+   "example": 3439
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 24,
+   "b": 0,
+   "uses": 3,
+   "example": 16359
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 23513
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 57,
+   "b": 0,
+   "uses": 3,
+   "example": 1022
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 4,
+   "b": 0,
+   "uses": 3,
+   "example": 3439
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 16,
+   "b": 0,
+   "uses": 3,
+   "example": 3256
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 18,
+   "b": 16,
+   "uses": 3,
+   "example": 15728
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 38,
+   "b": 0,
+   "uses": 3,
+   "example": 7035
+  },
+  {
+   "effect": 6,
+   "aura": 38,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 10455
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 21,
+   "b": 0,
+   "uses": 3,
+   "example": 4979
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 25,
+   "b": 0,
+   "uses": 3,
+   "example": 21892
+  },
+  {
+   "effect": 6,
+   "aura": 41,
+   "a": 21,
+   "b": 0,
+   "uses": 3,
+   "example": 550
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 4,
+   "b": 0,
+   "uses": 3,
+   "example": 3439
+  },
+  {
+   "effect": 6,
+   "aura": 53,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 5219
+  },
+  {
+   "effect": 6,
+   "aura": 57,
+   "a": 21,
+   "b": 0,
+   "uses": 3,
+   "example": 15366
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 10096
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 38,
+   "b": 0,
+   "uses": 3,
+   "example": 10732
+  },
+  {
+   "effect": 6,
+   "aura": 75,
+   "a": 6,
+   "b": 0,
+   "uses": 3,
+   "example": 1714
+  },
+  {
+   "effect": 6,
+   "aura": 75,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 12889
+  },
+  {
+   "effect": 6,
+   "aura": 76,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 6145
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 18,
+   "b": 31,
+   "uses": 3,
+   "example": 22440
+  },
+  {
+   "effect": 6,
+   "aura": 85,
+   "a": 22,
+   "b": 30,
+   "uses": 3,
+   "example": 16609
+  },
+  {
+   "effect": 6,
+   "aura": 88,
+   "a": 6,
+   "b": 0,
+   "uses": 3,
+   "example": 3150
+  },
+  {
+   "effect": 6,
+   "aura": 95,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 8326
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 5,
+   "b": 0,
+   "uses": 3,
+   "example": 20988
+  },
+  {
+   "effect": 6,
+   "aura": 101,
+   "a": 25,
+   "b": 0,
+   "uses": 3,
+   "example": 16610
+  },
+  {
+   "effect": 6,
+   "aura": 107,
+   "a": 0,
+   "b": 0,
+   "uses": 3,
+   "example": 14063
+  },
+  {
+   "effect": 6,
+   "aura": 108,
+   "a": 0,
+   "b": 0,
+   "uses": 3,
+   "example": 16998
+  },
+  {
+   "effect": 6,
+   "aura": 112,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 23397
+  },
+  {
+   "effect": 6,
+   "aura": 118,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 17820
+  },
+  {
+   "effect": 6,
+   "aura": 129,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 1557
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 18,
+   "b": 16,
+   "uses": 3,
+   "example": 16597
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 20,
+   "b": 0,
+   "uses": 3,
+   "example": 1018
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 38,
+   "b": 0,
+   "uses": 3,
+   "example": 10348
+  },
+  {
+   "effect": 6,
+   "aura": 143,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 2380
+  },
+  {
+   "effect": 6,
+   "aura": 143,
+   "a": 37,
+   "b": 0,
+   "uses": 3,
+   "example": 21849
+  },
+  {
+   "effect": 6,
+   "aura": 161,
+   "a": 22,
+   "b": 30,
+   "uses": 3,
+   "example": 16890
+  },
+  {
+   "effect": 6,
+   "aura": 172,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 26022
+  },
+  {
+   "effect": 6,
+   "aura": 179,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 30861
+  },
+  {
+   "effect": 6,
+   "aura": 185,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 30894
+  },
+  {
+   "effect": 6,
+   "aura": 186,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 30894
+  },
+  {
+   "effect": 6,
+   "aura": 191,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 29894
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 3,
+   "example": 16094
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 3,
+   "example": 22458
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 3,
+   "example": 21064
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 27,
+   "b": 0,
+   "uses": 3,
+   "example": 6497
+  },
+  {
+   "effect": 22,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 3,
+   "example": 3124
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 6,
+   "b": 1,
+   "uses": 3,
+   "example": 15698
+  },
+  {
+   "effect": 35,
+   "aura": 113,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 15108
+  },
+  {
+   "effect": 35,
+   "aura": 124,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 19506
+  },
+  {
+   "effect": 35,
+   "aura": 138,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 3631
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 3,
+   "example": 897
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 1,
+   "b": 32,
+   "uses": 3,
+   "example": 27884
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 22,
+   "b": 0,
+   "uses": 3,
+   "example": 747
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 22,
+   "b": 32,
+   "uses": 3,
+   "example": 18650
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 42,
+   "b": 0,
+   "uses": 3,
+   "example": 23422
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 43,
+   "b": 0,
+   "uses": 3,
+   "example": 23423
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 41,
+   "b": 0,
+   "uses": 3,
+   "example": 10869
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 44,
+   "b": 0,
+   "uses": 3,
+   "example": 10869
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 48,
+   "b": 0,
+   "uses": 3,
+   "example": 21964
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 22,
+   "b": 47,
+   "uses": 3,
+   "example": 724
+  },
+  {
+   "effect": 62,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 19665
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 3,
+   "example": 8913
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 3,
+   "example": 10854
+  },
+  {
+   "effect": 67,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 3,
+   "example": 9232
+  },
+  {
+   "effect": 68,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 3,
+   "example": 10887
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 3,
+   "example": 11462
+  },
+  {
+   "effect": 96,
+   "aura": 0,
+   "a": 53,
+   "b": 0,
+   "uses": 3,
+   "example": 19196
+  },
+  {
+   "effect": 100,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 3,
+   "example": 16712
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 3,
+   "example": 18805
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 22,
+   "b": 33,
+   "uses": 3,
+   "example": 8146
+  },
+  {
+   "effect": 111,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 3,
+   "example": 5978
+  },
+  {
+   "effect": 114,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 3,
+   "example": 355
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 18788
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 18761
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 17,
+   "b": 8,
+   "uses": 2,
+   "example": 12158
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 58
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 56,
+   "b": 0,
+   "uses": 2,
+   "example": 19594
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 60,
+   "b": 0,
+   "uses": 2,
+   "example": 24933
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 1,
+   "b": 18,
+   "uses": 2,
+   "example": 16047
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 8,
+   "b": 0,
+   "uses": 2,
+   "example": 25822
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 18,
+   "b": 8,
+   "uses": 2,
+   "example": 24207
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 2,
+   "example": 22900
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 20,
+   "b": 0,
+   "uses": 2,
+   "example": 7078
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 8,
+   "uses": 2,
+   "example": 16771
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 38,
+   "b": 46,
+   "uses": 2,
+   "example": 16074
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 52,
+   "b": 0,
+   "uses": 2,
+   "example": 27651
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 6,
+   "b": 48,
+   "uses": 2,
+   "example": 25371
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 8699
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 23411
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 61,
+   "b": 0,
+   "uses": 2,
+   "example": 25890
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 16,
+   "b": 0,
+   "uses": 2,
+   "example": 5134
+  },
+  {
+   "effect": 6,
+   "aura": 9,
+   "a": 22,
+   "b": 15,
+   "uses": 2,
+   "example": 4320
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 22,
+   "b": 7,
+   "uses": 2,
+   "example": 7082
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 22,
+   "b": 15,
+   "uses": 2,
+   "example": 12741
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 10732
+  },
+  {
+   "effect": 6,
+   "aura": 15,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 16610
+  },
+  {
+   "effect": 6,
+   "aura": 19,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 7967
+  },
+  {
+   "effect": 6,
+   "aura": 20,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 1908
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 16878
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 37,
+   "b": 0,
+   "uses": 2,
+   "example": 21849
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 25,
+   "b": 38,
+   "uses": 2,
+   "example": 21794
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 1539
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 61,
+   "b": 0,
+   "uses": 2,
+   "example": 25894
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 35,
+   "b": 0,
+   "uses": 2,
+   "example": 5391
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 24732
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 5388
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 24425
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 16609
+  },
+  {
+   "effect": 6,
+   "aura": 36,
+   "a": 22,
+   "b": 15,
+   "uses": 2,
+   "example": 23397
+  },
+  {
+   "effect": 6,
+   "aura": 37,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 28350
+  },
+  {
+   "effect": 6,
+   "aura": 38,
+   "a": 22,
+   "b": 7,
+   "uses": 2,
+   "example": 20544
+  },
+  {
+   "effect": 6,
+   "aura": 38,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 4058
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 22,
+   "b": 15,
+   "uses": 2,
+   "example": 6240
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 35,
+   "b": 0,
+   "uses": 2,
+   "example": 5391
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 19577
+  },
+  {
+   "effect": 6,
+   "aura": 49,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 16448
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 24353
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 16460
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 15366
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 17961
+  },
+  {
+   "effect": 6,
+   "aura": 58,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 16456
+  },
+  {
+   "effect": 6,
+   "aura": 58,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 16555
+  },
+  {
+   "effect": 6,
+   "aura": 60,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 851
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 20,
+   "b": 0,
+   "uses": 2,
+   "example": 13004
+  },
+  {
+   "effect": 6,
+   "aura": 64,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 5024
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 10348
+  },
+  {
+   "effect": 6,
+   "aura": 67,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 24743
+  },
+  {
+   "effect": 6,
+   "aura": 75,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 15494
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 16629
+  },
+  {
+   "effect": 6,
+   "aura": 80,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 24705
+  },
+  {
+   "effect": 6,
+   "aura": 82,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 131
+  },
+  {
+   "effect": 6,
+   "aura": 85,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 28795
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 23505
+  },
+  {
+   "effect": 6,
+   "aura": 93,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 4511
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 22888
+  },
+  {
+   "effect": 6,
+   "aura": 99,
+   "a": 61,
+   "b": 0,
+   "uses": 2,
+   "example": 25782
+  },
+  {
+   "effect": 6,
+   "aura": 107,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 30440
+  },
+  {
+   "effect": 6,
+   "aura": 110,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 24705
+  },
+  {
+   "effect": 6,
+   "aura": 120,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 13161
+  },
+  {
+   "effect": 6,
+   "aura": 124,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 16449
+  },
+  {
+   "effect": 6,
+   "aura": 126,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 16592
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 22647
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 22751
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 22998
+  },
+  {
+   "effect": 6,
+   "aura": 136,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 23177
+  },
+  {
+   "effect": 6,
+   "aura": 137,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 20217
+  },
+  {
+   "effect": 6,
+   "aura": 140,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 89
+  },
+  {
+   "effect": 6,
+   "aura": 142,
+   "a": 21,
+   "b": 0,
+   "uses": 2,
+   "example": 20233
+  },
+  {
+   "effect": 6,
+   "aura": 153,
+   "a": 57,
+   "b": 0,
+   "uses": 2,
+   "example": 6940
+  },
+  {
+   "effect": 6,
+   "aura": 155,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 5227
+  },
+  {
+   "effect": 6,
+   "aura": 162,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 23153
+  },
+  {
+   "effect": 6,
+   "aura": 177,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 26740
+  },
+  {
+   "effect": 6,
+   "aura": 183,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 12593
+  },
+  {
+   "effect": 6,
+   "aura": 187,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 30892
+  },
+  {
+   "effect": 6,
+   "aura": 188,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 30892
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 2,
+   "example": 17471
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 7277
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 7106
+  },
+  {
+   "effect": 11,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 3286
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 1,
+   "b": 38,
+   "uses": 2,
+   "example": 11513
+  },
+  {
+   "effect": 24,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 20018
+  },
+  {
+   "effect": 27,
+   "aura": 23,
+   "a": 28,
+   "b": 0,
+   "uses": 2,
+   "example": 13810
+  },
+  {
+   "effect": 27,
+   "aura": 23,
+   "a": 47,
+   "b": 0,
+   "uses": 2,
+   "example": 16136
+  },
+  {
+   "effect": 27,
+   "aura": 33,
+   "a": 16,
+   "b": 0,
+   "uses": 2,
+   "example": 424
+  },
+  {
+   "effect": 27,
+   "aura": 33,
+   "a": 18,
+   "b": 28,
+   "uses": 2,
+   "example": 25989
+  },
+  {
+   "effect": 27,
+   "aura": 33,
+   "a": 28,
+   "b": 0,
+   "uses": 2,
+   "example": 13810
+  },
+  {
+   "effect": 27,
+   "aura": 41,
+   "a": 28,
+   "b": 0,
+   "uses": 2,
+   "example": 1543
+  },
+  {
+   "effect": 30,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 2,
+   "example": 10369
+  },
+  {
+   "effect": 30,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 2,
+   "example": 28681
+  },
+  {
+   "effect": 30,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 16332
+  },
+  {
+   "effect": 30,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 9232
+  },
+  {
+   "effect": 33,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 1843
+  },
+  {
+   "effect": 35,
+   "aura": 14,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 463
+  },
+  {
+   "effect": 35,
+   "aura": 57,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 24907
+  },
+  {
+   "effect": 35,
+   "aura": 82,
+   "a": 22,
+   "b": 15,
+   "uses": 2,
+   "example": 17443
+  },
+  {
+   "effect": 35,
+   "aura": 117,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 19746
+  },
+  {
+   "effect": 35,
+   "aura": 133,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 23033
+  },
+  {
+   "effect": 35,
+   "aura": 135,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 28143
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 2,
+   "example": 5333
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 2,
+   "example": 8913
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 10832
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 22,
+   "b": 33,
+   "uses": 2,
+   "example": 8168
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 49,
+   "b": 0,
+   "uses": 2,
+   "example": 26147
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 50,
+   "b": 0,
+   "uses": 2,
+   "example": 26145
+  },
+  {
+   "effect": 43,
+   "aura": 0,
+   "a": 6,
+   "b": 17,
+   "uses": 2,
+   "example": 22951
+  },
+  {
+   "effect": 43,
+   "aura": 0,
+   "a": 6,
+   "b": 18,
+   "uses": 2,
+   "example": 21150
+  },
+  {
+   "effect": 45,
+   "aura": 0,
+   "a": 31,
+   "b": 0,
+   "uses": 2,
+   "example": 23466
+  },
+  {
+   "effect": 58,
+   "aura": 0,
+   "a": 6,
+   "b": 16,
+   "uses": 2,
+   "example": 7896
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 25,
+   "b": 38,
+   "uses": 2,
+   "example": 21794
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 23015
+  },
+  {
+   "effect": 67,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 2,
+   "example": 16332
+  },
+  {
+   "effect": 67,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 7162
+  },
+  {
+   "effect": 69,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 2,
+   "example": 1725
+  },
+  {
+   "effect": 71,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 921
+  },
+  {
+   "effect": 72,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 6196
+  },
+  {
+   "effect": 72,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 2,
+   "example": 21171
+  },
+  {
+   "effect": 73,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 2,
+   "example": 126
+  },
+  {
+   "effect": 82,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 2,
+   "example": 6955
+  },
+  {
+   "effect": 91,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 8127
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 13239
+  },
+  {
+   "effect": 99,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 10694
+  },
+  {
+   "effect": 101,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 2,
+   "example": 6991
+  },
+  {
+   "effect": 105,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 2,
+   "example": 22996
+  },
+  {
+   "effect": 109,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 2,
+   "example": 982
+  },
+  {
+   "effect": 111,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 2,
+   "example": 16722
+  },
+  {
+   "effect": 119,
+   "aura": 20,
+   "a": 1,
+   "b": 0,
+   "uses": 2,
+   "example": 19579
+  },
+  {
+   "effect": 121,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 2,
+   "example": 1680
+  },
+  {
+   "effect": 124,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 2,
+   "example": 28266
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 15,
+   "b": 0,
+   "uses": 1,
+   "example": 265
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 17,
+   "b": 16,
+   "uses": 1,
+   "example": 4170
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 18,
+   "b": 8,
+   "uses": 1,
+   "example": 20038
+  },
+  {
+   "effect": 1,
+   "aura": 0,
+   "a": 21,
+   "b": 38,
+   "uses": 1,
+   "example": 9455
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 6,
+   "b": 16,
+   "uses": 1,
+   "example": 6996
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 6,
+   "b": 46,
+   "uses": 1,
+   "example": 28364
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 8,
+   "b": 0,
+   "uses": 1,
+   "example": 31364
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 18,
+   "b": 15,
+   "uses": 1,
+   "example": 3106
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 18,
+   "b": 60,
+   "uses": 1,
+   "example": 25030
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 9776
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 11391
+  },
+  {
+   "effect": 2,
+   "aura": 0,
+   "a": 46,
+   "b": 16,
+   "uses": 1,
+   "example": 17616
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 19028
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 6,
+   "b": 16,
+   "uses": 1,
+   "example": 17276
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 6,
+   "b": 38,
+   "uses": 1,
+   "example": 14247
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 0,
+   "uses": 1,
+   "example": 11352
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 32,
+   "uses": 1,
+   "example": 23053
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 22,
+   "b": 38,
+   "uses": 1,
+   "example": 19721
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 16054
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 25,
+   "b": 38,
+   "uses": 1,
+   "example": 23359
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 27,
+   "b": 0,
+   "uses": 1,
+   "example": 6677
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 31,
+   "b": 0,
+   "uses": 1,
+   "example": 26074
+  },
+  {
+   "effect": 3,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 1,
+   "example": 27766
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 1,
+   "b": 19,
+   "uses": 1,
+   "example": 50
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 1,
+   "b": 63,
+   "uses": 1,
+   "example": 28401
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 6,
+   "b": 18,
+   "uses": 1,
+   "example": 22935
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 6,
+   "b": 47,
+   "uses": 1,
+   "example": 22994
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 11,
+   "b": 0,
+   "uses": 1,
+   "example": 4
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 20,
+   "b": 9,
+   "uses": 1,
+   "example": 3
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 20,
+   "b": 10,
+   "uses": 1,
+   "example": 1073
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 25,
+   "b": 48,
+   "uses": 1,
+   "example": 26382
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 38,
+   "b": 17,
+   "uses": 1,
+   "example": 13461
+  },
+  {
+   "effect": 5,
+   "aura": 0,
+   "a": 38,
+   "b": 47,
+   "uses": 1,
+   "example": 17272
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 24323
+  },
+  {
+   "effect": 6,
+   "aura": 3,
+   "a": 60,
+   "b": 0,
+   "uses": 1,
+   "example": 25029
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 28757
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 7,
+   "b": 0,
+   "uses": 1,
+   "example": 16037
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 27420
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 10857
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 31,
+   "b": 0,
+   "uses": 1,
+   "example": 6758
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 35,
+   "b": 0,
+   "uses": 1,
+   "example": 21354
+  },
+  {
+   "effect": 6,
+   "aura": 4,
+   "a": 46,
+   "b": 0,
+   "uses": 1,
+   "example": 16007
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 7,
+   "b": 0,
+   "uses": 1,
+   "example": 13488
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 23603
+  },
+  {
+   "effect": 6,
+   "aura": 5,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 23023
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 7,
+   "b": 0,
+   "uses": 1,
+   "example": 13488
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 15,
+   "b": 0,
+   "uses": 1,
+   "example": 28315
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 12613
+  },
+  {
+   "effect": 6,
+   "aura": 7,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 23275
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 16599
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 22,
+   "b": 33,
+   "uses": 1,
+   "example": 20713
+  },
+  {
+   "effect": 6,
+   "aura": 8,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 2147
+  },
+  {
+   "effect": 6,
+   "aura": 9,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 7389
+  },
+  {
+   "effect": 6,
+   "aura": 9,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 16322
+  },
+  {
+   "effect": 6,
+   "aura": 9,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 8385
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 4101
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 29232
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 35,
+   "b": 0,
+   "uses": 1,
+   "example": 1036
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 17179
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 57,
+   "b": 0,
+   "uses": 1,
+   "example": 1038
+  },
+  {
+   "effect": 6,
+   "aura": 10,
+   "a": 61,
+   "b": 0,
+   "uses": 1,
+   "example": 25895
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 15,
+   "b": 0,
+   "uses": 1,
+   "example": 5260
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 18,
+   "b": 31,
+   "uses": 1,
+   "example": 13238
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 8902
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 23269
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 35,
+   "b": 0,
+   "uses": 1,
+   "example": 21167
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 16452
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 53,
+   "b": 16,
+   "uses": 1,
+   "example": 27808
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 54,
+   "b": 0,
+   "uses": 1,
+   "example": 26102
+  },
+  {
+   "effect": 6,
+   "aura": 12,
+   "a": 57,
+   "b": 0,
+   "uses": 1,
+   "example": 19753
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 28155
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 877
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 20553
+  },
+  {
+   "effect": 6,
+   "aura": 13,
+   "a": 30,
+   "b": 0,
+   "uses": 1,
+   "example": 26043
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 16,
+   "b": 0,
+   "uses": 1,
+   "example": 24673
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 1184
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 23120
+  },
+  {
+   "effect": 6,
+   "aura": 14,
+   "a": 61,
+   "b": 0,
+   "uses": 1,
+   "example": 25899
+  },
+  {
+   "effect": 6,
+   "aura": 15,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 21075
+  },
+  {
+   "effect": 6,
+   "aura": 15,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 16877
+  },
+  {
+   "effect": 6,
+   "aura": 16,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 2425
+  },
+  {
+   "effect": 6,
+   "aura": 16,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 24690
+  },
+  {
+   "effect": 6,
+   "aura": 16,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 9991
+  },
+  {
+   "effect": 6,
+   "aura": 17,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 21403
+  },
+  {
+   "effect": 6,
+   "aura": 18,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 5732
+  },
+  {
+   "effect": 6,
+   "aura": 18,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 9095
+  },
+  {
+   "effect": 6,
+   "aura": 18,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 23452
+  },
+  {
+   "effect": 6,
+   "aura": 18,
+   "a": 27,
+   "b": 0,
+   "uses": 1,
+   "example": 4952
+  },
+  {
+   "effect": 6,
+   "aura": 19,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 16882
+  },
+  {
+   "effect": 6,
+   "aura": 19,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 16712
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 849
+  },
+  {
+   "effect": 6,
+   "aura": 22,
+   "a": 25,
+   "b": 37,
+   "uses": 1,
+   "example": 7120
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 29296
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 15,
+   "b": 0,
+   "uses": 1,
+   "example": 28313
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 22,
+   "b": 8,
+   "uses": 1,
+   "example": 28018
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 9798
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 23023
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 38,
+   "b": 6,
+   "uses": 1,
+   "example": 23015
+  },
+  {
+   "effect": 6,
+   "aura": 23,
+   "a": 53,
+   "b": 16,
+   "uses": 1,
+   "example": 27808
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 22661
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 16599
+  },
+  {
+   "effect": 6,
+   "aura": 24,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 23108
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 10730
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 28786
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 24753
+  },
+  {
+   "effect": 6,
+   "aura": 25,
+   "a": 27,
+   "b": 0,
+   "uses": 1,
+   "example": 4952
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 22935
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 804
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 22,
+   "b": 33,
+   "uses": 1,
+   "example": 16469
+  },
+  {
+   "effect": 6,
+   "aura": 26,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 12252
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 16,
+   "b": 0,
+   "uses": 1,
+   "example": 19821
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 25656
+  },
+  {
+   "effect": 6,
+   "aura": 27,
+   "a": 53,
+   "b": 16,
+   "uses": 1,
+   "example": 26053
+  },
+  {
+   "effect": 6,
+   "aura": 28,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 20223
+  },
+  {
+   "effect": 6,
+   "aura": 28,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 20619
+  },
+  {
+   "effect": 6,
+   "aura": 28,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 10831
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 25,
+   "b": 37,
+   "uses": 1,
+   "example": 7120
+  },
+  {
+   "effect": 6,
+   "aura": 29,
+   "a": 27,
+   "b": 0,
+   "uses": 1,
+   "example": 16598
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 6711
+  },
+  {
+   "effect": 6,
+   "aura": 31,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 5628
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 23412
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 27640
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 25,
+   "b": 25,
+   "uses": 1,
+   "example": 17134
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 19832
+  },
+  {
+   "effect": 6,
+   "aura": 33,
+   "a": 60,
+   "b": 0,
+   "uses": 1,
+   "example": 25029
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 17244
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 4238
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 28750
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 22,
+   "b": 8,
+   "uses": 1,
+   "example": 26522
+  },
+  {
+   "effect": 6,
+   "aura": 34,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 27572
+  },
+  {
+   "effect": 6,
+   "aura": 36,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 5388
+  },
+  {
+   "effect": 6,
+   "aura": 38,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 23015
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 20544
+  },
+  {
+   "effect": 6,
+   "aura": 39,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 23415
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 5640
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 3424
+  },
+  {
+   "effect": 6,
+   "aura": 42,
+   "a": 58,
+   "b": 0,
+   "uses": 1,
+   "example": 30080
+  },
+  {
+   "effect": 6,
+   "aura": 43,
+   "a": 61,
+   "b": 0,
+   "uses": 1,
+   "example": 25899
+  },
+  {
+   "effect": 6,
+   "aura": 44,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 21403
+  },
+  {
+   "effect": 6,
+   "aura": 44,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 21736
+  },
+  {
+   "effect": 6,
+   "aura": 50,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 21540
+  },
+  {
+   "effect": 6,
+   "aura": 51,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 31006
+  },
+  {
+   "effect": 6,
+   "aura": 51,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 13459
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 20,
+   "b": 0,
+   "uses": 1,
+   "example": 16939
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 29846
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 29232
+  },
+  {
+   "effect": 6,
+   "aura": 52,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 22888
+  },
+  {
+   "effect": 6,
+   "aura": 53,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 24435
+  },
+  {
+   "effect": 6,
+   "aura": 54,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 25656
+  },
+  {
+   "effect": 6,
+   "aura": 54,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 22833
+  },
+  {
+   "effect": 6,
+   "aura": 54,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 16337
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 11391
+  },
+  {
+   "effect": 6,
+   "aura": 56,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 23603
+  },
+  {
+   "effect": 6,
+   "aura": 57,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 16460
+  },
+  {
+   "effect": 6,
+   "aura": 57,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 29846
+  },
+  {
+   "effect": 6,
+   "aura": 57,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 29232
+  },
+  {
+   "effect": 6,
+   "aura": 60,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 17446
+  },
+  {
+   "effect": 6,
+   "aura": 61,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 19574
+  },
+  {
+   "effect": 6,
+   "aura": 62,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 24617
+  },
+  {
+   "effect": 6,
+   "aura": 62,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 24322
+  },
+  {
+   "effect": 6,
+   "aura": 63,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 1941
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 4,
+   "b": 0,
+   "uses": 1,
+   "example": 7103
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 22247
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 17633
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 28732
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 25516
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 22642
+  },
+  {
+   "effect": 6,
+   "aura": 65,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 2313
+  },
+  {
+   "effect": 6,
+   "aura": 67,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 22419
+  },
+  {
+   "effect": 6,
+   "aura": 68,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 21391
+  },
+  {
+   "effect": 6,
+   "aura": 71,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 22888
+  },
+  {
+   "effect": 6,
+   "aura": 72,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 19703
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 22752
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 19574
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 21087
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 29910
+  },
+  {
+   "effect": 6,
+   "aura": 77,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 20482
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 21048
+  },
+  {
+   "effect": 6,
+   "aura": 79,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 26099
+  },
+  {
+   "effect": 6,
+   "aura": 80,
+   "a": 18,
+   "b": 8,
+   "uses": 1,
+   "example": 26393
+  },
+  {
+   "effect": 6,
+   "aura": 80,
+   "a": 22,
+   "b": 8,
+   "uses": 1,
+   "example": 26462
+  },
+  {
+   "effect": 6,
+   "aura": 81,
+   "a": 27,
+   "b": 0,
+   "uses": 1,
+   "example": 18814
+  },
+  {
+   "effect": 6,
+   "aura": 82,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 18733
+  },
+  {
+   "effect": 6,
+   "aura": 82,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 16881
+  },
+  {
+   "effect": 6,
+   "aura": 85,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 8384
+  },
+  {
+   "effect": 6,
+   "aura": 86,
+   "a": 6,
+   "b": 27,
+   "uses": 1,
+   "example": 24826
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 29125
+  },
+  {
+   "effect": 6,
+   "aura": 87,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 23014
+  },
+  {
+   "effect": 6,
+   "aura": 88,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 24705
+  },
+  {
+   "effect": 6,
+   "aura": 88,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 8384
+  },
+  {
+   "effect": 6,
+   "aura": 89,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 24910
+  },
+  {
+   "effect": 6,
+   "aura": 89,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 25838
+  },
+  {
+   "effect": 6,
+   "aura": 92,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 31362
+  },
+  {
+   "effect": 6,
+   "aura": 93,
+   "a": 57,
+   "b": 0,
+   "uses": 1,
+   "example": 19753
+  },
+  {
+   "effect": 6,
+   "aura": 100,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 2855
+  },
+  {
+   "effect": 6,
+   "aura": 100,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 1852
+  },
+  {
+   "effect": 6,
+   "aura": 101,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 23720
+  },
+  {
+   "effect": 6,
+   "aura": 101,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 10967
+  },
+  {
+   "effect": 6,
+   "aura": 104,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 546
+  },
+  {
+   "effect": 6,
+   "aura": 105,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 17168
+  },
+  {
+   "effect": 6,
+   "aura": 105,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 10857
+  },
+  {
+   "effect": 6,
+   "aura": 105,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 24742
+  },
+  {
+   "effect": 6,
+   "aura": 107,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 24818
+  },
+  {
+   "effect": 6,
+   "aura": 109,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 12256
+  },
+  {
+   "effect": 6,
+   "aura": 112,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 28171
+  },
+  {
+   "effect": 6,
+   "aura": 115,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28846
+  },
+  {
+   "effect": 6,
+   "aura": 118,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 23230
+  },
+  {
+   "effect": 6,
+   "aura": 119,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 978
+  },
+  {
+   "effect": 6,
+   "aura": 121,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 1462
+  },
+  {
+   "effect": 6,
+   "aura": 123,
+   "a": 30,
+   "b": 0,
+   "uses": 1,
+   "example": 26204
+  },
+  {
+   "effect": 6,
+   "aura": 124,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 28791
+  },
+  {
+   "effect": 6,
+   "aura": 124,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 19778
+  },
+  {
+   "effect": 6,
+   "aura": 124,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 23205
+  },
+  {
+   "effect": 6,
+   "aura": 126,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 16337
+  },
+  {
+   "effect": 6,
+   "aura": 128,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 1002
+  },
+  {
+   "effect": 6,
+   "aura": 129,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 1906
+  },
+  {
+   "effect": 6,
+   "aura": 129,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 2313
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 802
+  },
+  {
+   "effect": 6,
+   "aura": 133,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 31906
+  },
+  {
+   "effect": 6,
+   "aura": 134,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 29166
+  },
+  {
+   "effect": 6,
+   "aura": 135,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 25109
+  },
+  {
+   "effect": 6,
+   "aura": 136,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 10060
+  },
+  {
+   "effect": 6,
+   "aura": 136,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 26525
+  },
+  {
+   "effect": 6,
+   "aura": 137,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 24425
+  },
+  {
+   "effect": 6,
+   "aura": 137,
+   "a": 61,
+   "b": 0,
+   "uses": 1,
+   "example": 25898
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 4,
+   "b": 0,
+   "uses": 1,
+   "example": 7103
+  },
+  {
+   "effect": 6,
+   "aura": 138,
+   "a": 25,
+   "b": 25,
+   "uses": 1,
+   "example": 17134
+  },
+  {
+   "effect": 6,
+   "aura": 139,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 17961
+  },
+  {
+   "effect": 6,
+   "aura": 140,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 28701
+  },
+  {
+   "effect": 6,
+   "aura": 140,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 19365
+  },
+  {
+   "effect": 6,
+   "aura": 142,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 27208
+  },
+  {
+   "effect": 6,
+   "aura": 143,
+   "a": 18,
+   "b": 31,
+   "uses": 1,
+   "example": 16874
+  },
+  {
+   "effect": 6,
+   "aura": 143,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 16878
+  },
+  {
+   "effect": 6,
+   "aura": 143,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 24752
+  },
+  {
+   "effect": 6,
+   "aura": 145,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 18520
+  },
+  {
+   "effect": 6,
+   "aura": 146,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 18523
+  },
+  {
+   "effect": 6,
+   "aura": 147,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 18747
+  },
+  {
+   "effect": 6,
+   "aura": 148,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 14183
+  },
+  {
+   "effect": 6,
+   "aura": 149,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 22812
+  },
+  {
+   "effect": 6,
+   "aura": 151,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 19885
+  },
+  {
+   "effect": 6,
+   "aura": 156,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 20599
+  },
+  {
+   "effect": 6,
+   "aura": 157,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 20782
+  },
+  {
+   "effect": 6,
+   "aura": 159,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 2479
+  },
+  {
+   "effect": 6,
+   "aura": 160,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 23198
+  },
+  {
+   "effect": 6,
+   "aura": 162,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 19659
+  },
+  {
+   "effect": 6,
+   "aura": 164,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 10654
+  },
+  {
+   "effect": 6,
+   "aura": 170,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 26802
+  },
+  {
+   "effect": 6,
+   "aura": 176,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 27795
+  },
+  {
+   "effect": 6,
+   "aura": 177,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 28225
+  },
+  {
+   "effect": 6,
+   "aura": 179,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 12579
+  },
+  {
+   "effect": 6,
+   "aura": 182,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28574
+  },
+  {
+   "effect": 6,
+   "aura": 190,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 30754
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 14
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 25157
+  },
+  {
+   "effect": 8,
+   "aura": 0,
+   "a": 53,
+   "b": 16,
+   "uses": 1,
+   "example": 19223
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 15
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 4,
+   "b": 0,
+   "uses": 1,
+   "example": 3477
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 8809
+  },
+  {
+   "effect": 9,
+   "aura": 0,
+   "a": 18,
+   "b": 8,
+   "uses": 1,
+   "example": 10860
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 49
+  },
+  {
+   "effect": 10,
+   "aura": 0,
+   "a": 22,
+   "b": 33,
+   "uses": 1,
+   "example": 20713
+  },
+  {
+   "effect": 11,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 26
+  },
+  {
+   "effect": 12,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 1,
+   "example": 27
+  },
+  {
+   "effect": 12,
+   "aura": 0,
+   "a": 17,
+   "b": 30,
+   "uses": 1,
+   "example": 13912
+  },
+  {
+   "effect": 16,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 14804
+  },
+  {
+   "effect": 16,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 25201
+  },
+  {
+   "effect": 16,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 24875
+  },
+  {
+   "effect": 18,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 26687
+  },
+  {
+   "effect": 18,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 25841
+  },
+  {
+   "effect": 18,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 24341
+  },
+  {
+   "effect": 20,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 81
+  },
+  {
+   "effect": 21,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 108
+  },
+  {
+   "effect": 23,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 107
+  },
+  {
+   "effect": 26,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 204
+  },
+  {
+   "effect": 27,
+   "aura": 3,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 5010
+  },
+  {
+   "effect": 27,
+   "aura": 4,
+   "a": 18,
+   "b": 28,
+   "uses": 1,
+   "example": 25996
+  },
+  {
+   "effect": 27,
+   "aura": 4,
+   "a": 18,
+   "b": 29,
+   "uses": 1,
+   "example": 23467
+  },
+  {
+   "effect": 27,
+   "aura": 22,
+   "a": 16,
+   "b": 0,
+   "uses": 1,
+   "example": 965
+  },
+  {
+   "effect": 27,
+   "aura": 64,
+   "a": 16,
+   "b": 0,
+   "uses": 1,
+   "example": 21097
+  },
+  {
+   "effect": 29,
+   "aura": 0,
+   "a": 1,
+   "b": 36,
+   "uses": 1,
+   "example": 6544
+  },
+  {
+   "effect": 29,
+   "aura": 0,
+   "a": 1,
+   "b": 48,
+   "uses": 1,
+   "example": 29209
+  },
+  {
+   "effect": 29,
+   "aura": 0,
+   "a": 1,
+   "b": 49,
+   "uses": 1,
+   "example": 29210
+  },
+  {
+   "effect": 29,
+   "aura": 0,
+   "a": 1,
+   "b": 50,
+   "uses": 1,
+   "example": 29211
+  },
+  {
+   "effect": 29,
+   "aura": 0,
+   "a": 1,
+   "b": 55,
+   "uses": 1,
+   "example": 1953
+  },
+  {
+   "effect": 31,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 28168
+  },
+  {
+   "effect": 32,
+   "aura": 0,
+   "a": 8,
+   "b": 0,
+   "uses": 1,
+   "example": 31364
+  },
+  {
+   "effect": 32,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 30169
+  },
+  {
+   "effect": 35,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 3017
+  },
+  {
+   "effect": 35,
+   "aura": 3,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 11638
+  },
+  {
+   "effect": 35,
+   "aura": 4,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 6755
+  },
+  {
+   "effect": 35,
+   "aura": 4,
+   "a": 46,
+   "b": 0,
+   "uses": 1,
+   "example": 19770
+  },
+  {
+   "effect": 35,
+   "aura": 10,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 25909
+  },
+  {
+   "effect": 35,
+   "aura": 12,
+   "a": 22,
+   "b": 8,
+   "uses": 1,
+   "example": 15252
+  },
+  {
+   "effect": 35,
+   "aura": 17,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 19480
+  },
+  {
+   "effect": 35,
+   "aura": 17,
+   "a": 1,
+   "b": 21,
+   "uses": 1,
+   "example": 16527
+  },
+  {
+   "effect": 35,
+   "aura": 22,
+   "a": 1,
+   "b": 21,
+   "uses": 1,
+   "example": 16530
+  },
+  {
+   "effect": 35,
+   "aura": 23,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 31599
+  },
+  {
+   "effect": 35,
+   "aura": 23,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 6672
+  },
+  {
+   "effect": 35,
+   "aura": 31,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 13159
+  },
+  {
+   "effect": 35,
+   "aura": 33,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 11638
+  },
+  {
+   "effect": 35,
+   "aura": 34,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 463
+  },
+  {
+   "effect": 35,
+   "aura": 35,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 464
+  },
+  {
+   "effect": 35,
+   "aura": 42,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 13159
+  },
+  {
+   "effect": 35,
+   "aura": 52,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 24932
+  },
+  {
+   "effect": 35,
+   "aura": 54,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 17497
+  },
+  {
+   "effect": 35,
+   "aura": 85,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28145
+  },
+  {
+   "effect": 35,
+   "aura": 96,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 8178
+  },
+  {
+   "effect": 35,
+   "aura": 138,
+   "a": 1,
+   "b": 30,
+   "uses": 1,
+   "example": 15167
+  },
+  {
+   "effect": 35,
+   "aura": 149,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 19746
+  },
+  {
+   "effect": 37,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 522
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 28133
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 24406
+  },
+  {
+   "effect": 38,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 8320
+  },
+  {
+   "effect": 39,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 25674
+  },
+  {
+   "effect": 40,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 674
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 1,
+   "b": 47,
+   "uses": 1,
+   "example": 28683
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 6,
+   "b": 46,
+   "uses": 1,
+   "example": 12699
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 6,
+   "b": 53,
+   "uses": 1,
+   "example": 27360
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 8,
+   "b": 0,
+   "uses": 1,
+   "example": 25823
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 18,
+   "b": 32,
+   "uses": 1,
+   "example": 6122
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 28218
+  },
+  {
+   "effect": 41,
+   "aura": 0,
+   "a": 36,
+   "b": 0,
+   "uses": 1,
+   "example": 7969
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 22,
+   "b": 0,
+   "uses": 1,
+   "example": 20671
+  },
+  {
+   "effect": 42,
+   "aura": 0,
+   "a": 36,
+   "b": 0,
+   "uses": 1,
+   "example": 10132
+  },
+  {
+   "effect": 43,
+   "aura": 0,
+   "a": 25,
+   "b": 47,
+   "uses": 1,
+   "example": 514
+  },
+  {
+   "effect": 45,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 31929
+  },
+  {
+   "effect": 48,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 2426
+  },
+  {
+   "effect": 49,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 3050
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 17,
+   "b": 0,
+   "uses": 1,
+   "example": 9055
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 18,
+   "b": 18,
+   "uses": 1,
+   "example": 6900
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 22,
+   "b": 32,
+   "uses": 1,
+   "example": 27433
+  },
+  {
+   "effect": 50,
+   "aura": 0,
+   "a": 46,
+   "b": 0,
+   "uses": 1,
+   "example": 9082
+  },
+  {
+   "effect": 52,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 1492
+  },
+  {
+   "effect": 54,
+   "aura": 0,
+   "a": 6,
+   "b": 13,
+   "uses": 1,
+   "example": 6570
+  },
+  {
+   "effect": 55,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 13481
+  },
+  {
+   "effect": 55,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 2650
+  },
+  {
+   "effect": 58,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 22311
+  },
+  {
+   "effect": 59,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 18952
+  },
+  {
+   "effect": 61,
+   "aura": 0,
+   "a": 32,
+   "b": 0,
+   "uses": 1,
+   "example": 16989
+  },
+  {
+   "effect": 61,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 12347
+  },
+  {
+   "effect": 62,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 1,
+   "example": 19821
+  },
+  {
+   "effect": 62,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 22936
+  },
+  {
+   "effect": 62,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 22559
+  },
+  {
+   "effect": 63,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 22786
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 17749
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 22,
+   "b": 33,
+   "uses": 1,
+   "example": 16469
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 35,
+   "b": 0,
+   "uses": 1,
+   "example": 21167
+  },
+  {
+   "effect": 64,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 12709
+  },
+  {
+   "effect": 68,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 8714
+  },
+  {
+   "effect": 69,
+   "aura": 0,
+   "a": 15,
+   "b": 0,
+   "uses": 1,
+   "example": 5260
+  },
+  {
+   "effect": 70,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 15051
+  },
+  {
+   "effect": 73,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 1,
+   "example": 6272
+  },
+  {
+   "effect": 74,
+   "aura": 0,
+   "a": 18,
+   "b": 0,
+   "uses": 1,
+   "example": 13166
+  },
+  {
+   "effect": 74,
+   "aura": 0,
+   "a": 44,
+   "b": 0,
+   "uses": 1,
+   "example": 12506
+  },
+  {
+   "effect": 75,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 15057
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28535
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 18,
+   "b": 47,
+   "uses": 1,
+   "example": 30677
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 18,
+   "b": 49,
+   "uses": 1,
+   "example": 30684
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 18,
+   "b": 50,
+   "uses": 1,
+   "example": 30685
+  },
+  {
+   "effect": 76,
+   "aura": 0,
+   "a": 22,
+   "b": 0,
+   "uses": 1,
+   "example": 21883
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 3,
+   "b": 0,
+   "uses": 1,
+   "example": 22838
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 8,
+   "b": 0,
+   "uses": 1,
+   "example": 30758
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 18,
+   "b": 16,
+   "uses": 1,
+   "example": 24320
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 18,
+   "b": 34,
+   "uses": 1,
+   "example": 966
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 22539
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 25,
+   "b": 37,
+   "uses": 1,
+   "example": 27686
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 31,
+   "b": 0,
+   "uses": 1,
+   "example": 30882
+  },
+  {
+   "effect": 77,
+   "aura": 0,
+   "a": 38,
+   "b": 46,
+   "uses": 1,
+   "example": 28392
+  },
+  {
+   "effect": 78,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 6603
+  },
+  {
+   "effect": 79,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 24690
+  },
+  {
+   "effect": 79,
+   "aura": 0,
+   "a": 57,
+   "b": 0,
+   "uses": 1,
+   "example": 19752
+  },
+  {
+   "effect": 81,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 6757
+  },
+  {
+   "effect": 83,
+   "aura": 0,
+   "a": 25,
+   "b": 32,
+   "uses": 1,
+   "example": 7266
+  },
+  {
+   "effect": 84,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 7355
+  },
+  {
+   "effect": 85,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 7720
+  },
+  {
+   "effect": 85,
+   "aura": 0,
+   "a": 62,
+   "b": 0,
+   "uses": 1,
+   "example": 27802
+  },
+  {
+   "effect": 92,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 14792
+  },
+  {
+   "effect": 94,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 20509
+  },
+  {
+   "effect": 96,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 22690
+  },
+  {
+   "effect": 98,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 17168
+  },
+  {
+   "effect": 100,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 8553
+  },
+  {
+   "effect": 100,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 24596
+  },
+  {
+   "effect": 100,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 22833
+  },
+  {
+   "effect": 102,
+   "aura": 0,
+   "a": 5,
+   "b": 0,
+   "uses": 1,
+   "example": 2641
+  },
+  {
+   "effect": 103,
+   "aura": 0,
+   "a": 22,
+   "b": 7,
+   "uses": 1,
+   "example": 26523
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 21099
+  },
+  {
+   "effect": 108,
+   "aura": 0,
+   "a": 38,
+   "b": 0,
+   "uses": 1,
+   "example": 20482
+  },
+  {
+   "effect": 110,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 16529
+  },
+  {
+   "effect": 111,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 21388
+  },
+  {
+   "effect": 111,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 22068
+  },
+  {
+   "effect": 112,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 1122
+  },
+  {
+   "effect": 112,
+   "aura": 0,
+   "a": 16,
+   "b": 0,
+   "uses": 1,
+   "example": 24670
+  },
+  {
+   "effect": 112,
+   "aura": 0,
+   "a": 47,
+   "b": 0,
+   "uses": 1,
+   "example": 25005
+  },
+  {
+   "effect": 112,
+   "aura": 0,
+   "a": 49,
+   "b": 0,
+   "uses": 1,
+   "example": 20493
+  },
+  {
+   "effect": 113,
+   "aura": 0,
+   "a": 21,
+   "b": 0,
+   "uses": 1,
+   "example": 21074
+  },
+  {
+   "effect": 114,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 23790
+  },
+  {
+   "effect": 115,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 23437
+  },
+  {
+   "effect": 115,
+   "aura": 0,
+   "a": 22,
+   "b": 15,
+   "uses": 1,
+   "example": 23436
+  },
+  {
+   "effect": 115,
+   "aura": 0,
+   "a": 24,
+   "b": 0,
+   "uses": 1,
+   "example": 21559
+  },
+  {
+   "effect": 115,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 16722
+  },
+  {
+   "effect": 116,
+   "aura": 0,
+   "a": 0,
+   "b": 0,
+   "uses": 1,
+   "example": 22027
+  },
+  {
+   "effect": 117,
+   "aura": 0,
+   "a": 18,
+   "b": 31,
+   "uses": 1,
+   "example": 22012
+  },
+  {
+   "effect": 119,
+   "aura": 30,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 25163
+  },
+  {
+   "effect": 119,
+   "aura": 81,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 25228
+  },
+  {
+   "effect": 119,
+   "aura": 99,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28758
+  },
+  {
+   "effect": 119,
+   "aura": 124,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28758
+  },
+  {
+   "effect": 120,
+   "aura": 0,
+   "a": 22,
+   "b": 30,
+   "uses": 1,
+   "example": 24237
+  },
+  {
+   "effect": 120,
+   "aura": 0,
+   "a": 25,
+   "b": 0,
+   "uses": 1,
+   "example": 24253
+  },
+  {
+   "effect": 122,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 31247
+  },
+  {
+   "effect": 123,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 28129
+  },
+  {
+   "effect": 126,
+   "aura": 0,
+   "a": 6,
+   "b": 0,
+   "uses": 1,
+   "example": 23685
+  },
+  {
+   "effect": 129,
+   "aura": 0,
+   "a": 1,
+   "b": 0,
+   "uses": 1,
+   "example": 26659
+  }
+ ]
+}

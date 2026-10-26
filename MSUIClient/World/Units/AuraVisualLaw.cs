@@ -3,7 +3,7 @@ using MSUIClient.Formats;
 
 namespace MSUIClient.World.Units;
 
-public enum AuraBodyNodeKind { Alpha, Tint, AnimationRate }
+public enum AuraBodyNodeKind { Alpha, Tint, AnimationRate, Scale }
 
 public readonly record struct AuraBodyNode(AuraBodyNodeKind Kind, float Value, Vector3 Tint);
 public readonly record struct AuraBodySpell(uint SpellId, IReadOnlyList<AuraBodyNode> Nodes);
@@ -12,6 +12,9 @@ public readonly record struct AuraBodySpell(uint SpellId, IReadOnlyList<AuraBody
 public static class AuraVisualLaw
 {
     public const int TintProc = 1;
+    /// <summary>p0 = a factor on the model's scale (wowdev DB/SpellVisualKit, procedure 2 "Scale";
+    /// Bloodlust 1.5, Tiger's Fury 1.1, Berserk 1.0). SPELL_CREATOR_PLAN.md P4.3.</summary>
+    public const int ScaleProc = 2;
     public const int AnimationRateProc = 11;
     public const int AlphaProc = 14;
     public const double AlphaFadeSeconds = 1.0;
@@ -34,6 +37,9 @@ public static class AuraVisualLaw
                     result.Add(new AuraBodyNode(AuraBodyNodeKind.Tint, value,
                         new Vector3((packed >> 16) & 0xff, (packed >> 8) & 0xff,
                             packed & 0xff) / 255f));
+                    break;
+                case ScaleProc when value > 0f:
+                    result.Add(new AuraBodyNode(AuraBodyNodeKind.Scale, value, Vector3.One));
                     break;
                 case AnimationRateProc:
                     result.Add(new AuraBodyNode(AuraBodyNodeKind.AnimationRate, value,
@@ -60,6 +66,7 @@ public sealed class AuraVisualState
     private readonly List<(uint Spell, float Value)> _alpha = [];
     private readonly List<(uint Spell, Vector3 Value)> _tint = [];
     private readonly List<(uint Spell, float Value)> _rate = [];
+    private readonly List<(uint Spell, float Value)> _scale = [];
     private readonly Dictionary<uint, AuraBodyNode[]> _active = [];
     private bool _initialized;
     private float _baseAlpha = 1f;
@@ -71,6 +78,8 @@ public sealed class AuraVisualState
     public float Alpha => Math.Clamp(_currentAlpha, 0f, 1f);
     public Vector3 Tint => _tint.Count > 0 ? _tint[0].Value : Vector3.One;
     public float? AnimationRate => _rate.Count > 0 ? _rate[0].Value : null;
+    /// <summary>The head scale node's factor on the model (1 = none).</summary>
+    public float Scale => _scale.Count > 0 ? _scale[0].Value : 1f;
     public bool Frozen => AnimationRate == 0f;
     public bool Translucent => Alpha < 1f - AuraVisualLaw.AlphaSettledEpsilon;
     public float BaseAlpha => _baseAlpha;
@@ -123,6 +132,7 @@ public sealed class AuraVisualState
                 case AuraBodyNodeKind.Alpha: _alpha.Insert(0, (spell, node.Value)); break;
                 case AuraBodyNodeKind.Tint: _tint.Insert(0, (spell, node.Tint)); break;
                 case AuraBodyNodeKind.AnimationRate: _rate.Insert(0, (spell, node.Value)); break;
+                case AuraBodyNodeKind.Scale: _scale.Insert(0, (spell, node.Value)); break;
             }
         }
         Retarget(now);
@@ -140,6 +150,7 @@ public sealed class AuraVisualState
         _alpha.RemoveAll(node => node.Spell == spell);
         _tint.RemoveAll(node => node.Spell == spell);
         _rate.RemoveAll(node => node.Spell == spell);
+        _scale.RemoveAll(node => node.Spell == spell);
     }
 
     private void Retarget(double now)

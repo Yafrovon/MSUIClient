@@ -19,6 +19,8 @@ public sealed class SoundEntriesCatalog
     private readonly Dictionary<string, uint> _byName = new(StringComparer.OrdinalIgnoreCase);
 
     public int Count => _byId.Count;
+    /// <summary>Every row, for pickers (SPELL_CREATOR_PLAN.md P3.9).</summary>
+    public IEnumerable<SoundEntry> Entries => _byId.Values;
     public bool TryGet(uint id, out SoundEntry entry) => _byId.TryGetValue(id, out entry);
     public bool TryGet(string name, out SoundEntry entry)
     {

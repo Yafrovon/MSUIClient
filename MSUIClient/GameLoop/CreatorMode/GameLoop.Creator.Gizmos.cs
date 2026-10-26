@@ -114,6 +114,7 @@ public sealed partial class GameLoop
                 foreach (SpellEffectSource.BoneFrame frame in _spellEffects.BoneFrames(SpellClockNow, SpellEffectUnitPose))
                     if (TryResolveGizmoModel(doc, frame.Path, out _)) _creatorBoneFrames.Add(frame);
 
+            AddCreatorRulesRings(_gizmoLines, doc);
             DrawCreatorRibbonMarkers(doc);
             DrawCreatorSkeleton(doc, settings.GizmoBones);
             BuildCreatorHandles(doc, _creatorEmitterFrames, _creatorBoneFrames);

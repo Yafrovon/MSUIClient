@@ -226,6 +226,8 @@ public sealed partial class GameLoop
             if (HandleDevEditClick(click)) continue;
             // Creator World Builder: an armed tool (sculpt/place/select) owns the click.
             if (HandleWorldBuilderClick(click)) continue;
+            // Spell workshop: "Pick the spot" for a ground-targeted spell's preview.
+            if (HandleCreatorGroundPickClick(click)) continue;
             // Encounter Lab: an armed placement (probe body, scenario actor, boss)
             // owns the click the same way, so dropping a probe never also issues an
             // order. No-op unless a placement is armed.

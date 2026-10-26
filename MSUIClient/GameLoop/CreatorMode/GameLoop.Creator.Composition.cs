@@ -33,6 +33,21 @@ public sealed partial class GameLoop
     {
         public ushort? AnimationId;
         public ushort? AuthoredAnimation;
+        /// <summary>SpellEffectCameraShakes id this phase's kit shakes the camera with (f14);
+        /// null = none (P4.3 / P4.4).</summary>
+        public uint? Shake;
+        public uint? AuthoredShake;
+        /// <summary>A SoundEntries id picked for this phase's kit (f13), null = the kit's own (P3.9).</summary>
+        public uint? Sound;
+        public uint? AuthoredSound;
+        /// <summary>The kit's WORLD effect (f12): a model planted at the unit's feet. P4.3/P4.4.</summary>
+        public string? WorldEffect;
+        public string? AuthoredWorldEffect;
+        /// <summary>The kit's CharProc lanes as the source authored them, and the body dials over
+        /// them (GameLoop.Creator.BodyProcs.cs, P4.4).</summary>
+        public SpellVisualCharProc[] AuthoredProcs = Array.Empty<SpellVisualCharProc>();
+        public CreatorBody Body;
+        public CreatorBody AuthoredBody;
         public readonly string?[] Slots = new string?[9];
         public readonly string?[] AuthoredSlots = new string?[9];
         public readonly float[] Scales = { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f };
@@ -44,6 +59,10 @@ public sealed partial class GameLoop
             get
             {
                 if (AnimationId != AuthoredAnimation) return true;
+                if (Shake != AuthoredShake) return true;
+                if (Sound != AuthoredSound) return true;
+                if (!string.Equals(WorldEffect ?? "", AuthoredWorldEffect ?? "", StringComparison.OrdinalIgnoreCase)) return true;
+                if (Body != AuthoredBody) return true;
                 for (int i = 0; i < 9; i++)
                 {
                     if (!string.Equals(Slots[i] ?? "", AuthoredSlots[i] ?? "", StringComparison.OrdinalIgnoreCase)) return true;
@@ -56,6 +75,10 @@ public sealed partial class GameLoop
         public void Reset()
         {
             AnimationId = AuthoredAnimation;
+            Shake = AuthoredShake;
+            Sound = AuthoredSound;
+            WorldEffect = AuthoredWorldEffect;
+            Body = AuthoredBody;
             for (int i = 0; i < 9; i++) { Slots[i] = AuthoredSlots[i]; Scales[i] = 1f; }
         }
     }
@@ -74,6 +97,11 @@ public sealed partial class GameLoop
             {
                 composition.Authored = true;
                 composition.AuthoredAnimation = kit.AnimationId;
+                composition.AuthoredShake = kit.Shake;
+                composition.AuthoredSound = kit.Sound;
+                composition.AuthoredWorldEffect = kit.WorldEffect;
+                composition.AuthoredProcs = kit.CharProcs.ToArray();
+                composition.AuthoredBody = CreatorBodyOf(kit.CharProcs);
                 foreach (SpellVisualKitEffect effect in kit.Effects)
                 {
                     int slot = Array.IndexOf(SpellVisualCatalog.KitAttachmentIds, effect.AttachmentId);
@@ -85,6 +113,49 @@ public sealed partial class GameLoop
         }
         doc.MissileOverride = null;
         doc.MissileScale = 1f;
+        InitCreatorArea(doc);
+    }
+
+    private const int CreatorWorldPickerSlot = -5;
+
+    // The game's own shakes, labelled by what they do: SpellEffectCameraShakes id -> waves.
+    private string[]? _creatorShakeLabels;
+    private uint[]? _creatorShakeIds;
+
+    private void DrawCreatorShakeCombo(CreatorStageComposition composition, float width)
+    {
+        if (_creatorShakeIds is null && _spellVisualCatalog is { } catalog)
+        {
+            string[] axis = { "side", "fore", "up" };
+            var ids = new List<uint> { 0 };
+            var labels = new List<string> { "none" };
+            foreach (uint id in catalog.SpellCameraShakeIds)
+            {
+                if (!catalog.TryGetCameraShake(id, out IReadOnlyList<CameraShakeInfo> waves)) continue;
+                ids.Add(id);
+                labels.Add($"#{id}: " + string.Join(" + ", waves.Select(w =>
+                    $"{axis[Math.Min(w.Direction, 2u)]} {w.Amplitude:0.#} @{w.Frequency:0.#}Hz {w.Duration:0.##}s")));
+            }
+            _creatorShakeIds = ids.ToArray();
+            _creatorShakeLabels = labels.ToArray();
+        }
+        if (_creatorShakeIds is null || _creatorShakeLabels is null) { ImGui.TextDisabled("(no shake tables)"); return; }
+        int current = Math.Max(Array.IndexOf(_creatorShakeIds, composition.Shake ?? 0u), 0);
+        bool changed = composition.Shake != composition.AuthoredShake;
+        if (changed) ImGui.PushStyleColor(ImGuiCol.Text, SpellIdeGold);
+        ImGui.SetNextItemWidth(width);
+        if (ImGui.Combo("##shake", ref current, _creatorShakeLabels, _creatorShakeLabels.Length))
+        {
+            composition.Shake = current == 0 ? null : _creatorShakeIds[current];
+            ReapPresentedEffect();
+            _creatorLoopNextAt = 0;
+        }
+        if (changed) ImGui.PopStyleColor();
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Shake the camera when this part of the spell plays - one of the game's own " +
+                             "shakes (War Stomp's is #3, Earthquake-like rumbles are #1/#2). Each wave: " +
+                             "the axis it moves the eye on, its strength, rate and length. Full strength " +
+                             "within 15 yards of the camera, fading out by 60.");
     }
 
     /// <summary>The kit the preview plays: the authored one, or the composed one when changed.</summary>
@@ -96,7 +167,10 @@ public sealed partial class GameLoop
         for (int i = 0; i < 9; i++)
             if (composition.Slots[i] is { Length: > 0 } path)
                 effects.Add(new SpellVisualKitEffect(SpellVisualCatalog.KitAttachmentIds[i], path, composition.Scales[i]));
-        return new SpellVisualKitInfo(composition.AnimationId, authored.Sound, effects, authored.CharProcs);
+        IReadOnlyList<SpellVisualCharProc> procs = composition.Body == composition.AuthoredBody
+            ? authored.CharProcs : CreatorComposedProcs(composition);
+        return new SpellVisualKitInfo(composition.AnimationId, composition.Sound ?? authored.Sound, effects, procs, composition.Shake,
+            composition.WorldEffect);
     }
 
     /// <summary>The missile the preview flies: the composed override, else the authored path.</summary>
@@ -105,16 +179,16 @@ public sealed partial class GameLoop
 
     private static bool CreatorMissileChanged(CreatorSpellDoc doc) =>
         (doc.MissileOverride is { Length: > 0 } && !string.Equals(doc.MissileOverride, doc.MissilePath, StringComparison.OrdinalIgnoreCase)) ||
-        MathF.Abs(doc.MissileScale - 1f) > 1e-4f;
+        MathF.Abs(doc.MissileScale - 1f) > 1e-4f || doc.MissileSound is not null;
 
     /// <summary>A stage can play when the source authored it or the composition filled it.</summary>
     private static bool CreatorStageAvailable(CreatorSpellDoc doc, SpellStage stage) =>
         doc.Composition.TryGetValue(stage, out CreatorStageComposition? c)
-            ? c.Authored || c.Slots.Any(p => p is { Length: > 0 })
+            ? c.Authored || c.Slots.Any(p => p is { Length: > 0 }) || c.Body.Any
             : SpellVisualCatalog.KitFor(doc.Stages, stage) != 0;
 
     private static bool CreatorCompositionChanged(CreatorSpellDoc doc) =>
-        doc.Composition.Values.Any(c => c.Changed) || CreatorMissileChanged(doc);
+        doc.Composition.Values.Any(c => c.Changed) || CreatorMissileChanged(doc) || doc.Area.Changed;
 
     /// <summary>Every model path the composed phases reference, for the tree and the export.</summary>
     private static void RefreshCreatorPhaseModels(CreatorSpellDoc doc)
@@ -210,6 +284,29 @@ public sealed partial class GameLoop
             ImGui.SameLine(130f * cs);
             DrawCreatorAnimationButton(stage, composition, 200f * cs);
 
+            ImGui.TextDisabled("Camera shake");
+            ImGui.SameLine(130f * cs);
+            DrawCreatorShakeCombo(composition, 260f * cs);
+
+            // The kit's world effect (f12): planted at the unit's feet, not on a bone - Thunder
+            // Clap's ring, Frost Nova's ice, Entangling Roots' vines.
+            ImGui.TextDisabled("World (feet)");
+            ImGui.SameLine(130f * cs);
+            if (composition.WorldEffect is { Length: > 0 } world) ImGui.TextUnformatted(Path.GetFileName(world));
+            else ImGui.TextDisabled("(none)");
+            ImGui.SameLine();
+            if (ImGui.SmallButton("pick##world")) OpenCreatorModelPicker(stage, CreatorWorldPickerSlot);
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("A model planted on the ground where the unit stands when this part plays - it " +
+                                 "does not follow the unit's bones (Frost Nova's ice, a ring of fire at the feet).");
+            if (composition.WorldEffect is { Length: > 0 })
+            {
+                ImGui.SameLine();
+                if (ImGui.SmallButton("clear##world")) { composition.WorldEffect = null; ReapPresentedEffect(); _creatorLoopNextAt = 0; }
+            }
+
+            DrawCreatorBodyRows(stage, composition, cs);
+
             for (int slot = 0; slot < 9; slot++)
             {
                 ImGui.PushID(slot);
@@ -267,7 +364,8 @@ public sealed partial class GameLoop
             if (ImGui.SliderFloat("Missile scale", ref missileScale, 0.1f, 5f, "x%.2f")) doc.MissileScale = missileScale;
         }
         CreatorHelp("The projectile model that flies to the target (its trail and sparks are the " +
-            "model's own ribbons and emitters, tuned like any phase). Flight speed is spell data, " +
-            "set in the Completer.");
+            "model's own ribbons and emitters, tuned like any phase). Flight speed is spell data: " +
+            "Rules > Timing > Missile speed.");
+        DrawCreatorAreaCompositionBody(doc, cs);
     }
 }

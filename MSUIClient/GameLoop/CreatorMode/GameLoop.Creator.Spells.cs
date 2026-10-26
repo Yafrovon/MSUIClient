@@ -114,6 +114,12 @@ public sealed partial class GameLoop
         // The skeleton (GameLoop.Creator.Bones.cs): pivots and poses patch in place.
         public List<BoneSnapshot> Bones = [];
         public readonly Dictionary<int, BonePatch> BoneEdits = [];
+        /// <summary>Whole-track rewrites by track id ("e3.rate", "b2.rotation" - M2TrackPatcher), from
+        /// the dope sheet (SPELL_CREATOR_PLAN.md P3.1/P3.2). Applied after every other edit, so a
+        /// rewritten track wins over a first-key dial on the same track.</summary>
+        public readonly Dictionary<string, Creator.TrackKeys> TrackEdits = new(StringComparer.Ordinal);
+        /// <summary>Emitters / trails grafted from other models (GameLoop.Creator.Transplant.cs).</summary>
+        public readonly List<CreatorTransplant> Transplants = [];
         // Cloned ribbons / mesh layers (sources), like AddedEmitters: clone i of each kind
         // lives at Original*Count + i, so edits and off-switches address clones by index.
         public readonly List<int> AddedRibbons = [];
@@ -164,14 +170,28 @@ public sealed partial class GameLoop
         /// OWN texture tables, invisible from the host's slots.</summary>
         public readonly Dictionary<string, string> GeometryHosts = new(StringComparer.OrdinalIgnoreCase);
         public readonly Dictionary<CreatorAudioCue, CreatorAudioTrack> Audio = [];
+        /// <summary>Spells this one triggers, made in the same design (GameLoop.Creator.Children.cs).</summary>
+        public readonly List<CreatorChildSpell> Children = [];
+        /// <summary>The totem this spell plants, made here (GameLoop.Creator.Actors.cs).</summary>
+        public CreatorActor? Actor;
         // The kit level (GameLoop.Creator.Composition.cs): per stage, which models sit in
         // which attachment slot at what scale, and the caster animation; the missile.
         public readonly Dictionary<SpellStage, CreatorStageComposition> Composition = [];
         public string? MissileOverride;
         public float MissileScale = 1f;
+        /// <summary>A SoundEntries id picked for the missile's flight loop (SpellVisual f10), P3.9.</summary>
+        public uint? MissileSound;
         // Imported art (GameLoop.Creator.TextureImport.cs): custom MPQ path -> BLP bytes,
         // served by the mount's override layer and shipped in the session.
         public readonly Dictionary<string, byte[]> ImportedTextures = new(StringComparer.OrdinalIgnoreCase);
+        // The BLPs the Sketch compiler last produced, served through the same override layer.
+        // Kept apart from ImportedTextures because they are OUTPUT, regenerated from the pieces:
+        // the export ships the fresh set from a one-shot recompile and the design never stores
+        // them (SPELL_CREATOR_PLAN.md P0.1/P0.2).
+        public readonly Dictionary<string, byte[]> SketchTextures = new(StringComparer.OrdinalIgnoreCase);
+        // A stable identity for this design across saves, pushes and reopens - a temp name can
+        // be retyped and a new spell's local id is only a session counter.
+        public string DesignId = Guid.NewGuid().ToString("N");
         // Free-form geometry (GameLoop.Creator.Sketch.cs, shared_docs/SPELL_SKETCH.md): the
         // authored pieces per stage. These are the SOURCE - the compiled M2 they produce is
         // an ordinary phase model in Models above - so they are what has to be saved for a
@@ -183,6 +203,11 @@ public sealed partial class GameLoop
         public readonly HashSet<SpellStage> PlannedStages = [];
         public bool PlannedMissile;
         public bool PlanStarted;
+        // What the spell DOES (GameLoop.Creator.Rules.cs, SPELL_CREATOR_PLAN.md P1): created on
+        // first use from the spell's own Spell.dbc row (or the from-zero template).
+        public Creator.Spells.SpellRules? Rules;
+        // The lasting ground part (GameLoop.Creator.Area.cs, P2.5).
+        public CreatorAreaComposition Area = new();
     }
 
     private CreatorSpellDoc? _creatorSpell;
@@ -220,6 +245,9 @@ public sealed partial class GameLoop
     private const ulong CreatorAreaGuid = 0xF000_0000_0000_00F0UL;
     private float _creatorAreaRadius = 8f;
     private bool _creatorAreaActive;
+    // A deferred ground spell's area lives from the missile's ARRIVAL for the rules' duration -
+    // the server places the DynamicObject then (SPELL_CUSTOM_DEFERRED_DEST); the preview follows.
+    private double _creatorAreaFrom = double.MaxValue, _creatorAreaUntil = double.MinValue;
 
     private bool _creatorLoopOn;
     private float _creatorLoopPeriod = 2f;
@@ -287,10 +315,18 @@ public sealed partial class GameLoop
             _creatorLoopImpactAt = double.MaxValue;
             StopCreatorAudio(CreatorAudioCue.Missile);
             _creatorMissileSoundEndsAt = double.MaxValue;
+            if (CreatorAreaWaitsForArrival(_creatorSpell))
+            {
+                _creatorAreaFrom = now;
+                _creatorAreaUntil = now + CreatorAreaPreviewSeconds(_creatorSpell);
+                RestartCreatorArea();
+            }
             ulong target = CreatorMissileTargetGuid();
             ulong anchor = target != 0 ? target : LocalPlayerGuid;
+            // A ground spell lands on its SPOT unless a dummy stands there to be hit.
+            Vector3? spot = target == 0 && CreatorGroundTargeted(_creatorSpell) ? CreatorGroundPreviewPoint() : null;
             if (!SketchSoloBlocks(SpellStage.Impact) &&
-                PresentSpellEffect(spell, "impact", target != 0 ? target : null))
+                PresentSpellEffect(spell, "impact", target != 0 ? target : null, spot))
             {
                 var pose = SpellEffectUnitPose(anchor);
                 StartCreatorAudio(CreatorAudioCue.Impact, anchor,
@@ -364,12 +400,50 @@ public sealed partial class GameLoop
         _ => 0,
     };
 
+    // A NEW spell has no source kits: a phase the design plans or composes gets one on demand in
+    // the Completer, so it can carry a sound too (P3.9).
     private bool CreatorAudioAvailable(CreatorSpellDoc doc, CreatorAudioCue cue) => cue switch
     {
         CreatorAudioCue.Missile => doc.Info.Speed > 0 || doc.MissilePath is { Length: > 0 } ||
-                                   doc.Stages.MissileSound != 0,
-        _ => CreatorAudioKitId(doc, cue) != 0,
+                                   doc.Stages.MissileSound != 0 || CreatorEffectiveMissile(doc) is { Length: > 0 } ||
+                                   (doc.Rules?.Speed ?? 0f) > 0f,
+        CreatorAudioCue.Area => CreatorAudioKitId(doc, cue) != 0 || doc.Area.Any,
+        _ => CreatorAudioKitId(doc, cue) != 0 ||
+             (CreatorAudioStage(cue) is { } stage && (doc.PlannedStages.Contains(stage) ||
+              (doc.Composition.TryGetValue(stage, out CreatorStageComposition? c) && c.Slots.Any(s => s is { Length: > 0 })))),
     };
+
+    private static SpellStage? CreatorAudioStage(CreatorAudioCue cue) => cue switch
+    {
+        CreatorAudioCue.Precast => SpellStage.Precast,
+        CreatorAudioCue.Cast => SpellStage.Cast,
+        CreatorAudioCue.Impact => SpellStage.Impact,
+        CreatorAudioCue.State => SpellStage.State,
+        CreatorAudioCue.Channel => SpellStage.Channel,
+        _ => null,
+    };
+
+    /// <summary>The game sound a cue plays: one picked in the workshop, else the source's own.</summary>
+    private uint? CreatorPickedSound(CreatorSpellDoc doc, CreatorAudioCue cue) => cue switch
+    {
+        CreatorAudioCue.Missile => doc.MissileSound,
+        CreatorAudioCue.Area => doc.Area.Sound,
+        _ => CreatorAudioStage(cue) is { } stage && doc.Composition.TryGetValue(stage, out CreatorStageComposition? c) &&
+             c.Sound != c.AuthoredSound ? c.Sound : null,
+    };
+
+    private void SetCreatorPickedSound(CreatorSpellDoc doc, CreatorAudioCue cue, uint? sound)
+    {
+        switch (cue)
+        {
+            case CreatorAudioCue.Missile: doc.MissileSound = sound; break;
+            case CreatorAudioCue.Area: doc.Area.Sound = sound; break;
+            default:
+                if (CreatorAudioStage(cue) is { } stage && doc.Composition.TryGetValue(stage, out CreatorStageComposition? c))
+                    c.Sound = sound ?? c.AuthoredSound;
+                break;
+        }
+    }
 
     private long PlayCreatorAudio(CreatorAudioCue cue, ulong owner, Vector3 source,
         bool forceLoop = false)
@@ -382,7 +456,7 @@ public sealed partial class GameLoop
                 forceLoop || custom.Looping, custom.NoDuplicates,
                 custom.MinDistance, custom.CutoffDistance, trackHold: false,
                 extraFlags: custom.ExtraFlags, eax: custom.Eax);
-        return _spellSounds.Play(CreatorAuthoredSound(doc, cue), owner, source, listener,
+        return _spellSounds.Play(CreatorPickedSound(doc, cue) ?? CreatorAuthoredSound(doc, cue), owner, source, listener,
             forceLoop, trackHold: false, category: $"creator-{cue.ToString().ToLowerInvariant()}");
     }
 
@@ -437,9 +511,8 @@ public sealed partial class GameLoop
     private void UpdateCreatorAreaVisual(double now)
     {
         bool want = _creatorLoopOn && _creatorLoopAreaHold && _creatorSpell is { } doc &&
-                    _spellEffects is not null &&
-                    _spellVisualCatalog?.TryGetAreaVisual(doc.Info.VisualId,
-                        out SpellAreaVisualInfo _) == true;
+                    _spellEffects is not null && TryCreatorComposedArea(doc, out SpellAreaVisualInfo _) &&
+                    (!CreatorAreaWaitsForArrival(doc) || (now >= _creatorAreaFrom && now < _creatorAreaUntil));
         if (!want)
         {
             if (_creatorAreaActive)
@@ -453,9 +526,9 @@ public sealed partial class GameLoop
         }
 
         var spell = _creatorSpell!.Info.Id;
-        _spellVisualCatalog!.TryGetAreaVisual(_creatorSpell.Info.VisualId,
-            out SpellAreaVisualInfo area);
+        TryCreatorComposedArea(_creatorSpell, out SpellAreaVisualInfo area);
         Vector3 position = CreatorAreaPosition();
+        _creatorAreaRadius = CreatorAreaPreviewRadius(_creatorSpell);
         if (!_creatorAreaActive)
         {
             bool customAudio = _creatorSpell.Audio.ContainsKey(CreatorAudioCue.Area);
@@ -488,6 +561,7 @@ public sealed partial class GameLoop
     /// ahead of the player on the ground.</summary>
     private Vector3 CreatorAreaPosition()
     {
+        if (_creatorSpell is { } groundDoc && CreatorGroundTargeted(groundDoc)) return CreatorGroundPreviewPoint();
         ulong target = CreatorMissileTargetGuid();
         if (target != 0 && _entities.TryGet(target, out var entity)) return entity.Position;
         if (_controller is null) return default;
@@ -507,14 +581,18 @@ public sealed partial class GameLoop
         Vector3 from = _controller.Position with { Z = _controller.Position.Z + 1.5f };
         Vector3 to;
         ulong targetGuid = CreatorMissileTargetGuid();
-        if (targetGuid != 0 && _entities.TryGet(targetGuid, out var dummy))
+        if (CreatorGroundTargeted(missileDoc) && targetGuid == 0)
+            to = CreatorGroundPreviewPoint() + new Vector3(0f, 0f, 0.3f);   // the live client flies to the spot itself
+        else if (targetGuid != 0 && _entities.TryGet(targetGuid, out var dummy))
             to = dummy.Position with { Z = dummy.Position.Z + 1.5f };
         else
         {
             float yaw = _controller.Yaw;
             to = from + new Vector3(MathF.Cos(yaw), MathF.Sin(yaw), 0f) * 20f;
         }
-        float speed = _creatorSpell.Info.Speed > 1f ? _creatorSpell.Info.Speed : 20f;
+        // The RULES' speed (what the server times arrival by), not a stand-in.
+        float ruleSpeed = CreatorMissileSpeed(missileDoc);
+        float speed = ruleSpeed > 0.4f ? ruleSpeed : 20f;
         double duration = Vector3.Distance(from, to) / speed;
         _spellEffects.SpawnMissile(LocalPlayerGuid, _creatorSpell.Info.Id, path,
             from, to, SpellClockNow, duration, missileDoc.MissileScale);
@@ -620,10 +698,15 @@ public sealed partial class GameLoop
     /// assigns a real one on export. That is enough to author and preview with; turning it
     /// into real DBC rows is the Completer's job, and its "no template to clone" gap is still
     /// open (SPELL_SKETCH.md §5).</summary>
-    private void StartNewCreatorSpell(string name)
+    private void StartNewCreatorSpell(string name, uint? localId = null)
     {
+        // Reopening a saved design keeps its local id, because every custom path it compiled
+        // (Spells\Custom\{id}_{name}\...) is spelled with it; the counter moves past it so a
+        // later New spell can never collide.
+        uint id = localId is { } kept && IsCreatorNewSpellId(kept) ? kept : ++_creatorNextNewSpellId;
+        if (id > _creatorNextNewSpellId) _creatorNextNewSpellId = id;
         var blank = new SpellInfo(
-            Id: ++_creatorNextNewSpellId, Name: name, Rank: "", IconPath: "",
+            Id: id, Name: name, Rank: "", IconPath: "",
             Attributes: 0, AttributesEx2: 0, AttributesEx3: 0,
             InterruptFlags: 0, ChannelInterruptFlags: 0, Targets: 0, ImplicitTarget: 0,
             RecoveryMs: 0, CategoryRecoveryMs: 0,
@@ -668,7 +751,13 @@ public sealed partial class GameLoop
         }
         // The previous spell's imported art leaves the override layer with it.
         if (_creatorSpell is { } previousDoc)
+        {
             foreach (string imported in previousDoc.ImportedTextures.Keys) _mpq?.ClearOverride(imported);
+            foreach (string sketched in previousDoc.SketchTextures.Keys) _mpq?.ClearOverride(sketched);
+            foreach (Creator.Sketch.SketchDoc sketch in previousDoc.Sketches.Values)
+                _mpq?.ClearOverride(Creator.Sketch.SketchDoc.ModelPath(
+                    (int)previousDoc.Info.Id, previousDoc.Info.Name, sketch.Stage));
+        }
         StopAllCreatorAudio();
         _creatorAudioPickerCue = null;
         _creatorAudioPickerError = "";
@@ -778,6 +867,56 @@ public sealed partial class GameLoop
     /// Original every time, so the multipliers never compound.</summary>
     private void RebuildCreatorModel(CreatorModelDoc model, bool replay = true)
     {
+        byte[] working = ComposeCreatorModelBytes(model, model.Original, out bool bytesPatched);
+
+        // The byte patcher cannot reach ribbon or MESH color tracks (keyframed
+        // data), so the whole-model hue routes to those renderers' color layers -
+        // otherwise "hue everything" left the missile trail and the mesh planes
+        // (glow sheets, cloud swirls) unmoved.
+        string renderPath = SpellVisualCatalog.ModelPath(model.Path);
+        uint? modelHue = model.HueShift ? PackArgb(model.HueColor) & 0x00FFFFFF : null;
+        _spellRibbons?.SetModelColorHue(renderPath, modelHue);
+        _spellEffectMeshes?.SetModelColorHue(renderPath, modelHue);
+
+        // Meshes bake their textures at build time - drop the cached mesh so
+        // byte patches and texture swaps show on the mesh-drawn parts too.
+        _spellEffectMeshes?.InvalidateModel(renderPath);
+
+        model.Working = working;
+        model.Emitters = M2EmitterParser.ReadEmitters(working);
+        model.Meshes = M2MeshParser.ReadMeshes(working);
+        model.Ribbons = M2RibbonParser.ReadRibbons(working);
+        model.Bones = M2BoneParser.ReadBones(working);
+        // Tints live in the renderers' texture layer, not the M2 bytes, but they
+        // count as "modified" so the export includes the recolored BLPs.
+        model.Modified = bytesPatched || model.TextureTints.Any(t => t.Value.On);
+        // A sketch's "original" is the compiled M2 - there is no archive file behind its path,
+        // only the mount override CompileSketch installed. Dropping the override here (nothing
+        // byte-patched, so "back to the archive") sent every renderer back through the mount
+        // for the same bytes and re-baked the mesh and its animator on EVERY frame a Tint
+        // swatch was being dragged (msui-console.log, 2026-09-19: 234 clears in six seconds).
+        bool keepBytes = bytesPatched ||
+                         (_creatorSpell is { } sketchOwner && IsSketchModel(sketchOwner, model.Path));
+        _spellEffects?.SetModelOverride(model.Path, keepBytes ? working : null);
+        // Geometry-particle models load through the particle system's own cache,
+        // not SpellEffectSource - push the same override there (a no-op for
+        // paths nothing spawns as geometry).
+        _spellParticles?.SetGeometryModelOverride(renderPath, keepBytes ? working : null);
+        // Editing while paused: re-lay the held picture deterministically with the new bytes
+        // (shared_docs/SPELL_CREATOR_IDE.md §2.2). A drag in flight skips it (§2.10) and
+        // replays once on release.
+        if (replay && CreatorSpellPaused) ReplayCreatorEffects();
+    }
+
+    /// <summary>Every byte-level edit of a model, applied to <paramref name="source"/> in the
+    /// one fixed order (globals → authored-emitter edits → clones → per-BLP hues → clone
+    /// edits → off-switches → mesh/ribbon/bone edits → texture swaps). Pure with respect to
+    /// the renderers: it only re-reads the texture table into <c>model.Textures</c>, which the
+    /// hue step needs. RebuildCreatorModel feeds it the preview original; the session export
+    /// feeds it a sketch recompiled WITHOUT the editing loop, so what ships is what the
+    /// author tuned on top of the one-shot bytes (SPELL_CREATOR_PLAN.md P0.1).</summary>
+    private byte[] ComposeCreatorModelBytes(CreatorModelDoc model, byte[] baseBytes, out bool bytesPatched)
+    {
         bool globalsActive = model.HueShift || model.GravityAdd != 0f ||
             model.RateMul != 1f || model.ScaleMul != 1f || model.LifeMul != 1f || model.SpeedMul != 1f;
         bool texHuesActive = model.TextureHues.Any(h => h.Value.On);
@@ -794,10 +933,10 @@ public sealed partial class GameLoop
                 EmissionSpeedMultiplier = model.SpeedMul == 1f ? null : model.SpeedMul,
                 GravityAdd = model.GravityAdd == 0f ? null : model.GravityAdd,
             };
-            working = M2ParticlePatcher.PatchParticles(model.Original, globals)
-                      ?? (byte[])model.Original.Clone();
+            working = M2ParticlePatcher.PatchParticles(baseBytes, globals)
+                      ?? (byte[])baseBytes.Clone();
         }
-        else working = (byte[])model.Original.Clone();
+        else working = (byte[])baseBytes.Clone();
 
         // Apply authored-emitter edits before cloning. A duplicate should copy
         // the source as the user currently tuned it, not silently revert to the
@@ -831,6 +970,8 @@ public sealed partial class GameLoop
         foreach (int source in model.AddedLayers)
             if (M2MeshParser.CloneLayer(working, source) is { } layerClone) working = layerClone.Data;
             else Console.WriteLine($"[creator] {Path.GetFileName(model.Path)}: layer clone of m{source} failed");
+        // Grafts from other models (P3.3), after the clones: their indices follow them.
+        working = ApplyCreatorTransplants(model, working);
 
         // The texture table's emitter back-references must see the clones (the
         // per-BLP hue dials and the UI's texture<->emitter grouping key on them).
@@ -868,6 +1009,12 @@ public sealed partial class GameLoop
         // swaps' resize below, which never moves what was written.
         working = ApplyCreatorMeshAndRibbonEdits(model, working);
 
+        // Dope-sheet track rewrites (P3.1): new key arrays at EOF, blocks repointed.
+        foreach ((string trackId, Creator.TrackKeys keys) in model.TrackEdits)
+            if (Creator.M2TrackPatcher.Find(working, trackId) is { } track)
+                working = Creator.M2TrackPatcher.Write(working, track, keys);
+            else Console.WriteLine($"[creator] {Path.GetFileName(model.Path)}: track {trackId} not in the model - edit skipped");
+
         // Texture-slot swaps LAST: longer paths append at EOF (resize), which
         // never moves the fixed-offset structures the patchers above wrote.
         if (model.TextureSwaps.Count > 0)
@@ -879,47 +1026,12 @@ public sealed partial class GameLoop
                 $"({string.Join(", ", model.TextureSwaps.Select(sw => $"{sw.Key}->{Path.GetFileName(sw.Value)}"))})");
         }
 
-        // The byte patcher cannot reach ribbon or MESH color tracks (keyframed
-        // data), so the whole-model hue routes to those renderers' color layers -
-        // otherwise "hue everything" left the missile trail and the mesh planes
-        // (glow sheets, cloud swirls) unmoved.
-        string renderPath = SpellVisualCatalog.ModelPath(model.Path);
-        uint? modelHue = model.HueShift ? PackArgb(model.HueColor) & 0x00FFFFFF : null;
-        _spellRibbons?.SetModelColorHue(renderPath, modelHue);
-        _spellEffectMeshes?.SetModelColorHue(renderPath, modelHue);
-
-        // Meshes bake their textures at build time - drop the cached mesh so
-        // byte patches and texture swaps show on the mesh-drawn parts too.
-        _spellEffectMeshes?.InvalidateModel(renderPath);
-
-        model.Working = working;
-        model.Emitters = M2EmitterParser.ReadEmitters(working);
-        model.Meshes = M2MeshParser.ReadMeshes(working);
-        model.Ribbons = M2RibbonParser.ReadRibbons(working);
-        model.Bones = M2BoneParser.ReadBones(working);
-        bool bytesPatched = globalsActive || texHuesActive || model.Edits.Count > 0 ||
-                            model.TextureSwaps.Count > 0 || model.DisabledEmitters.Count > 0 ||
-                            model.AddedEmitters.Count > 0 || CreatorMeshOrRibbonEditsActive(model) ||
-                            model.AddedRibbons.Count > 0 || model.AddedLayers.Count > 0;
-        // Tints live in the renderers' texture layer, not the M2 bytes, but they
-        // count as "modified" so the export includes the recolored BLPs.
-        model.Modified = bytesPatched || model.TextureTints.Any(t => t.Value.On);
-        // A sketch's "original" is the compiled M2 - there is no archive file behind its path,
-        // only the mount override CompileSketch installed. Dropping the override here (nothing
-        // byte-patched, so "back to the archive") sent every renderer back through the mount
-        // for the same bytes and re-baked the mesh and its animator on EVERY frame a Tint
-        // swatch was being dragged (msui-console.log, 2026-09-19: 234 clears in six seconds).
-        bool keepBytes = bytesPatched ||
-                         (_creatorSpell is { } sketchOwner && IsSketchModel(sketchOwner, model.Path));
-        _spellEffects?.SetModelOverride(model.Path, keepBytes ? working : null);
-        // Geometry-particle models load through the particle system's own cache,
-        // not SpellEffectSource - push the same override there (a no-op for
-        // paths nothing spawns as geometry).
-        _spellParticles?.SetGeometryModelOverride(renderPath, keepBytes ? working : null);
-        // Editing while paused: re-lay the held picture deterministically with the new bytes
-        // (shared_docs/SPELL_CREATOR_IDE.md §2.2). A drag in flight skips it (§2.10) and
-        // replays once on release.
-        if (replay && CreatorSpellPaused) ReplayCreatorEffects();
+        bytesPatched = globalsActive || texHuesActive || model.Edits.Count > 0 ||
+                       model.TextureSwaps.Count > 0 || model.DisabledEmitters.Count > 0 ||
+                       model.AddedEmitters.Count > 0 || CreatorMeshOrRibbonEditsActive(model) ||
+                       model.AddedRibbons.Count > 0 || model.AddedLayers.Count > 0 || model.TrackEdits.Count > 0 ||
+                       model.Transplants.Count > 0;
+        return working;
     }
 
     /// <summary>The identity color of one texture slot: a stable golden-angle
@@ -1335,6 +1447,9 @@ public sealed partial class GameLoop
     {
         if (doc.Audio.TryGetValue(cue, out CreatorAudioTrack? custom))
             return $"custom: {Path.GetFileName(custom.SourcePath)}";
+        if (CreatorPickedSound(doc, cue) is uint picked && _spellSounds?.TryGetEntry(picked, out SoundEntry pickedEntry) == true)
+            return $"game sound {picked}: {(pickedEntry.Name.Length > 0 ? pickedEntry.Name : Path.GetFileName(pickedEntry.Variants.FirstOrDefault().Path ?? ""))}" +
+                   (pickedEntry.Looping ? "  (loop)" : "");
         uint? sound = CreatorAuthoredSound(doc, cue);
         if (_spellSounds?.TryGetEntry(sound, out SoundEntry entry) == true)
         {
@@ -1379,7 +1494,7 @@ public sealed partial class GameLoop
             ImGui.SameLine();
             ImGui.TextDisabled(CreatorAudioDescription(doc, cue));
 
-            bool hasSound = custom || CreatorAuthoredSound(doc, cue) is not null;
+            bool hasSound = custom || CreatorPickedSound(doc, cue) is not null || CreatorAuthoredSound(doc, cue) is not null;
             if (!hasSound) ImGui.BeginDisabled();
             if (ImGui.SmallButton("Preview"))
             {
@@ -1393,6 +1508,18 @@ public sealed partial class GameLoop
             ImGui.SameLine();
             if (ImGui.SmallButton(custom ? "Replace file" : "Import file"))
                 BeginCreatorAudioImport(cue);
+            ImGui.SameLine();
+            if (ImGui.SmallButton(_creatorSoundPickerCue == cue ? "Close##gs" : "Game sound"))
+                _creatorSoundPickerCue = _creatorSoundPickerCue == cue ? null : cue;
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Use one of the game's own sounds for this part (any of its 4,600 " +
+                                 "SoundEntries) - nothing to import, every variant kept.");
+            if (CreatorPickedSound(doc, cue) is not null && !custom)
+            {
+                ImGui.SameLine();
+                if (ImGui.SmallButton("Clear##gs")) { SetCreatorPickedSound(doc, cue, null); StopCreatorAudio(cue); }
+            }
+            if (_creatorSoundPickerCue == cue) DrawCreatorSoundPicker(doc, cue, cs);
             if (custom)
             {
                 ImGui.SameLine();
@@ -1464,6 +1591,67 @@ public sealed partial class GameLoop
             ImGui.Separator();
             ImGui.PopID();
         }
+    }
+
+    // ── the game-sound picker (SPELL_CREATOR_PLAN.md P3.9) ──
+    private CreatorAudioCue? _creatorSoundPickerCue;
+    private readonly byte[] _creatorSoundSearchBuf = new byte[64];
+    private static readonly string[] CreatorSoundChips =
+        { "lightning", "thunder", "fire", "frost", "arcane", "shadow", "holy", "nature", "impact", "cast", "precast", "explosion", "loop" };
+
+    private void DrawCreatorSoundPicker(CreatorSpellDoc doc, CreatorAudioCue cue, float cs)
+    {
+        if (_soundKits?.Catalog is not { } catalog) { ImGui.TextDisabled("SoundEntries are not loaded."); return; }
+        ImGui.SetNextItemWidth(200f * cs);
+        ImGui.InputText("Search##gs", _creatorSoundSearchBuf, (uint)_creatorSoundSearchBuf.Length);
+        bool first = true;
+        foreach (string chip in CreatorSoundChips)
+        {
+            float width = ImGui.CalcTextSize(chip).X + ImGui.GetStyle().FramePadding.X * 2f + ImGui.GetStyle().ItemSpacing.X;
+            if (!first && ImGui.GetItemRectMax().X + width < ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X)
+                ImGui.SameLine();
+            if (ImGui.SmallButton(chip + "##gschip"))
+            {
+                Array.Clear(_creatorSoundSearchBuf);
+                System.Text.Encoding.UTF8.GetBytes(chip, _creatorSoundSearchBuf);
+            }
+            first = false;
+        }
+        string[] words = BufToString(_creatorSoundSearchBuf).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // Name or any variant's file: "Spell" sounds are named for the spell, files for the sound.
+        List<SoundEntry> hits = catalog.Entries
+            .Where(e => words.All(w => e.Name.Contains(w, StringComparison.OrdinalIgnoreCase) ||
+                                       e.Variants.Any(v => v.Path.Contains(w, StringComparison.OrdinalIgnoreCase))))
+            .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).Take(80).ToList();
+        uint? current = CreatorPickedSound(doc, cue);
+        if (ImGui.BeginChild("##gs-list", new Vector2(-1f, 180f * cs), true))
+        {
+            foreach (SoundEntry entry in hits)
+            {
+                ImGui.PushID((int)entry.Id);
+                if (ImGui.SmallButton(">"))
+                {
+                    if (_creatorAudioPreviewVoice != 0) _spellSounds?.Stop(_creatorAudioPreviewVoice);
+                    Vector3 at = _controller?.Position ?? Vector3.Zero;
+                    _creatorAudioPreviewVoice = _spellSounds?.Play(entry.Id, LocalPlayerGuid, at, at,
+                        forceLoop: false, trackHold: false, category: "creator-pick") ?? 0;
+                }
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip("Listen");
+                ImGui.SameLine();
+                string files = string.Join(", ", entry.Variants.Take(2).Select(v => Path.GetFileNameWithoutExtension(v.Path)));
+                if (entry.Variants.Count > 2) files += $" +{entry.Variants.Count - 2}";
+                if (ImGui.Selectable($"{entry.Id}  {entry.Name}  ({files}){(entry.Looping ? "  loop" : "")}", current == entry.Id))
+                {
+                    RemoveCreatorAudio(cue);                  // an imported file would win over it
+                    SetCreatorPickedSound(doc, cue, entry.Id);
+                    StopCreatorAudio(cue);
+                    _creatorSustainedAudio.Remove(cue);
+                }
+                ImGui.PopID();
+            }
+        }
+        ImGui.EndChild();
+        ImGui.TextDisabled(hits.Count == 80 ? "First 80 shown; narrow the search." : $"{hits.Count} sounds");
     }
 
     private void BeginCreatorAudioImport(CreatorAudioCue cue)

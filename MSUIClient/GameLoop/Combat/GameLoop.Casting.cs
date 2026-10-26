@@ -179,28 +179,52 @@ public sealed partial class GameLoop
         string? ammoTexture = ammoFallback ? _spellEffects?.AmmoTexturePath(packet.AmmoDisplayId) : null;
 
         // The destination has its own presentation even when no units were hit.
-        // A no-missile visual births its one-shot at GO; the pure location missile
-        // instead uses the normal release gate and hands off its area sound on arrival.
+        // A no-missile visual births its one-shot at GO; a location missile flies ONCE to the
+        // point (SPELL_CREATOR_PLAN.md P2.2): a ground-targeted spell's missile goes to the spot
+        // the caster picked, never one projectile per unit in the radius - that is what turned a
+        // grenade into a fan of grenades. On arrival: the area sound; the impact kit on every unit
+        // the GO listed; and when it listed none (a pure ground cast, or a SuperUI deferred-
+        // destination spell whose victims are only decided on arrival) the impact kit AT the point.
+        bool groundMissile = packet.Targets.Destination is not null &&
+                             (packet.Targets.Mask & GroundTargetMask) != 0 &&
+                             info is { Speed: > 0 } && _spellEffects is not null;
         if (packet.Targets.Destination is { } destination)
         {
             if (_spellVisualCatalog?.TryGetDestinationBurst(visual, out string burst) == true)
                 _spellEffects?.SpawnGroundBurst(packet.Caster, packet.SpellId, burst, destination, now);
-            if (packet.Hits.Length == 0 && packet.Misses.Length == 0 &&
-                info is { Speed: > 0 } groundInfo && _spellEffects is not null)
+            bool legacyGround = packet.Hits.Length == 0 && packet.Misses.Length == 0 &&
+                                info is { Speed: > 0 } && _spellEffects is not null;
+            if ((groundMissile || legacyGround) && info is { } groundInfo)
             {
                 long groundVoice = 0;
-                _spellEffects.SpawnMissile(packet.Caster, packet.SpellId, missilePath, 0,
+                ulong[] hits = packet.Hits;
+                (ulong Guid, byte Reason)[] misses = packet.Misses.Select(m => (m.Guid, m.Reason)).ToArray();
+                ulong caster = packet.Caster;
+                uint spell = packet.SpellId;
+                // A deferred destination lists nobody at GO: whoever the server damages with it
+                // at arrival gets the impact kit (P2.3, ObserveDeferredImpact).
+                DeferredImpact? deferred = hits.Length == 0 && misses.Length == 0
+                    ? TrackDeferredImpact(caster, spell, visual, now) : null;
+                _spellEffects!.SpawnMissile(packet.Caster, packet.SpellId, missilePath, 0,
                     SpellVisualCatalog.NoMissileAttachment, groundInfo.Speed, now, false, 0,
                     anim, SpellEffectUnitPose,
-                    (_, _, _, _) => PlaySpellSoundAt(packet.Caster,
-                        ResolveSpellKit(visual, static s => s.AreaKit)?.Sound, destination,
-                        forceLoop: false, trackHold: false),
+                    (_, _, _, _) =>
+                    {
+                        PlaySpellSoundAt(caster, ResolveSpellKit(visual, static s => s.AreaKit)?.Sound, destination,
+                            forceLoop: false, trackHold: false);
+                        if (hits.Length == 0 && misses.Length == 0)
+                            ApplyGroundImpact(caster, spell, visual, destination);
+                        if (deferred is not null) ArriveDeferredImpact(deferred);
+                        foreach (ulong hit in hits) OnSpellMissileArrived(hit, spell, visual, false, 0);
+                        foreach ((ulong guid, byte reason) in misses) OnSpellMissileArrived(guid, spell, visual, true, reason);
+                    },
                     ammoTexture,
-                    launched: () => groundVoice = PlaySpellSound(packet.Caster,
+                    launched: () => groundVoice = PlaySpellSound(caster,
                         hasStages ? visualStages.MissileSound : 0, forceLoop: true, trackHold: false),
                     ended: () => _spellSounds?.Stop(groundVoice), destination: destination);
             }
         }
+        if (groundMissile) return;   // the units were handed to the one ground missile above
 
         foreach ((ulong target, bool missed, byte reason) in
             packet.Hits.Select(g => (g, false, (byte)0))
@@ -223,6 +247,79 @@ public sealed partial class GameLoop
                     trackHold: false),
                 ended: () => _spellSounds?.Stop(missileVoice));
         }
+    }
+
+    /// <summary>SpellCastTargets bit 0x40, TARGET_FLAG_DEST_LOCATION: the caster picked a point.</summary>
+    private const uint GroundTargetMask = 0x40;
+
+    // ── P2.3: impacts on the units a deferred-destination missile hits ────────
+    // The server decides those units only on ARRIVAL (SPELL_CUSTOM_DEFERRED_DEST), so the GO
+    // lists none and the per-unit impact kit had nothing to play on. Their damage log IS the
+    // list: a non-periodic SMSG_SPELLNONMELEEDAMAGELOG for this caster and spell. It can beat
+    // the client's own missile to the spot by a few frames, so a victim seen before the missile
+    // lands waits for it; one seen after plays at once; each unit once per cast.
+
+    private sealed class DeferredImpact
+    {
+        public ulong Caster;
+        public uint Spell, Visual;
+        public double Launched;
+        public double? Arrived;
+        public readonly HashSet<ulong> Played = new();
+        public readonly List<ulong> Waiting = new();
+    }
+
+    private readonly List<DeferredImpact> _deferredImpacts = new();
+    private const double DeferredImpactMaxFlight = 60.0, DeferredImpactAfterArrival = 1.5;
+
+    private DeferredImpact TrackDeferredImpact(ulong caster, uint spell, uint visual, double now)
+    {
+        _deferredImpacts.RemoveAll(d => now - d.Launched > DeferredImpactMaxFlight ||
+                                        (d.Arrived is { } a && now - a > DeferredImpactAfterArrival));
+        var impact = new DeferredImpact { Caster = caster, Spell = spell, Visual = visual, Launched = now };
+        _deferredImpacts.Add(impact);
+        return impact;
+    }
+
+    private void ArriveDeferredImpact(DeferredImpact impact)
+    {
+        impact.Arrived = NowSeconds();
+        foreach (ulong victim in impact.Waiting) PlayDeferredImpact(impact, victim);
+        impact.Waiting.Clear();
+    }
+
+    private void ObserveDeferredImpact(CombatEvent value)
+    {
+        if (value is not CombatSpellDamage { Periodic: false } damage || _deferredImpacts.Count == 0) return;
+        double now = NowSeconds();
+        // The oldest cast still in the air or just landed: casts in flight together resolve in order.
+        DeferredImpact? impact = _deferredImpacts.FirstOrDefault(d =>
+            d.Caster == damage.Attacker && d.Spell == damage.SpellId && !d.Played.Contains(damage.Target) &&
+            (d.Arrived is not { } a || now - a <= DeferredImpactAfterArrival));
+        if (impact is null) return;
+        if (impact.Arrived is null)
+        {
+            if (!impact.Waiting.Contains(damage.Target)) impact.Waiting.Add(damage.Target);
+        }
+        else PlayDeferredImpact(impact, damage.Target);
+    }
+
+    private void PlayDeferredImpact(DeferredImpact impact, ulong victim)
+    {
+        if (!impact.Played.Add(victim)) return;
+        ApplySpellImpact(victim, impact.Spell, impact.Visual);
+        EmitCombat("DeferredImpact", "arrival-damage", victim, $"spell={impact.Spell};visual={impact.Visual}");
+    }
+
+    /// <summary>A ground missile landed on no listed unit: its impact kit plays AT the point
+    /// (SPELL_CREATOR_PLAN.md P2.2), with the impact sound there.</summary>
+    private void ApplyGroundImpact(ulong caster, uint spellId, uint visual, Vector3 point)
+    {
+        if (ResolveSpellKit(visual, static s => s.Impact) is not { } impact) return;
+        int spawned = _spellEffects?.SpawnGroundKit(caster, spellId, impact, point, NowSeconds(), "IMPACT") ?? 0;
+        PlaySpellSoundAt(caster, impact.Sound, point, forceLoop: false, trackHold: false);
+        EmitCombat("GroundImpact", "missile-arrival", 0,
+            $"spell={spellId};visual={visual};models={spawned};at={point.X:F1},{point.Y:F1},{point.Z:F1}");
     }
 
     private void OnSpellMissileArrived(ulong target, uint spellId, uint visual,
@@ -434,6 +531,7 @@ public sealed partial class GameLoop
         UpdateLootableCorpseVisuals(now);
         // Paused creator clock: no tick, so self-terminating kits are not reaped mid-hold.
         if (!CreatorSpellPaused) _spellEffects?.Tick(now, SpellEffectUnitPose);
+        UpdateCameraShake();
         UpdateAuraStateVisuals(now);
         UpdateObservedChannels(now);
         UpdateDynamicObjectVisuals(now);
@@ -870,6 +968,8 @@ public sealed partial class GameLoop
         {
             Vector3 position = unit.Type == ObjectTypeId.DynamicObject
                 ? DynamicObjectWorldPosition(unit) : unit.Position;
+            // The live Quest Tabletop draws every unit on its exaggerated ground; an undrawn one stands there too.
+            position.Z += LiveTableLiftAt(position.X, position.Y);
             return new SpellUnitPose(true, position, unit.Orientation,
                 Matrix4x4.CreateTranslation(position), null, null);
         }
@@ -877,6 +977,14 @@ public sealed partial class GameLoop
     }
 
     private float? SpellGroundHeight(float x, float y, float authoredZ)
+    {
+        // The live Quest Tabletop asks in its shown (lifted) space: answer in it too.
+        float viewLift = LiveTableLiftAt(x, y);
+        if (viewLift != 0f) return SpellGroundHeightWorld(x, y, authoredZ - viewLift) + viewLift;
+        return SpellGroundHeightWorld(x, y, authoredZ);
+    }
+
+    private float? SpellGroundHeightWorld(float x, float y, float authoredZ)
     {
         float? terrain = _terrain?.SampleHeight(x, y);
         float? collision = _collision?.Raycast(new Vector3(x, y, authoredZ + 3f),
@@ -886,6 +994,13 @@ public sealed partial class GameLoop
     }
 
     private float? SpellParticleGroundHeight(float x, float y, float authoredZ)
+    {
+        float viewLift = LiveTableLiftAt(x, y);
+        if (viewLift != 0f) return SpellParticleGroundHeightWorld(x, y, authoredZ - viewLift) + viewLift;
+        return SpellParticleGroundHeightWorld(x, y, authoredZ);
+    }
+
+    private float? SpellParticleGroundHeightWorld(float x, float y, float authoredZ)
     {
         float? solid = _collision?.Raycast(new Vector3(x, y, authoredZ + .01f),
             -Vector3.UnitZ, 20.01f)?.Point.Z;
@@ -913,6 +1028,9 @@ public sealed partial class GameLoop
         return best;
     }
 
+    /// <summary>Aura body looks already logged (`[aura-body]`, once per unit + spell while it lasts).</summary>
+    private readonly HashSet<(ulong Unit, uint Spell)> _auraBodyLogged = new();
+
     private void UpdateAuraStateVisuals(double now)
     {
         var seen = new HashSet<(ulong Unit, uint Spell)>();
@@ -929,7 +1047,13 @@ public sealed partial class GameLoop
                         out SpellVisualKitInfo stateKit, out StageLife life) != true) continue;
 
                 AuraBodyNode[] nodes = AuraVisualLaw.Nodes(stateKit.CharProcs);
-                if (nodes.Length != 0) body.Add(new AuraBodySpell(spell, nodes));
+                if (nodes.Length != 0)
+                {
+                    body.Add(new AuraBodySpell(spell, nodes));
+                    if (_auraBodyLogged.Add(key))
+                        Console.WriteLine($"[aura-body] spell {spell} on {unit.Guid:X}: " + string.Join(", ", nodes.Select(n =>
+                            n.Kind == AuraBodyNodeKind.Tint ? $"tint #{(uint)n.Value:X6}" : $"{n.Kind.ToString().ToLowerInvariant()} {n.Value:0.##}")));
+                }
 
                 if (_spellEffects is null || _activeAuraStateFx.Contains(key)) continue;
                 int spawned = _spellEffects.SpawnKit(unit.Guid, spell, stateKit, life, now, "STATE");
@@ -945,6 +1069,8 @@ public sealed partial class GameLoop
             _spellEffects?.Reap(stale.Unit, stale.Spell, StageLife.AuraState);
             _activeAuraStateFx.Remove(stale);
         }
+        _auraBodyLogged.RemoveWhere(k => !seen.Contains(k));
+        UpdateCreatorBodyPreview(now);
     }
 
     /// <summary>

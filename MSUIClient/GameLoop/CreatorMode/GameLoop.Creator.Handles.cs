@@ -201,9 +201,8 @@ public sealed partial class GameLoop
         Vector2? Project(Vector3 world) =>
             camera.TryProjectToScreen(world, display, out Vector2 pixel, out _) ? pixel : null;
 
-        // Ctrl+Z: the last drag, whatever the mouse is doing.
-        if (io.KeyCtrl && ImGui.IsKeyPressed(ImGuiKey.Z, false) && !io.WantTextInput && _gizmoDrag is null)
-            CreatorUndoLast();
+        // Ctrl+Z / Ctrl+Y: the whole design (GameLoop.Creator.Undo.cs) - a drag is one step of it.
+        HandleCreatorUndoKeys();
 
         if (_gizmoDrag is { } drag)
         {

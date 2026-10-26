@@ -23,7 +23,9 @@ namespace MSUIClient;
 // ─────────────────────────────────────────────────────────────────────────────
 public sealed partial class GameLoop
 {
-    private bool TabletopActive => _creatorWorldRequested && _creatorPanel == CreatorPanel.Tabletop;
+    /// <summary>The table is up: the Creator panel offline, or the live table opened from the Command View
+    /// (GameLoop.Creator.Tabletop.LiveWorld.cs).</summary>
+    private bool TabletopActive => (_creatorWorldRequested || _liveTableOpen) && _creatorPanel == CreatorPanel.Tabletop;
 
     private TabletopRenderer? _tabletop;
     private readonly Camera _ttCamera = new()
@@ -74,6 +76,8 @@ public sealed partial class GameLoop
     {
         if (TabletopActive && !_ttOpen) OpenTabletop();
         else if (!TabletopActive && _ttOpen) CloseTabletop();
+        else if (_liveTableOpen && !TabletopActive) LiveTableEnd();   // closed before it ever opened
+        LiveTableUpdate();
     }
 
     private void OpenTabletop()
@@ -86,6 +90,7 @@ public sealed partial class GameLoop
             _residentCentre, _config.Start.Map, _movementSender.PacketsSent);
         Console.WriteLine($"[tabletop] open: body ({_ttSnapshot.Body.X:0.00}, {_ttSnapshot.Body.Y:0.00}, {_ttSnapshot.Body.Z:0.00}) " +
                           $"stream {_residentCentre} map {_config.Start.Map}");
+        if (_liveTableOpen) LiveTableBegin();
         var s = Settings.Creator.Tabletop;
         if (_tabletop?.Board is null || _ttAreaId != s.AreaId) TabletopLoadZone(s.AreaId);
         else TabletopIntro();
@@ -96,6 +101,18 @@ public sealed partial class GameLoop
         _ttOpen = false;
         _ttFlight = null;
         _ttDragButton = -1;
+        if (_liveTableOpen)
+        {
+            // Live: the rig was the table's eye on purpose and the stream followed it; the Command View carries on
+            // from where the table looked. The verdict that matters live: no movement packet left the session.
+            bool quietLive = _ttSnapshot is null || _movementSender.PacketsSent == _ttSnapshot.Packets;
+            _ttLastCloseClean = quietLive;
+            _ttLastCloseReport = $"live: movement packets {(quietLive ? "none sent" : $"SENT {_movementSender.PacketsSent - _ttSnapshot!.Packets}")}, eye moves {_liveTableEyeMoves}";
+            Console.WriteLine($"[tabletop] close: {_ttLastCloseReport}");
+            _ttSnapshot = null;
+            LiveTableEnd();
+            return;
+        }
         if (_ttSnapshot is not { } snap) return;
         var cam = _window.Camera;
         bool camSame = cam.Target == snap.CamTarget && cam.Yaw == snap.Yaw && cam.OrbitYaw == snap.OrbitYaw && cam.Pitch == snap.Pitch &&
@@ -481,9 +498,12 @@ public sealed partial class GameLoop
         UpdateTabletopCamera(io.DeltaTime);
         TabletopNearUpdate();
         QaUpdate();
+        LiveUpdate();
         QaDrawOverlays();
+        LiveDrawOverlays();
+        LiveTableDrawUnitBars();
 
-        if (BeginCreatorPanel("Quest Tabletop", "Tabletop", 380f, 620f))
+        if (BeginCreatorPanel(_liveTableOpen ? "Live Tabletop" : "Quest Tabletop", "Tabletop", 380f, 620f))
         {
             BeginCreatorContent();
             ImGui.TextDisabled(_ttLoad is not null ? "Building the table..." : _ttStatus);
@@ -495,6 +515,7 @@ public sealed partial class GameLoop
             QaDrawFiltersAndList();
             if (_ttNear is not null) ImGui.TextDisabled(_ttNear.Failure is { } f ? "Near layer failed: " + f : _ttNear.Status);
             if (_ttCensusStatus.Length > 0) ImGui.TextDisabled(_ttCensusStatus);
+            if (_liveStatus.Length > 0) ImGui.TextDisabled(_liveStatus);
             ImGui.TextDisabled("Left-drag pans, right-drag turns, the wheel zooms. Esc: overview.");
             EndCreatorContent();
         }
@@ -505,7 +526,8 @@ public sealed partial class GameLoop
 
         if (_tabletop is not null)
         {
-            _tabletop.Exaggeration = Math.Clamp(Settings.Creator.Tabletop.Exaggeration, TabletopLaw.MinExaggeration, TabletopLaw.MaxExaggeration);
+            _tabletop.Exaggeration = TabletopLaw.ShownExaggeration(Settings.Creator.Tabletop.Exaggeration, _ttRadius,
+                Settings.Creator.Tabletop.ReliefEasesClose);
             _tabletop.Miniature = Settings.Creator.Tabletop.Miniature;
             _tabletop.ShowWater = Settings.Creator.Tabletop.Water;
         }
@@ -559,6 +581,12 @@ public sealed partial class GameLoop
     {
         if (_gl is null) return false;
         _tabletop ??= new TabletopRenderer(_gl);
+        if (_liveTableOpen)
+        {
+            var live = _tabletop.Board is null ? null : LiveTableNearDraw();
+            _tabletop.Render(_ttCamera, live, live is null ? null : _liveTableTiles);
+            return true;
+        }
         var near = _tabletop.Board is null ? null : TabletopNearDraw();
         _tabletop.Render(_ttCamera, near, near is null ? null : _ttNear?.ReadyTiles);
         return true;

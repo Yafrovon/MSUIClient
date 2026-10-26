@@ -147,13 +147,23 @@ public sealed class GameSettings
     {
         /// <summary>Relief exaggeration k (1 = true heights; the web sketch's default 2.2; slider 1-5).</summary>
         public float Exaggeration { get; set; } = 2.2f;
+        /// <summary>The relief eases toward true heights as the camera closes in (TabletopLaw.ShownExaggeration).</summary>
+        public bool ReliefEasesClose { get; set; } = true;
         /// <summary>Miniature lens: tilt-shift blur at the top and bottom of the screen.</summary>
         public bool Miniature { get; set; } = true;
         public bool Water { get; set; } = true;
         /// <summary>The real world near the camera's ground target: terrain detail, buildings, props, water (P2 near layer).</summary>
         public bool World { get; set; } = true;
-        /// <summary>The real creature models standing on the board (true scale).</summary>
+        /// <summary>The real creature models standing on the board.</summary>
         public bool Creatures { get; set; } = true;
+        /// <summary>Ambient wildlife (creature type 8) among them: off by default (§5).</summary>
+        public bool Critters { get; set; }
+        /// <summary>Figure scale slider (1-4): true scale up close, this much larger from mid-range out (TabletopLaw.FigureScale).</summary>
+        public float FigureScale { get; set; } = 3f;
+        /// <summary>The living board: SuperUI bots where they are now (web /Bots/MapBots), dressed (/Bots/Appearance).</summary>
+        public bool LiveBots { get; set; } = true;
+        /// <summary>Where each live bot has been in the last minute, as a fading line.</summary>
+        public bool LiveTrails { get; set; } = true;
 
         // P3 layers (§5), web defaults: givers/turn-ins/chains/journey/explore on, the rest off.
         public bool Givers { get; set; } = true;

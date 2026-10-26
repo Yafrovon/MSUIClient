@@ -26,6 +26,9 @@
   </PropertyGroup>
   <ItemGroup Condition="Exists('$(WebM2Reader)')">
     <Compile Include="$(WebM2Reader)" Link="Web\M2Reader.cs" />
+    <!-- SPELL_CREATOR_PLAN.md P5.1: the Completer's REAL visual cloner, run offline by the round trip. -->
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\MangosSuperUI\MangosSuperUI\Services\DbcWriterService.cs" Link="Web\DbcWriterService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\MangosSuperUI\MangosSuperUI\Services\SpellServices\SpellVisualCloner.cs" Link="Web\SpellVisualCloner.cs" />
   </ItemGroup>
   <PropertyGroup Condition="Exists('$(WebM2Reader)')">
     <DefineConstants>$(DefineConstants);WEB_M2READER</DefineConstants>

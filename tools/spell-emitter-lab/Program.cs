@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
@@ -19,6 +20,276 @@ if (args.Length is < 1 or > 2)
 
 ClientConfig config = ClientConfig.Load(args[0]);
 using var mpq = new MpqMount(config.ClientDataPath);
+
+// LAB_DUMP_BLP="a.blp;b.blp" LAB_DUMP_DIR=dir: decode archive images through the CLIENT's own
+// BlpDecoder (BGRA) and write PNGs - the colours the game draws, not a viewer's guess - then stop.
+if (Environment.GetEnvironmentVariable("LAB_DUMP_BLP") is { Length: > 0 } dumpList)
+{
+    string dir = Environment.GetEnvironmentVariable("LAB_DUMP_DIR") ?? ".";
+    foreach (string blpPath in dumpList.Split(';', StringSplitOptions.RemoveEmptyEntries))
+    {
+        byte[]? raw = mpq.ReadFile(blpPath);
+        if (raw is null) { Console.WriteLine($"[blp-dump] missing {blpPath}"); continue; }
+        byte[] px = BlpDecoder.GetPixels(raw, 0, out int bw, out int bh);
+        using var bitmap = new SKBitmap(new SKImageInfo(bw, bh, SKColorType.Bgra8888, SKAlphaType.Unpremul));
+        System.Runtime.InteropServices.Marshal.Copy(px, 0, bitmap.GetPixels(), px.Length);
+        string outPath = Path.Combine(dir, Path.GetFileNameWithoutExtension(blpPath) + ".png");
+        using (var stream = File.Create(outPath)) bitmap.Encode(stream, SKEncodedImageFormat.Png, 100);
+        Console.WriteLine($"[blp-dump] {blpPath} {bw}x{bh} enc={raw[8]} alphaDepth={raw[9]} alphaType={raw[10]} -> {outPath}");
+    }
+    return 0;
+}
+
+// LAB_DUMP_DBC="DBFilesClient\X.dbc[:rows]": shape and the first rows (u32 / float side by side), then stop.
+if (Environment.GetEnvironmentVariable("LAB_DUMP_DBC") is { Length: > 0 } dbcList)
+{
+    foreach (string spec in dbcList.Split(';', StringSplitOptions.RemoveEmptyEntries))
+    {
+        string[] parts = spec.Split(':');
+        int show = parts.Length > 1 && int.TryParse(parts[1], out int n) ? n : 8;
+        DbcFile? dbc = mpq.ReadFile(parts[0]) is { } raw ? DbcFile.Parse(raw) : null;
+        if (dbc is null) { Console.WriteLine($"[dbc-dump] missing {parts[0]}"); continue; }
+        Console.WriteLine($"[dbc-dump] {parts[0]}: {dbc.RecordCount} rows x {dbc.FieldCount} fields");
+        for (int r = 0; r < Math.Min(show, dbc.RecordCount); r++)
+            Console.WriteLine("  " + string.Join(" ", Enumerable.Range(0, dbc.FieldCount).Select(f =>
+            {
+                uint u = dbc.GetUInt(r, f);
+                float x = dbc.GetFloat(r, f);
+                return u < 0x01000000 || u == 0xFFFFFFFF ? u.ToString() : x.ToString("0.###", CultureInfo.InvariantCulture) + "f";
+            })));
+    }
+    return 0;
+}
+
+// LAB_FIND_SOUND="word word": SoundEntries rows whose name or files match every word, then stop.
+if (Environment.GetEnvironmentVariable("LAB_FIND_SOUND") is { Length: > 0 } soundQuery)
+{
+    string[] soundWords = soundQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    foreach (SoundEntry e in SoundEntriesCatalog.Load(mpq)!.Entries.Where(e => soundWords.All(w =>
+                 e.Name.Contains(w, StringComparison.OrdinalIgnoreCase) ||
+                 e.Variants.Any(v => v.Path.Contains(w, StringComparison.OrdinalIgnoreCase)))).OrderBy(e => e.Id).Take(40))
+        Console.WriteLine($"[sound] {e.Id} {e.Name} loop={e.Looping} {string.Join(", ", e.Variants.Take(3).Select(v => v.Path))}");
+    return 0;
+}
+
+// LAB_KIT_CENSUS=1: what the kits use that the client may not play - f12 (world effect) and the
+// CharProc types (lanes f15..f18) - with the spells that use them. Then stop.
+if (Environment.GetEnvironmentVariable("LAB_KIT_CENSUS") is not null)
+{
+    DbcFile kitDbc = DbcFile.Parse(mpq.ReadFile(@"DBFilesClient\SpellVisualKit.dbc")!)!;
+    DbcFile visDbc = DbcFile.Parse(mpq.ReadFile(@"DBFilesClient\SpellVisual.dbc")!)!;
+    SpellCatalog census = SpellCatalog.Load(mpq)!;
+    var kitToVisual = new Dictionary<uint, List<uint>>();
+    for (int r = 0; r < visDbc.RecordCount; r++)
+        for (int f = 1; f <= 5; f++)
+        {
+            uint k = visDbc.GetUInt(r, f);
+            if (k is 0 or uint.MaxValue) continue;
+            if (!kitToVisual.TryGetValue(k, out var list)) kitToVisual[k] = list = new List<uint>();
+            list.Add(visDbc.GetUInt(r, 0));
+        }
+    var visualToSpell = census.Spells.GroupBy(s => s.VisualId).ToDictionary(g => g.Key, g => g.Select(s => $"{s.Id} {s.Name}").First());
+    string Example(uint kit) => kitToVisual.TryGetValue(kit, out var vs) ? vs.Select(v => visualToSpell.GetValueOrDefault(v)).FirstOrDefault(n => n is not null) ?? "-" : "-";
+    var world = new Dictionary<uint, List<uint>>();
+    var procTypes = new Dictionary<int, List<uint>>();
+    for (int r = 0; r < kitDbc.RecordCount; r++)
+    {
+        uint kit = kitDbc.GetUInt(r, 0);
+        uint w = kitDbc.GetUInt(r, 12);
+        if (w is not (0 or uint.MaxValue)) { if (!world.TryGetValue(w, out var l)) world[w] = l = new(); l.Add(kit); }
+        for (int lane = 0; lane < 4; lane++)
+        {
+            int type = kitDbc.GetInt(r, 15 + lane);
+            if (type < 0) continue;
+            if (!procTypes.TryGetValue(type, out var l2)) procTypes[type] = l2 = new();
+            l2.Add(kit);
+        }
+    }
+    DbcFile effectNames = DbcFile.Parse(mpq.ReadFile(@"DBFilesClient\SpellVisualEffectName.dbc")!)!;
+    var effectRow = Enumerable.Range(0, effectNames.RecordCount).ToDictionary(r => effectNames.GetUInt(r, 0), r => r);
+    string EffectName(uint id) => effectRow.TryGetValue(id, out int er) ? $"{effectNames.GetString(er, 1)} = {effectNames.GetString(er, 2)}" : "(not a SpellVisualEffectName)";
+    Console.WriteLine($"[kit-census] f12 world effect: {world.Values.Sum(l => l.Count)} kits, {world.Count} distinct values");
+    foreach (var (value, kits) in world.OrderByDescending(x => x.Value.Count).Take(10))
+        Console.WriteLine($"[kit-census]   f12={value} x{kits.Count} e.g. kit {kits[0]} ({Example(kits[0])}) -> {EffectName(value)}");
+    foreach (var (type, kits) in procTypes.OrderByDescending(x => x.Value.Count))
+        Console.WriteLine($"[kit-census] charproc type {type}: {kits.Count} lanes, e.g. kit {kits[0]} ({Example(kits[0])}), kit {kits[^1]} ({Example(kits[^1])})");
+    // Every spell whose kits carry a weapon trail (type 8), with its power cost - to find one any class can cast.
+    if (procTypes.TryGetValue(8, out var trailKits))
+    {
+        var trailVisuals = trailKits.SelectMany(k => kitToVisual.GetValueOrDefault(k) ?? new List<uint>()).ToHashSet();
+        foreach (SpellInfo s in census.Spells.Where(s => trailVisuals.Contains(s.VisualId)).OrderBy(s => s.PowerType).ThenBy(s => s.ManaCost).Take(20))
+            Console.WriteLine($"[kit-census]   trail spell {s.Id} {s.Name} power={s.PowerType} cost={s.ManaCost} attr=0x{s.Attributes:X}");
+    }
+    // The parameters of the types the client does not play, per lane (p0..p3 as float and as int).
+    var rowOfKit = Enumerable.Range(0, kitDbc.RecordCount).ToDictionary(r => kitDbc.GetUInt(r, 0), r => r);
+    foreach (int type in new[] { 8, 13, 7, 2, 6, 10, 15 })
+        if (procTypes.TryGetValue(type, out var kits))
+            foreach (uint kit in kits.Distinct().Take(6))
+            {
+                int r = rowOfKit[kit];
+                for (int lane = 0; lane < 4; lane++)
+                    if (kitDbc.GetInt(r, 15 + lane) == type)
+                        Console.WriteLine($"[kit-census]   type {type} kit {kit} ({Example(kit)}) lane {lane}: " +
+                            string.Join(" ", Enumerable.Range(0, 4).Select(p => { uint u = kitDbc.GetUInt(r, 19 + p * 4 + lane); float f = BitConverter.UInt32BitsToSingle(u); return $"p{p}={f.ToString("0.###", CultureInfo.InvariantCulture)}"; })));
+            }
+    return 0;
+}
+
+#if WEB_M2READER
+// LAB_ROUNDTRIP=1 (SPELL_CREATOR_PLAN.md P5.1): every stock SpellVisual rebuilt FROM ZERO through the
+// Completer's real cloner, from only what the workshop's composition can say (every phase explicit:
+// slots + scales, animation, camera shake, sound, world effect; the missile and its loop sound; the
+// area model, its shards and sound) - then diffed against Blizzard's rows by resolved model path.
+// "N of M lossless" is how much of vanilla's visual vocabulary a design made from nothing can reach.
+if (Environment.GetEnvironmentVariable("LAB_ROUNDTRIP") is not null)
+{
+    SpellVisualCatalog cat = SpellVisualCatalog.Load(mpq)!;
+    byte[] visBytes = mpq.ReadFile(@"DBFilesClient\SpellVisual.dbc")!, kitBytes = mpq.ReadFile(@"DBFilesClient\SpellVisualKit.dbc")!,
+           nameBytes = mpq.ReadFile(@"DBFilesClient\SpellVisualEffectName.dbc")!;
+    DbcFile stockVis = DbcFile.Parse(visBytes)!, stockKit = DbcFile.Parse(kitBytes)!, stockName = DbcFile.Parse(nameBytes)!;
+    var visW = WebM2.DbcWriterService.ReadDbc(visBytes); var kitW = WebM2.DbcWriterService.ReadDbc(kitBytes);
+    var nameW = WebM2.DbcWriterService.ReadDbc(nameBytes);
+    var kitRow = Enumerable.Range(0, stockKit.RecordCount).ToDictionary(r => stockKit.GetUInt(r, 0), r => r);
+    var nameRow = Enumerable.Range(0, stockName.RecordCount).ToDictionary(r => stockName.GetUInt(r, 0), r => r);
+    static bool None(uint v) => v is 0 or uint.MaxValue;
+    static string Norm(string p) => p.Replace('/', '\\').ToLowerInvariant().Replace(".mdx", ".m2").Replace(".mdl", ".m2");
+    string StockPath(uint effect) => None(effect) || !nameRow.TryGetValue(effect, out int er) ? "" : Norm(stockName.GetString(er, 2));
+    // A cloned effect row names a CUSTOM path the patch builder fills with the source model's bytes:
+    // what it will show is the ORIGINAL model (CloneResult.EffectFiles), so that is what is compared.
+    var origin = new Dictionary<uint, string>();
+    string NewPath(uint effect) => None(effect) ? "" : origin.TryGetValue(effect, out string? src) ? Norm(src)
+        : nameW.GetRow(effect) is { } row ? Norm(nameW.ReadString(row[2])) : "";
+    var f1ByStage = new Dictionary<string, Dictionary<uint, int>>();
+    string[] stageNames = { "precast", "cast", "impact", "state", "channel" };
+    foreach (int f in new[] { 8, 14, 15 })
+    {
+        var values = Enumerable.Range(0, stockVis.RecordCount).Select(rr => stockVis.GetUInt(rr, f)).Where(v => !None(v)).ToList();
+        Console.WriteLine($"[roundtrip] visual f{f}: {values.Count} rows set, {values.Distinct().Count()} distinct, {values.Count(v => kitRow.ContainsKey(v))} name a kit; e.g. {string.Join(",", values.Distinct().Take(8))}");
+    }
+    int total = 0, lossless = 0, danglingKits = 0;
+    var lost = new Dictionary<string, int>(StringComparer.Ordinal);
+    var lostExamples = new Dictionary<string, List<uint>>(StringComparer.Ordinal);
+    uint newVisual = 100_000, nextKit = 200_000, nextEffect = 300_000;
+    for (int r = 0; r < stockVis.RecordCount; r++)
+    {
+        uint vid = stockVis.GetUInt(r, 0);
+        if (!cat.TryGetStages(vid, out SpellVisualStages st)) continue;
+        var comp = new JsonObject();
+        uint[] stageKits = { st.Precast, st.Cast, st.Impact, st.State, st.Channel };
+        for (int s = 0; s < 5; s++)
+        {
+            if (None(stageKits[s]) || !cat.TryGetKit(stageKits[s], out SpellVisualKitInfo kit)) continue;
+            var slots = new JsonArray();
+            foreach (SpellVisualKitEffect e in kit.Effects)
+                slots.Add(new JsonObject { ["slot"] = Array.IndexOf(SpellVisualCatalog.KitAttachmentIds, e.AttachmentId), ["modelPath"] = e.ModelPath, ["scale"] = 1f });
+            comp[stageNames[s]] = new JsonObject
+            {
+                ["animationId"] = kit.AnimationId is { } a ? a : null,
+                ["slots"] = slots,
+                ["cameraShake"] = kit.Shake ?? 0u,
+                ["sound"] = kit.Sound is { } snd ? snd : null,
+                ["worldEffect"] = kit.WorldEffect ?? "",
+                ["kitType"] = kitRow.TryGetValue(stageKits[s], out int kt) ? stockKit.GetUInt(kt, 1) : null,
+                // Positional: an empty lane before a used one is said as type -1 (the catalog compacts lanes).
+                ["charProcs"] = kitRow.TryGetValue(stageKits[s], out int pr) ? new JsonArray(Enumerable.Range(0, 4).Select(lane => (JsonNode)new JsonObject
+                {
+                    ["type"] = stockKit.GetInt(pr, 15 + lane),
+                    ["params"] = new JsonArray(Enumerable.Range(0, 4).Select(p => (JsonNode)stockKit.GetFloat(pr, 19 + p * 4 + lane)).ToArray()),
+                }).ToArray()) : new JsonArray(),
+            };
+        }
+        if (cat.MissilePath(st) is { Length: > 0 } || !None(st.MissileSound))
+            comp["missile"] = new JsonObject
+            {
+                ["modelPath"] = cat.MissilePath(st) ?? "", ["scale"] = 1f,
+                ["sound"] = None(st.MissileSound) ? null : st.MissileSound,
+                ["attachment"] = stockVis.GetUInt(r, 9),
+            };
+        var rawFields = new JsonObject();
+        foreach (int f in new[] { 8, 9, 14, 15 })
+            if (f < stockVis.FieldCount && stockVis.GetUInt(r, f) != 0) rawFields[f.ToString()] = stockVis.GetUInt(r, f);
+        if (rawFields.Count > 0) comp["visualFields"] = rawFields;
+        if (cat.TryGetAreaVisual(vid, out SpellAreaVisualInfo area))
+        {
+            SpellAreaEmitterInfo? shard = area.Emitters.Count > 0 ? area.Emitters[0] : null;
+            comp["area"] = new JsonObject
+            {
+                ["modelPath"] = area.LoopingModelPath ?? "", ["scale"] = 1f,
+                ["shardSelector"] = shard is { } sh ? sh.Selector : -1, ["shardRate"] = shard is { } sr ? sr.InstancesPerSecond : 0f,
+                ["sound"] = area.Sound is { } asnd ? asnd : null,
+            };
+        }
+        var result = WebM2.SpellVisualCloner.Clone(visW, kitW, nameW, 0, newVisual, nextKit, nextEffect, $"rt{vid}",
+            WebM2.SpellComposition.Parse(JsonNode.Parse(comp.ToJsonString())));   // as it arrives: JSON TEXT, like the web request
+        uint[] made = visW.GetRow(newVisual)!;
+        origin.Clear();
+        foreach (var file in result.EffectFiles) origin[file.NewEffectId] = file.OriginalM2Path;
+        for (int s3 = 0; s3 < 5; s3++)
+            if (kitRow.TryGetValue(stockVis.GetUInt(r, 1 + s3), out int kr3))
+            {
+                if (!f1ByStage.TryGetValue(stageNames[s3], out var h)) f1ByStage[stageNames[s3]] = h = new();
+                uint f1 = stockKit.GetUInt(kr3, 1);
+                h[f1] = h.GetValueOrDefault(f1) + 1;
+            }
+        var diffs = new List<string>();
+        void Diff(string what, bool same) { if (!same) diffs.Add(what); }
+        for (int s = 0; s < 5; s++)
+        {
+            uint oldKit = stockVis.GetUInt(r, 1 + s), newKit = made[1 + s];
+            if (None(oldKit)) { Diff($"{stageNames[s]}: kit made from nothing", None(newKit)); continue; }
+            if (!kitRow.ContainsKey(oldKit) && None(newKit)) { danglingKits++; continue; }   // stock names a kit that does not exist: nothing renders either way
+            if (None(newKit) || !kitRow.TryGetValue(oldKit, out int kr) || kitW.GetRow(newKit) is not { } nk) { diffs.Add($"{stageNames[s]}: kit missing"); continue; }
+            for (int f = 3; f <= 11; f++) Diff($"kit slot f{f}", StockPath(stockKit.GetUInt(kr, f)) == NewPath(nk[f]));
+            Diff("kit f1 kit type", stockKit.GetUInt(kr, 1) == nk[1]);
+            Diff("kit f2 anim", (None(stockKit.GetUInt(kr, 2)) ? 0 : stockKit.GetUInt(kr, 2)) == (None(nk[2]) ? 0 : nk[2]));
+            Diff("kit f12 world", StockPath(stockKit.GetUInt(kr, 12)) == NewPath(nk[12]));
+            Diff("kit f13 sound", (None(stockKit.GetUInt(kr, 13)) ? 0 : stockKit.GetUInt(kr, 13)) == (None(nk[13]) ? 0 : nk[13]));
+            Diff("kit f14 shake", (None(stockKit.GetUInt(kr, 14)) ? 0 : stockKit.GetUInt(kr, 14)) == (None(nk[14]) ? 0 : nk[14]));
+            for (int lane = 0; lane < 4; lane++)
+            {
+                int oldType = stockKit.GetInt(kr, 15 + lane), newType = (int)nk[15 + lane];
+                bool paramsSame = oldType < 0 || Enumerable.Range(0, 4).All(p => stockKit.GetUInt(kr, 19 + p * 4 + lane) == nk[19 + p * 4 + lane]);
+                Diff($"kit charproc type {oldType}", (oldType == newType || (oldType < 0 && newType < 0)) && paramsSame);
+            }
+        }
+        Diff("visual f7 missile", StockPath(stockVis.GetUInt(r, 7)) == NewPath(made[7]));
+        Diff("visual f9 missile attachment", stockVis.GetUInt(r, 9) == made[9]);
+        Diff("visual f10 missile sound", (None(stockVis.GetUInt(r, 10)) ? 0 : stockVis.GetUInt(r, 10)) == (None(made[10]) ? 0 : made[10]));
+        Diff("visual f12 area model", StockPath(stockVis.GetUInt(r, 12)) == NewPath(made[12]));
+        foreach (int f in new[] { 8, 14, 15 })
+            if (f < stockVis.FieldCount) Diff($"visual f{f}", stockVis.GetUInt(r, f) == (f < made.Length ? made[f] : 0));
+        if (Environment.GetEnvironmentVariable("LAB_ROUNDTRIP_SHOW") is { } show && show == vid.ToString())
+        {
+            Console.WriteLine($"[roundtrip] visual {vid} stock: {string.Join(",", Enumerable.Range(0, stockVis.FieldCount).Select(f => stockVis.GetUInt(r, f)))}");
+            Console.WriteLine($"[roundtrip] visual {vid} made : {string.Join(",", made)}");
+            for (int s2 = 0; s2 < 5; s2++)
+            {
+                uint ok2 = stockVis.GetUInt(r, 1 + s2);
+                if (kitRow.TryGetValue(ok2, out int kr2)) Console.WriteLine($"[roundtrip]   {stageNames[s2]} stock kit {ok2}: {string.Join(",", Enumerable.Range(0, 19).Select(f => stockKit.GetUInt(kr2, f)))}");
+                if (kitW.GetRow(made[1 + s2]) is { } nk2) Console.WriteLine($"[roundtrip]   {stageNames[s2]} made  kit {made[1 + s2]}: {string.Join(",", nk2.Take(19))}");
+            }
+            Console.WriteLine($"[roundtrip] composition: {comp.ToJsonString()}");
+            Console.WriteLine($"[roundtrip] diffs: {string.Join("; ", diffs)}");
+        }
+        total++;
+        if (diffs.Count == 0) lossless++;
+        foreach (string d in diffs.Distinct())
+        {
+            lost[d] = lost.GetValueOrDefault(d) + 1;
+            if (!lostExamples.TryGetValue(d, out var ex)) lostExamples[d] = ex = new();
+            if (ex.Count < 6) ex.Add(vid);
+        }
+        newVisual++; nextKit += 16; nextEffect += 64;
+    }
+    Console.WriteLine($"[roundtrip] {lossless} of {total} stock spell visuals rebuilt from zero losslessly ({danglingKits} stock kit reference(s) name no SpellVisualKit row: nothing renders, none written)");
+    foreach (var (stageName, h) in f1ByStage)
+        Console.WriteLine($"[roundtrip]   kit f1 by phase {stageName}: {string.Join(", ", h.OrderByDescending(x => x.Value).Take(6).Select(x => $"{x.Key} x{x.Value}"))}");
+    foreach (var (what, count) in lost.OrderByDescending(x => x.Value).Take(20))
+        Console.WriteLine($"[roundtrip]   lost in {count}: {what} (visuals {string.Join(",", lostExamples[what])})");
+    return 0;
+}
+#endif
+
 SpellCatalog spells = SpellCatalog.Load(mpq)
     ?? throw new InvalidOperationException("Spell.dbc could not be loaded");
 SpellVisualCatalog visuals = SpellVisualCatalog.Load(mpq)
@@ -1343,6 +1614,502 @@ if (patchFixture is { } inlineFx)
         crowd.AddPiece(SketchShapeKind.Disc);
         Check(SketchWriter.Build(crowd, 1, "x", blpWriter, crowdCache) is null,
             "SketchWriter must refuse more pieces than a byte-sized bone index can address");
+    }
+
+    // ── the `sketches` block (SPELL_CREATOR_PLAN.md P0.2): what is saved must rebuild ──
+    // compile(parse(serialize(doc))) == compile(doc), byte for byte, on the fixtures AND on a
+    // piece that sets every field off its default - so a field added to the model that the
+    // serializer cannot carry fails HERE, not as a spell that reopens subtly different.
+    {
+        var sink = new SketchDoc { Stage = "impact" };
+        SketchPiece all = sink.AddPiece(SketchShapeKind.Stroke);
+        all.Shape.Width = 1.7f; all.Shape.Height = 0.6f; all.Shape.Thickness = 0.5f; all.Shape.Softness = 0.1f;
+        all.Shape.Strokes.Add(new List<Vector2> { new(0.1f, 0.2f), new(0.5f, 0.9f), new(0.8f, 0.3f) });
+        all.Shape.Strokes.Add(new List<Vector2> { new(0.2f, 0.8f), new(0.7f, 0.7f) });
+        all.Shape.StrokeWidth = 31f; all.Shape.Closed = true;
+        all.Look.Colour = new Vector3(0.2f, 0.4f, 1f); all.Look.Alpha = 0.7f; all.Look.Glow = 0.9f;
+        all.Look.Blend = SketchBlend.Mod; all.Look.Unlit = false;
+        all.Place.Origin = new Vector3(0.5f, -0.25f, 1.6f); all.Place.Facing = SketchFacing.Custom;
+        all.Place.CustomEuler = new Vector3(10f, 20f, 30f); all.Place.QuarterTurns = 3;
+        all.Place.MirrorX = true; all.Place.MirrorY = true; all.Place.Offset = new Vector3(0.85f, 0f, 0f);
+        all.Place.Scale = 1.3f;
+        all.Motion.StartAt = 0.1f; all.Motion.Distance = 2f; all.Motion.Direction = SketchDirection.Custom;
+        all.Motion.CustomDirection = new Vector3(1f, 1f, 0.5f); all.Motion.Duration = 0.4f;
+        all.Motion.Ease = SketchEase.Linear; all.Motion.SpinDegreesPerSecond = 90f; all.Motion.SwingDegrees = 215f;
+        all.Motion.GrowFrom = 0.5f; all.Motion.GrowTo = 1.5f; all.Motion.FadeIn = 0.05f; all.Motion.FadeOut = 0.15f;
+        all.Motion.Path.AddRange(new[] { new Vector3(0f, 0f, 1f), new Vector3(1f, 0.5f, 1.2f), new Vector3(2f, 0f, 1f) });
+        all.Extras.Glow.Radius = 0.4f; all.Extras.Glow.Colour = new Vector3(1f, 1f, 0f);
+        all.Extras.Trail.Preset = SketchTrailPreset.Glow; all.Extras.Trail.Length = 0.5f;
+        all.Extras.Sparks.Preset = SketchSparkPreset.Motes; all.Extras.Sparks.Rate = 12f;
+        sink.PasteCopy(all);
+
+        foreach ((string label, SketchDoc doc) in new[] { ("fixture A", sketch), ("facings", facings), ("every field", sink) })
+        {
+            string json = SketchJson.Serialize(doc);
+            SketchDoc? back = SketchJson.Deserialize(json);
+            Check(back is not null, $"sketch json ({label}) did not parse back");
+            Check(SketchJson.Serialize(back!) == json, $"sketch json ({label}) is not stable across a round trip");
+            byte[] a = SketchWriter.Build(doc, 4242, "Test Slash", blpWriter)!.Model;
+            byte[] b = SketchWriter.Build(back!, 4242, "Test Slash", blpWriter)!.Model;
+            Check(a.AsSpan().SequenceEqual(b), $"sketch json ({label}): the reopened sketch compiles to different bytes");
+        }
+        // A file from a newer build is refused, not misread.
+        Check(SketchJson.Deserialize("{\"version\":99,\"stage\":\"cast\",\"pieces\":[]}") is null,
+            "sketch json from a newer format must be refused");
+        // A file written before a field existed keeps that field's default.
+        SketchDoc? sparse = SketchJson.Deserialize("{\"version\":1,\"stage\":\"cast\",\"pieces\":[{\"name\":\"bare\",\"shape\":{\"kind\":\"Ring\"}}]}");
+        Check(sparse is { Pieces.Count: 1 } && sparse.Pieces[0].Shape.Kind == SketchShapeKind.Ring &&
+              Near(sparse.Pieces[0].Place.Origin.Z, 1.2f) && Near(sparse.Pieces[0].Motion.FadeOut, 0.2f) &&
+              SketchWriter.Build(sparse, 1, "x", blpWriter) is not null,
+            "a sparse sketch json must keep every absent field's default and still compile");
+        Console.WriteLine($"[emitter-lab] sketch json: 3 docs round-trip byte-identical ({SketchJson.Serialize(sink).Length} B for the every-field doc)");
+    }
+
+    // ── a MISSILE sketch loops and never fades (SPELL_CREATOR_PLAN.md P2, live 2026-10-26) ──
+    // A missile lives for its whole flight; a one-shot sequence faded the ball to nothing after
+    // half a second of a six-second flight. Both halves of the law, on the shipped bytes.
+    {
+        var missileDoc = new SketchDoc { Stage = "cast" };
+        SketchPiece ball = missileDoc.AddPiece(SketchShapeKind.Disc);
+        ball.Motion.Mode = SketchTravelMode.ToTarget;
+        ball.Motion.FadeIn = 0.1f;
+        ball.Motion.FadeOut = 0.3f;
+        M2Model? flown = M2Reader.Parse(SketchWriter.Build(missileDoc, 4242, "Test Ball", blpWriter)!.Model);
+        Check(flown is not null && flown.Sequences.Count == 1 && (flown.Sequences[0].Flags & 1) == 0,
+            "a missile sketch must write a LOOPING sequence (flag bit 0 clear) even when not editing");
+        var shot = new SketchDoc { Stage = "cast" };
+        shot.AddPiece(SketchShapeKind.Disc).Motion.FadeOut = 0.3f;
+        M2Model? once = M2Reader.Parse(SketchWriter.Build(shot, 4242, "Test Ball", blpWriter)!.Model);
+        Check(once is not null && (once.Sequences[0].Flags & 1) == 1, "an attached sketch still plays once");
+        Console.WriteLine("[emitter-lab] sketch missile: loops, attached plays once");
+    }
+
+    // ── SOLIDS, IMAGES and UV ANIMATION (SPELL_CREATOR_PLAN.md P3.5 / P3.6) ──
+    // Every solid compiles to a mesh both readers accept, with the vertex count its generator
+    // promised; an Image piece names the archive image and ships no BLP; a flipbook writes a
+    // STEPPED translation track on its own global sequence with one key per cell, a scroll a
+    // linear one whose end lands on whole repeats; animated or imaged textures wrap (flags 3).
+    {
+        var solids = new SketchDoc { Stage = "cast" };
+        foreach (SketchShapeKind kind in new[] { SketchShapeKind.Sphere, SketchShapeKind.Cylinder,
+                     SketchShapeKind.Cone, SketchShapeKind.Torus, SketchShapeKind.Beam })
+        {
+            SketchPiece solid = solids.AddPiece(kind);
+            solid.Shape.Segments = 12;
+            Check(solid.Place.Facing == SketchFacing.VerticalForward, $"a {kind} starts standing on its own axis");
+        }
+        SketchPiece ball = solids.Pieces[0];
+        ball.Look.Image = @"Spells\Lightning2.blp";
+        ball.Look.UvScroll = new Vector2(0.5f, 1.25f);
+        SketchPiece flip = solids.Pieces[1];
+        flip.Look.FlipRows = 4; flip.Look.FlipCols = 4; flip.Look.FlipFps = 16f;
+        solids.Pieces[4].Extras.Glow.Radius = 0.2f;   // a beam with a glow shell
+        SketchWriter.SketchBuild? sb = SketchWriter.Build(solids, 4242, "Test Solids", blpWriter);
+        Check(sb is not null, "the solids sketch compiles");
+        M2Model? sm = M2Reader.Parse(sb!.Model);
+        Check(sm is not null && sm.HasRenderableContent, "M2Reader accepts the solids and finds them drawable");
+        Check(sm!.Batches.Count == 6, $"five solids + one glow shell = 6 batches (got {sm.Batches.Count})");
+        Check(sb.Textures.Count == 4 && sb.Textures.All(t => !t.Path.Contains("sketch_cast_sphere", StringComparison.OrdinalIgnoreCase)),
+            "the image piece ships no BLP; the four others do");
+        Check(sm.Textures.Any(t => t.Filename.Equals(@"Spells\Lightning2.blp", StringComparison.OrdinalIgnoreCase) && (t.Flags & 3) == 3),
+            "the image piece's texture names the archive image and wraps");
+        Check(sm.TextureTransforms.Count == 2 && sm.GlobalSequenceDurations.Count == 2,
+            $"two animated pieces = two texture transforms on two global sequences ({sm.TextureTransforms.Count}/{sm.GlobalSequenceDurations.Count})");
+        M2AnimTrack<Vector3> scroll = sm.TextureTransforms[0].Translation, cells = sm.TextureTransforms[1].Translation;
+        Check(scroll.Keys.Count == 2 && scroll.IsLinear && scroll.GlobalSequence == 0 &&
+              MathF.Abs(scroll.Keys[1].X - 2f) < 1e-4f && MathF.Abs(scroll.Keys[1].Y - 5f) < 1e-4f && sm.GlobalSequenceDurations[0] == 4000,
+            $"the scroll loops seamlessly at its own speed: 0.5 and 1.25 per s -> 4 s ending on (2, 5) whole repeats (got {scroll.Keys.LastOrDefault()} over {sm.GlobalSequenceDurations[0]} ms)");
+        Check(cells.Keys.Count == 16 && !cells.IsLinear && cells.GlobalSequence == 1 && sm.GlobalSequenceDurations[1] == 1000,
+            "the flipbook steps 16 cells (interpolation 0) over one second on its own clock");
+        Vector3 sampled = M2TrackSampling.Vector(cells, sm, 0, 0.30f, Vector3.Zero);
+        Check(MathF.Abs(sampled.X) < 1e-4f && MathF.Abs(sampled.Y - 0.25f) < 1e-4f,
+            $"at 0.30 s the flipbook HOLDS cell 4 = row 1, column 0 = (0, 0.25) - stepped, not blended (got {sampled})");
+        for (int bIndex = 0; bIndex < sm.Batches.Count; bIndex++)
+        {
+            int transform = sm.GetTextureTransformForBatch(sm.Batches[bIndex]);
+            int piece = sm.Batches[bIndex].TextureIndex;   // texture lookup is identity per piece
+            int expected = piece == 0 ? 0 : piece == 1 ? 1 : -1;
+            Check(transform == expected, $"batch {bIndex} (piece {piece}) uses transform {expected} (got {transform})");
+        }
+        Check(M2MeshParser.ReadMeshes(sb.Model).Count == 6, "the creator's mesh parser reads all six layers");
+        // A sphere is closed and its normals point out: the top vertex's normal is +Z.
+        Check(sm.Vertices.Any(v => MathF.Max(v.NormY, v.NormZ) > 0.99f), "the sphere's pole normal points out along its axis");
+#if WEB_M2READER
+        Check(WebM2.M2Reader.Parse(sb.Model) is not null, "the web M2Reader accepts the solids sketch");
+#endif
+        Console.WriteLine($"[emitter-lab] sketch solids: {sm.Vertices.Count} verts, {sm.Batches.Count} batches, " +
+                          $"{sm.TextureTransforms.Count} texture transforms, scroll + flipbook laws hold");
+    }
+
+    // ── SPARKS and TRAILS: cross-file record copy (SPELL_SKETCH.md §4.5, PLAN P3.3 / P3.4) ──
+    // Every preset's donor exists and copies; the copy re-reads the SAME scalars as the source
+    // (rate, life, speed, gravity, shape, blend, atlas, colour and size keys, texture), rides the
+    // piece's bone at the piece's pivot, and the card's overrides land where they should. With no
+    // archive the extra is skipped with a note and the sketch still compiles.
+    {
+        Func<string, byte[]?> archive = p => mpq.ReadFile(p);
+        int copied = 0;
+        foreach (SketchSparkPreset preset in Enum.GetValues<SketchSparkPreset>())
+        {
+            if (preset is SketchSparkPreset.None or SketchSparkPreset.Custom) continue;
+            var doc = new SketchDoc { Stage = "cast" };
+            SketchPiece p = doc.AddPiece(SketchShapeKind.Disc);
+            p.Place.Offset = new Vector3(0.5f, 0f, 0f);
+            p.Extras.Sparks.Preset = preset;
+            SketchWriter.DonorRef donor = SketchWriter.SparkDonor(p.Extras.Sparks)!.Value;
+            M2Model? source = mpq.ReadFile(donor.Model) is { } donorBytes ? M2Reader.Parse(donorBytes) : null;
+            Check(source is not null && source.ParticleEmitters.Count > donor.Index, $"spark preset {preset}: donor {donor.Model} e{donor.Index} exists");
+            SketchWriter.SketchBuild? eb = SketchWriter.Build(doc, 4242, "Test Sparks", blpWriter, archive: archive);
+            Check(eb is not null && eb.Notes is { Count: 0 }, $"spark preset {preset} compiles with no notes ({string.Join("; ", eb?.Notes ?? [])})");
+            M2Model? em = M2Reader.Parse(eb!.Model);
+            Check(em is not null && em.ParticleEmitters.Count == 1, $"spark preset {preset}: one emitter in the sketch");
+            M2ParticleEmitter a = source!.ParticleEmitters[donor.Index], c = em!.ParticleEmitters[0];
+            static bool Same(float x, float y) => MathF.Abs(x - y) <= 1e-4f * MathF.Max(1f, MathF.Abs(x));
+            Check(Same(a.EmissionRate, c.EmissionRate) && Same(a.Lifespan, c.Lifespan) && Same(a.EmissionSpeed, c.EmissionSpeed) &&
+                  Same(a.Gravity, c.Gravity) && Same(a.SpeedVariation, c.SpeedVariation) && Same(a.VerticalRange, c.VerticalRange) &&
+                  Same(a.HorizontalRange, c.HorizontalRange) && Same(a.EmissionAreaLength, c.EmissionAreaLength) &&
+                  a.Shape == c.Shape && a.BlendingType == c.BlendingType && a.TextureRows == c.TextureRows &&
+                  a.TextureCols == c.TextureCols && a.ColorKeys.SequenceEqual(c.ColorKeys) && a.ScaleKeys.SequenceEqual(c.ScaleKeys) &&
+                  a.Flags == c.Flags,
+                $"spark preset {preset}: the copy re-reads the source's scalars (rate {a.EmissionRate}/{c.EmissionRate}, life {a.Lifespan}/{c.Lifespan}, speed {a.EmissionSpeed}/{c.EmissionSpeed})");
+            Check(string.Equals(source.Textures[a.Texture].Filename, em.Textures[c.Texture].Filename, StringComparison.OrdinalIgnoreCase),
+                $"spark preset {preset}: samples the donor's own texture ({em.Textures[c.Texture].Filename})");
+            Check(c.Bone == 1 && MathF.Abs(c.PosX - 0.5f) < 1e-4f, $"spark preset {preset}: rides the piece's bone at its pivot");
+#if WEB_M2READER
+            Check(WebM2.M2Reader.Parse(eb.Model) is not null, $"spark preset {preset}: the web reader accepts it");
+#endif
+            copied++;
+        }
+        foreach (SketchTrailPreset preset in Enum.GetValues<SketchTrailPreset>())
+        {
+            if (preset is SketchTrailPreset.None or SketchTrailPreset.Custom) continue;
+            var doc = new SketchDoc { Stage = "cast" };
+            SketchPiece p = doc.AddPiece(SketchShapeKind.Crescent);
+            p.Extras.Trail.Preset = preset;
+            p.Extras.Trail.Length = 0.45f;
+            SketchWriter.DonorRef donor = SketchWriter.TrailDonor(p.Extras.Trail)!.Value;
+            M2Model? source = mpq.ReadFile(donor.Model) is { } donorBytes ? M2Reader.Parse(donorBytes) : null;
+            Check(source is not null && source.RibbonEmitters.Count > donor.Index, $"trail preset {preset}: donor {donor.Model} r{donor.Index} exists");
+            SketchWriter.SketchBuild? rb = SketchWriter.Build(doc, 4242, "Test Trail", blpWriter, archive: archive);
+            Check(rb is not null && rb.Notes is { Count: 0 }, $"trail preset {preset} compiles with no notes ({string.Join("; ", rb?.Notes ?? [])})");
+            M2Model? rm = M2Reader.Parse(rb!.Model);
+            Check(rm is not null && rm.RibbonEmitters.Count == 1, $"trail preset {preset}: one ribbon in the sketch");
+            M2RibbonEmitter a = source!.RibbonEmitters[donor.Index], c = rm!.RibbonEmitters[0];
+            Check(MathF.Abs(a.EdgesPerSecond - c.EdgesPerSecond) < 1e-4f && MathF.Abs(c.EdgeLifetime - 0.45f) < 1e-4f &&
+                  a.HeightAbove.Keys.FirstOrDefault() == c.HeightAbove.Keys.FirstOrDefault() &&
+                  a.HeightBelow.Keys.FirstOrDefault() == c.HeightBelow.Keys.FirstOrDefault() && c.Bone == 1,
+                $"trail preset {preset}: edges/s and heights copied, life = the card's 0.45 s, on the piece's bone");
+            Check(c.Texture < rm.Textures.Count && string.Equals(rm.Textures[c.Texture].Filename, source.Textures[a.Texture].Filename, StringComparison.OrdinalIgnoreCase),
+                $"trail preset {preset}: samples the donor's texture ({(c.Texture < rm.Textures.Count ? rm.Textures[c.Texture].Filename : "none")})");
+            Check(c.Material < rm.RenderFlags.Count && a.Material < source.RenderFlags.Count &&
+                  rm.RenderFlags[c.Material].BlendingMode == source.RenderFlags[a.Material].BlendingMode,
+                $"trail preset {preset}: draws with the donor's blend");
+            Check(c.Color.Keys.Count > 0 && c.Color.Keys.All(k => Vector3.Distance(k, p.Look.Colour) < 1e-4f),
+                $"trail preset {preset}: wears the piece's colour");
+#if WEB_M2READER
+            Check(WebM2.M2Reader.Parse(rb.Model) is not null, $"trail preset {preset}: the web reader accepts it");
+#endif
+            copied++;
+        }
+
+        // The card's overrides, and the no-archive path.
+        var over = new SketchDoc { Stage = "cast" };
+        SketchPiece op = over.AddPiece(SketchShapeKind.Sphere);
+        op.Extras.Sparks.Preset = SketchSparkPreset.Crackle;
+        op.Extras.Sparks.Rate = 55f;
+        op.Extras.Sparks.Size = 2f;
+        op.Extras.Sparks.Colour = new Vector3(0.3f, 0.6f, 1f);
+        op.Extras.Trail.Preset = SketchTrailPreset.Glow;
+        SketchWriter.SketchBuild? ob = SketchWriter.Build(over, 4242, "Test Over", blpWriter, archive: archive);
+        M2Model? om = M2Reader.Parse(ob!.Model);
+        M2Model crackle = M2Reader.Parse(mpq.ReadFile(SketchWriter.SparkDonor(op.Extras.Sparks)!.Value.Model)!)!;
+        M2ParticleEmitter oc = om!.ParticleEmitters[0], od = crackle.ParticleEmitters[0];
+        Check(MathF.Abs(oc.ScalarTracks[6].Keys.Max() - 55f) < 1e-3f, $"Rate 55 sets the rate track's peak (got {oc.ScalarTracks[6].Keys.Max()})");
+        Check(oc.ScaleKeys.Zip(od.ScaleKeys).All(z => MathF.Abs(z.First - 2f * z.Second) < 1e-4f), "Size 2 doubles the three size keys");
+        Check(oc.ColorKeys.All(k => ((k >> 16) & 0xFF) < (k & 0xFF)) && oc.ColorKeys.Zip(od.ColorKeys).All(z => (z.First >> 24) == (z.Second >> 24)),
+            "the recolour turns the sparks blue and keeps the donor's alpha ramp");
+        Check(om.ParticleEmitters.Count == 1 && om.RibbonEmitters.Count == 1 && om.Textures.Count == 3,
+            "a sphere with sparks and a trail: one emitter, one ribbon, three textures (piece + two donors)");
+        Check(ob.Model.AsSpan().SequenceEqual(SketchWriter.Build(over, 4242, "Test Over", blpWriter, archive: archive)!.Model),
+            "copying is deterministic: two builds are byte-identical");
+        SketchWriter.SketchBuild? bare = SketchWriter.Build(over, 4242, "Test Over", blpWriter);
+        Check(bare is not null && bare.Notes is { Count: 2 } && M2Reader.Parse(bare.Model)!.ParticleEmitters.Count == 0,
+            "no archive: both extras skipped WITH notes, the sketch still compiles");
+        var custom = new SketchDoc { Stage = "cast" };
+        SketchPiece cp = custom.AddPiece(SketchShapeKind.Disc);
+        cp.Extras.Sparks.Preset = SketchSparkPreset.Custom;
+        cp.Extras.Sparks.Model = @"Spells\NoSuchModel.m2";
+        Check(SketchWriter.Build(custom, 1, "x", blpWriter, archive: archive)!.Notes!.Single().Contains("not found"),
+            "a custom donor that does not exist is a note, not a crash");
+        Console.WriteLine($"[emitter-lab] sketch extras: {copied} presets copied cross-file and re-read identical; overrides land");
+    }
+
+    // ── CROSS-FILE TRANSPLANT INTO STOCK MODELS (PLAN P3.3) ──
+    {
+        string targetPath = new[] { @"Spells\Cleave_Cast_Base.m2", @"Spells\Arcane_Missile.m2" }.First(p => mpq.ReadFile(p) is not null);
+        byte[] target = mpq.ReadFile(targetPath)!;
+        M2Model before = M2Reader.Parse(target)!;
+        int grafts = 0;
+        foreach (SketchSparkPreset preset in Enum.GetValues<SketchSparkPreset>().Where(p => p is not (SketchSparkPreset.None or SketchSparkPreset.Custom)))
+        {
+            SketchWriter.DonorRef donor = SketchWriter.SparkDonor(new SketchSparks { Preset = preset })!.Value;
+            byte[] donorBytes = mpq.ReadFile(donor.Model)!;
+            M2RecordTransplant.Result? r = M2RecordTransplant.AddParticle(target, donorBytes, donor.Index, 0, new Vector3(0.3f, 0f, 1f), out string note);
+            Check(r is not null, $"transplant {preset} into {targetPath}: {note}");
+            M2Model? after = M2Reader.Parse(r!.Model);
+            Check(after is not null && after.ParticleEmitters.Count == before.ParticleEmitters.Count + 1 && r.NewIndex == before.ParticleEmitters.Count,
+                $"{targetPath} + {preset}: one more emitter, at index {r.NewIndex}");
+            M2ParticleEmitter a = M2Reader.Parse(donorBytes)!.ParticleEmitters[donor.Index], c = after!.ParticleEmitters[r.NewIndex];
+            Check(MathF.Abs(a.EmissionRate - c.EmissionRate) < 1e-4f && MathF.Abs(a.Lifespan - c.Lifespan) < 1e-4f &&
+                  MathF.Abs(a.EmissionSpeed - c.EmissionSpeed) < 1e-4f && a.ColorKeys.SequenceEqual(c.ColorKeys) && a.Flags == c.Flags &&
+                  string.Equals(after.Textures[c.Texture].Filename, r.TexturePath, StringComparison.OrdinalIgnoreCase) &&
+                  c.Bone == 0 && MathF.Abs(c.PosX - 0.3f) < 1e-4f,
+                $"{targetPath} + {preset}: the copy re-reads the donor (rate {a.EmissionRate}/{c.EmissionRate}) on bone 0 at the given point");
+            Check(before.ParticleEmitters.Select((e, i) => (e, i)).All(p => after.ParticleEmitters[p.i].EmissionRate == p.e.EmissionRate),
+                $"{targetPath} + {preset}: the target's own emitters are untouched");
+#if WEB_M2READER
+            Check(WebM2.M2Reader.Parse(r.Model) is not null, $"{targetPath} + {preset}: the web reader accepts it");
+#endif
+            grafts++;
+        }
+        foreach (SketchTrailPreset preset in Enum.GetValues<SketchTrailPreset>().Where(p => p is not (SketchTrailPreset.None or SketchTrailPreset.Custom)))
+        {
+            SketchWriter.DonorRef donor = SketchWriter.TrailDonor(new SketchTrail { Preset = preset })!.Value;
+            byte[] donorBytes = mpq.ReadFile(donor.Model)!;
+            M2RecordTransplant.Result? r = M2RecordTransplant.AddRibbon(target, donorBytes, donor.Index, 0, Vector3.Zero, out string note);
+            M2Model? after = r is null ? null : M2Reader.Parse(r.Model);
+            Check(after is not null && after.RibbonEmitters.Count == before.RibbonEmitters.Count + 1 &&
+                  string.Equals(after.Textures[after.RibbonEmitters[r!.NewIndex].Texture].Filename, r.TexturePath, StringComparison.OrdinalIgnoreCase) &&
+                  MathF.Abs(after.RibbonEmitters[r.NewIndex].EdgesPerSecond - M2Reader.Parse(donorBytes)!.RibbonEmitters[donor.Index].EdgesPerSecond) < 1e-4f,
+                $"transplant trail {preset} into {targetPath}: one more ribbon with the donor's texture and edges/s ({note})");
+            grafts++;
+        }
+        Console.WriteLine($"[emitter-lab] transplant: {grafts} donor records grafted into {targetPath}; both readers accept, the target's own records untouched");
+    }
+
+    // ── TRACK PATCHER (PLAN P3.1): every track of real models, rewritten, re-reads the same ──
+    // Unchanged rewrites must be invisible to M2Reader (keys, times, interpolation, global
+    // sequence, per-sequence sampling); an inserted / moved / deleted key must land where asked;
+    // both readers accept the result; the arrays go to EOF and nothing before them moves.
+    {
+        string[] fixtures = { @"Item\ObjectComponents\Ammo\ArrowFireFlight_01.m2", @"Spells\Arcane_Missile.m2", @"Spells\Frostbolt.m2",
+                              @"Spells\Cleave_Cast_Base.m2", @"Spells\ArcaneShot_Missile.m2" };
+        int tracksChecked = 0, modelsChecked = 0;
+        foreach (string trackFixture in fixtures)
+        {
+            if (mpq.ReadFile(trackFixture) is not { } bytes) { Console.WriteLine($"[emitter-lab] track fixture {trackFixture} missing"); continue; }
+            modelsChecked++;
+            List<TrackInfo> tracks = M2TrackPatcher.Enumerate(bytes);
+            Check(tracks.Count > 0, $"{trackFixture}: the patcher finds its tracks");
+            foreach (TrackInfo track in tracks)
+            {
+                TrackKeys? before = M2TrackPatcher.Read(bytes, track);
+                if (before is null) continue;
+                byte[] rewritten = M2TrackPatcher.Write(bytes, track, before);
+                TrackKeys? after = M2TrackPatcher.Read(rewritten, track);
+                bool same = after is not null && after.Times.SequenceEqual(before.Times) &&
+                            after.Values.Zip(before.Values).All(p => p.First.SequenceEqual(p.Second)) &&
+                            after.Interpolation == before.Interpolation && after.GlobalSequence == before.GlobalSequence;
+                Check(same, $"{trackFixture} {track.Id}: an unchanged rewrite re-reads identical");
+                Check(rewritten.AsSpan(0, bytes.Length).SequenceEqual(bytes.AsSpan()) == false || before.Times.Count == 0 ||
+                      rewritten.Length > bytes.Length, $"{trackFixture} {track.Id}: the rewrite appends");
+                tracksChecked++;
+            }
+            // Edit one emitter rate (or the first float track): insert, move, delete.
+            TrackInfo? rate = tracks.FirstOrDefault(t => t.Id.EndsWith(".rate")) ?? tracks.FirstOrDefault(t => t.Kind == TrackValueKind.Float);
+            if (rate is not null && M2TrackPatcher.Read(bytes, rate) is { } keys)
+            {
+                List<(uint Start, uint End)> seqs = M2TrackPatcher.Sequences(bytes);
+                uint mid = seqs.Count > 0 ? seqs[0].Start + (seqs[0].End - seqs[0].Start) / 2 : 500;
+                TrackKeys edited = keys.Clone();
+                edited.Times.Add(mid); edited.Values.Add(new[] { 123.5f });
+                byte[] inserted = M2TrackPatcher.Write(bytes, rate, edited);
+                TrackKeys again = M2TrackPatcher.Read(inserted, rate)!;
+                int at = again.Times.IndexOf(mid);
+                Check(at >= 0 && again.Values[at][0] == 123.5f && again.Times.SequenceEqual(again.Times.OrderBy(t => t)),
+                    $"{trackFixture} {rate.Id}: an inserted key lands at {mid} ms, the times stay sorted");
+                M2Model? parsed = M2Reader.Parse(inserted);
+                Check(parsed is not null && parsed.ParticleEmitters.Count == M2Reader.Parse(bytes)!.ParticleEmitters.Count,
+                    $"{trackFixture}: M2Reader still reads the edited model whole");
+#if WEB_M2READER
+                Check(WebM2.M2Reader.Parse(inserted) is not null, $"{trackFixture}: the web reader accepts the edited model");
+#endif
+                again.Times[at] = mid + 7;
+                TrackKeys moved = M2TrackPatcher.Read(M2TrackPatcher.Write(inserted, rate, again), rate)!;
+                Check(moved.Times.Contains(mid + 7) && !moved.Times.Contains(mid), $"{trackFixture} {rate.Id}: a moved key moves");
+                moved.Times.RemoveAt(moved.Times.IndexOf(mid + 7)); moved.Values.RemoveAt(moved.Values.FindIndex(v => v[0] == 123.5f));
+                TrackKeys deleted = M2TrackPatcher.Read(M2TrackPatcher.Write(inserted, rate, moved), rate)!;
+                Check(deleted.Times.SequenceEqual(keys.Times), $"{trackFixture} {rate.Id}: deleting it gives the original keys back");
+            }
+        }
+        Console.WriteLine($"[emitter-lab] track patcher: {tracksChecked} tracks over {modelsChecked} models rewrite losslessly; insert/move/delete land");
+    }
+
+    // ── RULES ROUND TRIP + LEGALITY CENSUS (PLAN P5.2) ──
+    // Every stock Spell.dbc row, authored onto the from-zero template the way the workshop does
+    // (CopyFrom every column), exported as the rules JSON the session carries, applied to a FRESH
+    // template and read back: every column must come back as the row had it. Then the legality law
+    // over every stock spell - a census, not a gate: what it flags in Blizzard's own data is what
+    // an author copying from that spell will see.
+    {
+        SpellRuleTables tables = SpellRuleTables.Load(mpq)!;
+        Check(tables.TryGetSpellRow(MSUIClient.Creator.Spells.SpellRules.FromZeroTemplateSpell, out uint[] template),
+            "the from-zero template spell 18282 is in Spell.dbc");
+        string[] columns = MSUIClient.Creator.Spells.SpellTemplateColumns.All.Where(c => c.Kind != MSUIClient.Creator.Spells.SpellTemplateColumns.Kind.BigHigh).Select(c => c.Name)
+            .Where(n => !MSUIClient.Creator.Spells.SpellRules.ServerOnlyColumns.Contains(n, StringComparer.OrdinalIgnoreCase)).ToArray();
+        int ruleRows = 0, lossless = 0;
+        var lostColumns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (uint id in tables.SpellIds.OrderBy(i => i))
+        {
+            tables.TryGetSpellRow(id, out uint[] row);
+            Dictionary<string, double> truth = MSUIClient.Creator.Spells.SpellTemplateColumns.FromDbcRow(row);
+            var authored = MSUIClient.Creator.Spells.SpellRules.FromDbcRow(MSUIClient.Creator.Spells.SpellRules.FromZeroTemplateSpell, template);
+            authored.CopyFrom(row, columns);
+            var reopened = MSUIClient.Creator.Spells.SpellRules.FromDbcRow(MSUIClient.Creator.Spells.SpellRules.FromZeroTemplateSpell, template);
+            reopened.ApplyJson(JsonNode.Parse(authored.ToJson().ToJsonString()));
+            bool same = true;
+            foreach (string column in columns)
+            {
+                double want = truth.TryGetValue(column, out double v) ? v : 0;
+                double got = reopened.Get(column);
+                bool equal = MSUIClient.Creator.Spells.SpellTemplateColumns.TryGet(column, out MSUIClient.Creator.Spells.SpellTemplateColumns.Column meta) && meta.Kind == MSUIClient.Creator.Spells.SpellTemplateColumns.Kind.Float
+                    ? (float)want == (float)got || (float.IsNaN((float)want) && float.IsNaN((float)got))
+                    : want == got;
+                if (!equal)
+                {
+                    same = false;
+                    lostColumns[column] = lostColumns.GetValueOrDefault(column) + 1;
+                }
+            }
+            ruleRows++;
+            if (same) lossless++;
+        }
+        Check(lossless == ruleRows, $"rules round trip: {lossless} of {ruleRows} stock spells come back lossless" +
+              (lostColumns.Count == 0 ? "" : $" (lost: {string.Join(", ", lostColumns.OrderByDescending(k => k.Value).Take(6).Select(k => $"{k.Key} x{k.Value}"))})"));
+
+        var errorKinds = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        int clean = 0, withError = 0;
+        foreach (uint id in tables.SpellIds)
+        {
+            tables.TryGetSpellRow(id, out uint[] row);
+            var rules = MSUIClient.Creator.Spells.SpellRules.FromDbcRow(id, row);
+            var lines = MSUIClient.Creator.Spells.SpellLegality.Validate(rules, tables, s => tables.TryGetSpellRow(s, out _));
+            var errors = lines.Where(l => l.Severity == MSUIClient.Creator.Spells.SpellLegality.Severity.Error).ToList();
+            if (errors.Count == 0) clean++;
+            else
+            {
+                withError++;
+                foreach (var e in errors) errorKinds[e.Field] = errorKinds.GetValueOrDefault(e.Field) + 1;
+            }
+        }
+        Console.WriteLine($"[emitter-lab] rules round trip: {lossless}/{ruleRows} lossless; legality census: {clean} stock spells clean, " +
+                          $"{withError} flagged ({string.Join(", ", errorKinds.OrderByDescending(k => k.Value).Take(6).Select(k => $"{k.Key} x{k.Value}"))})");
+    }
+
+    // ── CAMERA SHAKE (PLAN P4.3): the tables load, kits name them, the wave law holds ──
+    {
+        int shakingKits = 0;
+        var shakers = new List<string>();
+        foreach (SpellInfo spell in spells.Spells.OrderBy(s => s.Id))
+        {
+            if (!visuals.TryGetStages(spell.VisualId, out SpellVisualStages st)) continue;
+            foreach (SpellStage stage in Enum.GetValues<SpellStage>())
+                if (visuals.TryGetKit(SpellVisualCatalog.KitFor(st, stage), out SpellVisualKitInfo kit) && kit.Shake is uint shake)
+                {
+                    shakingKits++;
+                    if (shakers.Count < 12) shakers.Add($"{spell.Id} {spell.Name} {stage}->{shake}");
+                    if (Environment.GetEnvironmentVariable("LAB_LIST_SHAKES") is not null) Console.WriteLine($"[shake-list] {spell.Id} {spell.Name} {stage} -> {shake}");
+                }
+        }
+        Check(shakingKits > 0, "some stock spell kit names a camera shake (f14)");
+        Check(visuals.SpellCameraShakeIds.Any() && visuals.SpellCameraShakeIds.All(id => visuals.TryGetCameraShake(id, out _)),
+            "every SpellEffectCameraShakes row resolves to CameraShakes waves");
+        Check(visuals.TryGetCameraShake(1, out IReadOnlyList<CameraShakeInfo> quake) && quake.Count == 3 &&
+              quake.Select(w => w.Direction).OrderBy(d => d).SequenceEqual(new uint[] { 0, 1, 2 }),
+            "SpellEffectCameraShakes 1 is three waves, one per camera axis");
+        CameraShakeInfo w0 = quake[0];
+        Check(CameraShakeLaw.Wave(w0, w0.Duration + 0.01f) == 0f && CameraShakeLaw.Wave(w0, -0.01f) == 0f,
+            "a wave is silent before it starts and after its duration");
+        float peak = Enumerable.Range(0, 400).Max(i => MathF.Abs(CameraShakeLaw.Wave(w0, w0.Duration * i / 400f)));
+        Check(peak <= w0.Amplitude * CameraShakeLaw.YardsPerAmplitude + 1e-4f && peak > 0f,
+            $"a wave never exceeds its amplitude ({peak:0.###} yd <= {w0.Amplitude * CameraShakeLaw.YardsPerAmplitude:0.###})");
+        Check(CameraShakeLaw.Falloff(5f) == 1f && CameraShakeLaw.Falloff(100f) == 0f &&
+              MathF.Abs(CameraShakeLaw.Falloff(37.5f) - 0.5f) < 1e-4f, "distance falloff: full near, half at 37.5 yd, none far");
+        var bounce = w0 with { Type = 1 };
+        Check(Enumerable.Range(0, 100).All(i => CameraShakeLaw.Wave(bounce, bounce.Duration * i / 100f) >= 0f),
+            "a type-1 wave bounces (never below rest)");
+        Console.WriteLine($"[emitter-lab] camera shake: {shakingKits} stock kits shake; e.g. {string.Join("; ", shakers.Take(6))}");
+    }
+
+    // ── HIERARCHY + ORBIT + JITTER (PLAN P3.8), through the client's own M2Animator ──
+    // A child rides its parent's travel; an orbit keeps its radius and loops on its own clock; a
+    // jitter holds between rolls, stays inside its box and is deterministic; a parent cycle
+    // resolves to the root; modifier bones never renumber a piece's bone.
+    {
+        var doc = new SketchDoc { Stage = "cast" };
+        SketchPiece parent = doc.AddPiece(SketchShapeKind.Disc);
+        parent.Place.Facing = SketchFacing.VerticalForward;
+        parent.Motion.Distance = 2f; parent.Motion.Duration = 0.5f; parent.Motion.Ease = SketchEase.Linear;
+        parent.Motion.FadeOut = 0f;
+        SketchPiece child = doc.AddPiece(SketchShapeKind.Disc);
+        child.Place.Facing = SketchFacing.VerticalForward;
+        child.Place.Origin = new Vector3(0f, 1f, 1.2f);
+        child.Place.Parent = parent.Name;
+        SketchPiece moon = doc.AddPiece(SketchShapeKind.Sphere);
+        moon.Place.Origin = new Vector3(0f, -1f, 1.2f);
+        moon.Motion.OrbitRadius = 0.5f; moon.Motion.OrbitTurnsPerSecond = 1f;
+        SketchPiece arc = doc.AddPiece(SketchShapeKind.Beam);
+        arc.Motion.JitterYards = 0.1f; arc.Motion.JitterDegrees = 40f; arc.Motion.JitterRate = 10f;
+        SketchWriter.SketchBuild? hb = SketchWriter.Build(doc, 4242, "Test Tree", blpWriter);
+        M2Model? hm = M2Reader.Parse(hb!.Model);
+        Check(hm is not null && hm.Bones.Count == 7, $"4 pieces + root + 2 modifier bones = 7 bones (got {hm?.Bones.Count})");
+        Check(hm!.Bones[2].ParentBone == 1 && hm.Bones[3].ParentBone == 5 && hm.Bones[4].ParentBone == 6 &&
+              hm.Bones[5].ParentBone == 0 && hm.Bones[6].ParentBone == 0,
+            "child -> parent's bone; orbit and jitter pieces -> their modifier bones -> root");
+        Check(hm.Bones[5].Translation.GlobalSequence >= 0 && hm.Bones[6].Rotation.GlobalSequence >= 0 &&
+              hm.Bones[6].Rotation.InterpolationType == 0,
+            "modifiers run on their own global sequences; the jitter is stepped");
+        var animator = MSUIClient.World.Units.M2Animator.Build(hm, Array.Empty<int>(), true);
+        var clip = animator!.FindSequenceOrBake(0, true);
+        var skin = new Matrix4x4[hm.Bones.Count];
+        static Vector3 Model(Vector3 raw) => new(raw.X, raw.Z, -raw.Y);   // M2Reader's swap
+        Vector3 At(int bone, Vector3 raw) => Vector3.Transform(Model(raw), skin[bone]);
+
+        animator.Evaluate(clip, 0.49f, 0f, skin);
+        Vector3 childAt = At(2, child.Place.Origin);
+        Check(MathF.Abs(childAt.X - 1.96f) < 0.05f && MathF.Abs(childAt.Z - Model(child.Place.Origin).Z) < 1e-3f,
+            $"the child rides its parent's 2 yd travel (x {childAt.X:0.00} at 0.49 s of 0.5)");
+
+        bool radiusHolds = true;
+        foreach (float g in new[] { 0f, 0.1f, 0.33f, 0.5f, 0.77f })
+        {
+            animator.Evaluate(clip, 0.1f, g, skin);
+            float r = Vector3.Distance(At(3, moon.Place.Origin), Model(moon.Place.Origin));
+            radiusHolds &= MathF.Abs(r - 0.5f) < 0.02f;
+        }
+        animator.Evaluate(clip, 0.1f, 0.25f, skin); Vector3 quarter = At(3, moon.Place.Origin);
+        animator.Evaluate(clip, 0.1f, 1.25f, skin); Vector3 nextLap = At(3, moon.Place.Origin);
+        Check(radiusHolds && Vector3.Distance(quarter, nextLap) < 1e-3f,
+            "the orbit keeps its 0.5 yd radius and comes round to the same place a turn later");
+
+        // Jitter: 10 rolls a second -> held for 0.1 s; inside its box; different between rolls.
+        Vector3 tip = arc.Place.Origin + new Vector3(0.5f, 0f, 0f);
+        animator.Evaluate(clip, 0.1f, 0.31f, skin); Vector3 j1 = At(4, tip);
+        animator.Evaluate(clip, 0.1f, 0.38f, skin); Vector3 j2 = At(4, tip);
+        animator.Evaluate(clip, 0.1f, 0.45f, skin); Vector3 j3 = At(4, tip);
+        Check(Vector3.Distance(j1, j2) < 1e-4f && Vector3.Distance(j2, j3) > 1e-3f,
+            "the jitter HOLDS between rolls and jumps at the next one (flicker, not drift)");
+        Check(Vector3.Distance(j3, Model(tip)) < 0.1f * 1.8f + 0.5f * 2f * MathF.Sin(40f * MathF.PI / 180f) + 0.01f,
+            "the jitter stays inside its box");
+        Check(hb.Model.AsSpan().SequenceEqual(SketchWriter.Build(doc, 4242, "Test Tree", blpWriter)!.Model),
+            "the jitter is seeded: two builds are byte-identical");
+        Check(hm.Vertices.All(v => v.BoneIndex0 >= 1 && v.BoneIndex0 <= 4), "every vertex still names its PIECE bone (1-4)");
+
+        child.Place.Parent = null; parent.Place.Parent = child.Name; child.Place.Parent = parent.Name;
+        int[] resolved = SketchWriter.ResolveParents(doc);
+        Check(resolved[0] == -1 || resolved[1] == -1, "a parent cycle is broken to the root, not followed forever");
+        Check(SketchWriter.Build(doc, 4242, "Test Tree", blpWriter) is not null, "a doc with a cycle still compiles");
+        Console.WriteLine("[emitter-lab] sketch hierarchy: parent carries child, orbit loops, jitter flickers, cycles break");
     }
 
     // ── the picture (SPELL_SKETCH §1): what the owner will actually see ───────
