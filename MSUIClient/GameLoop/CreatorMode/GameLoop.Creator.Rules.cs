@@ -115,6 +115,7 @@ public sealed partial class GameLoop
         rules.CopyFrom(row, SpellTemplateColumns.All.Select(c => c.Name).Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(c => !RecipeKeepColumns.Contains(c)));
         recipe.Adjust?.Invoke(rules);
+        _creatorLastRecipe = recipe.Name;
         doc.PlanStarted = true;
         doc.PlannedStages.Clear();
         foreach (SpellStage stage in recipe.Plan) doc.PlannedStages.Add(stage);
@@ -162,7 +163,7 @@ public sealed partial class GameLoop
                              ImGui.CalcTextSize(recipe.Name).X + 12f * cs;
                 if (next < shelfRight) ImGui.SameLine();
             }
-            if (ImGui.SmallButton(recipe.Name + "##recipe")) ApplyCreatorRecipe(doc, rules, recipe);
+            if (LessonMarked("recipe." + recipe.Name, ImGui.SmallButton(recipe.Name + "##recipe"))) ApplyCreatorRecipe(doc, rules, recipe);
             if (ImGui.IsItemHovered()) ImGui.SetTooltip(recipe.Words + $"\n\nCopies spell #{recipe.Source}'s rules and sets the parts plan.");
         }
         if (_rulesStatus.Length > 0) ImGui.TextWrapped(_rulesStatus);

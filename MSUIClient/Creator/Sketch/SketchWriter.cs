@@ -919,7 +919,7 @@ public static partial class SketchWriter
         if (billboarded || (MathF.Abs(spin) < 0.001f && MathF.Abs(swing) < 0.001f))
             return WriteQuaternionTrack(b, new uint[] { 0 }, new[] { facing });
 
-        Vector3 axis = PieceNormalAxis(piece);
+        Vector3 axis = piece.Motion.SpinAboutForward ? Vector3.UnitX : PieceNormalAxis(piece);
         uint startMs = StartMs(piece, lengthMs);
 
         // A SWING is finite: it turns over Duration and then holds, which is what a slash does.
@@ -1040,6 +1040,30 @@ public static partial class SketchWriter
         var times = new List<uint>();
         var keys = new List<short>();
         uint startMs = StartMs(piece, lengthMs);
+
+        // FLASH: hard strikes every FlashEvery from the start, each FlashOn long, nothing
+        // between; the fade-out scales the strikes that fall inside it down to nothing. A
+        // missile's sequence loops for the whole flight, so its strikes simply repeat (and it
+        // has no fade: fadeOut is 0 above).
+        if (piece.Motion.FlashEvery > 0.01f)
+        {
+            uint everyMs = Math.Max((uint)MathF.Round(piece.Motion.FlashEvery * 1000f), 4u);
+            uint onMs = Math.Clamp((uint)MathF.Round(MathF.Max(piece.Motion.FlashOn, 0.001f) * 1000f), 1u, everyMs - 2);
+            uint fadeFrom = fadeOut > 0.001f ? lengthMs - Math.Min((uint)MathF.Round(fadeOut * 1000f), lengthMs) : lengthMs;
+            times.Add(0); keys.Add(0);
+            for (uint at = Math.Max(startMs, 1u); at + 1 < lengthMs; at += everyMs)
+            {
+                float dim = at <= fadeFrom || lengthMs <= fadeFrom ? 1f
+                    : 1f - (at - fadeFrom) / (float)(lengthMs - fadeFrom);
+                short strike = (short)Math.Clamp((int)MathF.Round(peak * dim), 0, AlphaOpaque);
+                uint off = Math.Min(at + onMs, lengthMs - 1);
+                times.Add(at); keys.Add(strike);
+                times.Add(off); keys.Add(strike);
+                times.Add(off + 1); keys.Add(0);
+            }
+            if (times[^1] < lengthMs) { times.Add(lengthMs); keys.Add(0); }
+            return WriteFixed16Track(b, MakeMonotonic(times.ToArray(), lengthMs), keys.ToArray());
+        }
 
         // Invisible until the piece is due. Two keys of zero, not one: a single key at 0 would
         // let the reader interpolate up from the very beginning of the sequence and the piece

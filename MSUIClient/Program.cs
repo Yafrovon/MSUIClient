@@ -1620,6 +1620,8 @@ public sealed partial class GameLoop : IDisposable
         // Scripted creator-mode texture-swap reproduction (MSUI_CREATOR_PROBE).
         UpdateCreatorProbe();
         UpdateSpellPipeProbe();
+        UpdateSpellShowcase();
+        UpdateLessons();
         UpdateWorldBuilderScript();
         UpdateXrayProbe();
 

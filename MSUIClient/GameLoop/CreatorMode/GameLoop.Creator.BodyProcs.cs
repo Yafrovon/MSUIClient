@@ -144,7 +144,7 @@ public sealed partial class GameLoop
             ImGui.TextDisabled("Body (aura)");
             ImGui.SameLine(130f * cs);
             bool tintOn = body.Tint is not null;
-            if (ImGui.Checkbox("tint##body", ref tintOn)) { body = body with { Tint = tintOn ? 0x4080FFu : null }; changed = true; }
+            if (LessonMarked("body.tint", ImGui.Checkbox("tint##body", ref tintOn))) { body = body with { Tint = tintOn ? 0x4080FFu : null }; changed = true; }
             if (body.Tint is uint tint)
             {
                 ImGui.SameLine();
@@ -155,7 +155,7 @@ public sealed partial class GameLoop
                     changed = true;
                 }
             }
-            ImGui.SameLine();
+            ImGui.SetCursorPosX(130f * cs);   // one dial per line: the row ran off the sidebar (2026-11-03)
             bool alphaOn = body.Alpha is not null;
             if (ImGui.Checkbox("see-through##body", ref alphaOn)) { body = body with { Alpha = alphaOn ? 0.5f : null }; changed = true; }
             if (body.Alpha is float alpha)
@@ -164,7 +164,7 @@ public sealed partial class GameLoop
                 ImGui.SetNextItemWidth(90f * cs);
                 if (ImGui.SliderFloat("##alpha", ref alpha, 0f, 1f, "%.2f")) { body = body with { Alpha = alpha }; changed = true; }
             }
-            ImGui.SameLine();
+            ImGui.SetCursorPosX(130f * cs);   // one dial per line: the row ran off the sidebar (2026-11-03)
             bool rateOn = body.Rate is not null;
             if (ImGui.Checkbox("anim speed##body", ref rateOn)) { body = body with { Rate = rateOn ? 0.5f : null }; changed = true; }
             if (body.Rate is float rate)
@@ -173,7 +173,7 @@ public sealed partial class GameLoop
                 ImGui.SetNextItemWidth(90f * cs);
                 if (ImGui.SliderFloat("##rate", ref rate, 0f, 3f, rate == 0f ? "frozen" : "x%.2f")) { body = body with { Rate = rate }; changed = true; }
             }
-            ImGui.SameLine();
+            ImGui.SetCursorPosX(130f * cs);   // one dial per line: the row ran off the sidebar (2026-11-03)
             bool scaleOn = body.Scale is not null;
             if (ImGui.Checkbox("size##body", ref scaleOn)) { body = body with { Scale = scaleOn ? 1.5f : null }; changed = true; }
             if (body.Scale is float size)
@@ -205,11 +205,11 @@ public sealed partial class GameLoop
             var colour = new Vector3((trail.Rgb >> 16) & 0xFF, (trail.Rgb >> 8) & 0xFF, trail.Rgb & 0xFF) / 255f;
             if (ImGui.ColorEdit3("##trailrgb", ref colour, ImGuiColorEditFlags.NoInputs))
             { trail = trail with { Rgb = CreatorPackRgb(colour) }; changed = true; }
-            ImGui.SameLine();
+            CreatorFlow(90f * cs, 130f * cs);
             float seconds = trail.DurationMs / 1000f;
             ImGui.SetNextItemWidth(90f * cs);
             if (ImGui.SliderFloat("##trailms", ref seconds, 0.1f, 10f, "%.1f s")) { trail = trail with { DurationMs = MathF.Round(seconds * 1000f) }; changed = true; }
-            ImGui.SameLine();
+            CreatorFlow(80f * cs, 130f * cs);
             float strength = trail.AlphaPercent;
             ImGui.SetNextItemWidth(80f * cs);
             if (ImGui.SliderFloat("##trailalpha", ref strength, 0f, 100f, "%.0f%%")) { trail = trail with { AlphaPercent = strength }; changed = true; }

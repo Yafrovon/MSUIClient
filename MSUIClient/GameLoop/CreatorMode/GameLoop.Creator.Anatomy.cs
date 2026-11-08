@@ -110,9 +110,42 @@ public sealed partial class GameLoop
 
     /// <summary>The anatomy list: what this spell is made of, what is still to do, and one
     /// sentence each on when it plays and how long it lives.</summary>
+    private bool _sketchAnatomyFolded;
+
+    /// <summary>Take plan preset <paramref name="index"/> (the "What kind of spell is this?" row).</summary>
+    private void ChooseSketchPlan(CreatorSpellDoc doc, int index)
+    {
+        var (_, _, stages, missile) = SketchPlanPresets[index];
+        doc.PlannedStages.Clear();
+        foreach (SpellStage stage in stages) doc.PlannedStages.Add(stage);
+        doc.PlannedMissile = missile;
+        doc.PlanStarted = true;
+        // Arm every phase the plan calls for, and land on the first one. Choosing
+        // "projectile" and being dropped into a precast the loop does not play is
+        // how this tool manages to do nothing while behaving perfectly.
+        foreach (SpellStage planned in stages) SetSketchPhasePlaying(planned, true);
+        SketchEditStage(stages[0]);
+    }
+
     private void DrawSketchAnatomy(CreatorSpellDoc doc, float cs)
     {
+        // Foldable once the plan is made: it is how you switch part, but it is tall, and the
+        // cards below are where the work happens (owner, 2026-11-03).
+        if (doc.PlanStarted)
+        {
+            if (ImGui.ArrowButton("##anatomy-fold", _sketchAnatomyFolded ? ImGuiDir.Right : ImGuiDir.Down))
+                _sketchAnatomyFolded = !_sketchAnatomyFolded;
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip(_sketchAnatomyFolded ? "Show the spell's parts" : "Fold the parts away to make room for the cards");
+            ImGui.SameLine();
+        }
         ImGui.TextColored(SpellIdeGold, "ANATOMY");
+        if (doc.PlanStarted && _sketchAnatomyFolded)
+        {
+            ImGui.SameLine();
+            ImGui.TextDisabled($"(folded - drawing the {_sketchStage.ToString().ToLowerInvariant()})");
+            return;
+        }
         CreatorHelp("What this spell is made of. A spell's visual is not one thing - it is a " +
                     "handful of independent parts, and the game plays every part you fill in. " +
                     "Decide which parts this spell HAS, then draw each one.\n\n" +
@@ -127,18 +160,8 @@ public sealed partial class GameLoop
             {
                 var (name, example, stages, missile) = SketchPlanPresets[i];
                 if (i > 0 && i % 3 != 0) ImGui.SameLine();
-                if (ImGui.SmallButton($"{name}##plan{i}"))
-                {
-                    doc.PlannedStages.Clear();
-                    foreach (SpellStage stage in stages) doc.PlannedStages.Add(stage);
-                    doc.PlannedMissile = missile;
-                    doc.PlanStarted = true;
-                    // Arm every phase the plan calls for, and land on the first one. Choosing
-                    // "projectile" and being dropped into a precast the loop does not play is
-                    // how this tool manages to do nothing while behaving perfectly.
-                    foreach (SpellStage planned in stages) SetSketchPhasePlaying(planned, true);
-                    SketchEditStage(stages[0]);
-                }
+                if (LessonMarked($"plan.{name}", ImGui.SmallButton($"{name}##plan{i}")))
+                    ChooseSketchPlan(doc, i);
                 if (ImGui.IsItemHovered())
                     ImGui.SetTooltip($"{example}\n\n" +
                         string.Join(" -> ", stages.Select(x => x.ToString())) +
@@ -190,7 +213,7 @@ public sealed partial class GameLoop
                 : planned ? new Vector4(0.95f, 0.72f, 0.35f, 1f)     // planned but empty = to-do
                 : new Vector4(0.5f, 0.5f, 0.54f, 1f);
             ImGui.PushStyleColor(ImGuiCol.Text, tint);
-            bool clicked = ImGui.SmallButton($"{row.Name,-8}##go");
+            bool clicked = LessonMarked($"part.{row.Name}", ImGui.SmallButton($"{row.Name,-8}##go"));
             ImGui.PopStyleColor();
             if (clicked && row.Stage is { } target) SketchEditStage(target);
             if (row.Missile && clicked)

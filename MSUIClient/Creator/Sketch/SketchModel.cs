@@ -270,6 +270,12 @@ public sealed class SketchMotion
     /// <summary>Degrees per second, forever, about the piece's turning axis. Use it for
     /// something that tumbles the whole time it is alive.</summary>
     public float SpinDegreesPerSecond;
+    /// <summary>Spin (and swing) about the piece's own FORWARD axis instead of its face normal.
+    /// With an unturned facing (Vertical forward) that is the flight line: a hub spun this way
+    /// carries pieces riding it (Place.Parent) round a missile like rifling, each keeping its own
+    /// pose - the turn never inherits a sideways facing (owner, 2026-11-03: the crescents must
+    /// circle the ball edge-first, like fins).</summary>
+    public bool SpinAboutForward;
 
     /// <summary>Turn by this many degrees ONCE, over <see cref="Duration"/>, then hold.
     ///
@@ -300,6 +306,12 @@ public sealed class SketchMotion
     public float JitterDegrees;
     public float JitterRate = 12f;
     public bool JitterSmooth;
+    /// <summary>FLASH: from its start the piece strikes every FlashEvery seconds, shows for
+    /// FlashOn seconds and is gone between - re-striking lightning, a strobe, a crackle (owner,
+    /// 2026-11-03: "crackling lightning that continues to emit, and isn't just staying there").
+    /// The fade-out still dims the strikes toward the end. 0 = shown steadily.</summary>
+    public float FlashEvery;
+    public float FlashOn = 0.06f;
     public int JitterSeed;
 
     /// <summary>Longest time this motion occupies, used for the Sketch's sequence length.</summary>
@@ -311,6 +323,7 @@ public sealed class SketchMotion
             if (Path.Count > 1 || Distance > 0f) span = MathF.Max(span, Duration);
             if (GrowFrom != GrowTo) span = MathF.Max(span, Duration);
             if (SwingDegrees != 0f) span = MathF.Max(span, Duration);
+            if (FlashEvery > 0.01f) span = MathF.Max(span, Duration);   // it strikes for its Duration
             span = MathF.Max(span, FadeIn + FadeOut);
             // A piece that starts late makes the whole sketch longer, or its own motion would
             // be cut off by the sequence ending underneath it.

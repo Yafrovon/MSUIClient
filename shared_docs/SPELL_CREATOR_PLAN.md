@@ -674,3 +674,38 @@ impact and field appear on arrival; bots in the radius take nature damage per ti
   normal. Probe body=1 31/31 (preview aura scale 1.5 -> ModelScale 1.5; lane `{2,[1.5..]}`; back to
   1 when State stops). Not built: 7 (needs the client's stand/walk index tables - not in any DBC we
   read), 13 (unknown even to the reference), 1's period/fade params (our tint is still p0 only).
+- 2026-11-03 — **Showcase "Stormwing" built from nothing with the owner watching; two Sketch dials added for it.**
+  `MSUI_SPELL_SHOWCASE=stormwing` (`GameLoop.SpellShowcase.cs`; `MSUI_SPELL_SHOWCASE_CHECK=1` = frame
+  burst, front then side, and quit) drives the workshop's own operations step by step with a step
+  list on screen, then loops the spell on a Kobold Worker (display 10912): Bolt recipe (nature,
+  2.0 s, 30 yd, 4.5 yd/s); Chain Bolt's precast kit (`Lightning_PreCast_Low_Hand` both hands);
+  missile = lightning-ball sphere + shell, four MirrorX crescents (round edge leading) on the
+  diagonals riding an unturned hub that spins once a second about the flight line, seven bolts
+  leaping off the ball; impact = 18 bolts bursting out over a sphere round a flaring core, dimming
+  over 2 s. Owner notes applied in order: no straight bars, lightning that keeps striking, no
+  particle trails, crescents circling the ball edge-first like fins.
+  New dials: **Flash every, on (s)** (`SketchMotion.FlashEvery/FlashOn`: a piece strikes on and
+  off for its Duration, the fade-out dimming late strikes; works on missiles, whose loop repeats it;
+  before this a shown piece could only stay until the sequence end) and **Spin about forward**
+  (`SpinAboutForward`: turn about the piece's own forward axis, so a hub carries riders round a
+  missile like rifling; a hub stood side-on passed its sideways turn on to its riders). A Beam's
+  direction is set by the half turn about the bisector (`ShowcaseEulerFor`), right under either
+  quaternion convention. Lab 39,662; gates green.
+- 2026-11-03 (later) — **Stormwing live + showcase in the owner's layout.** `MSUI_SPELL_SHOWCASE_SHIP=1` ends
+  the showcase with Test live: Stormwing = #40038, learned by Magetest. The Sketch window was only
+  drawn by the docked spell layout, so in the default sidebar layout "open Sketch" did nothing; it is
+  now drawn in both (`GameLoop.Creator.Ui.cs`, top under the bar). The showcase keeps the viewer's
+  layout (it used to force the docked Workspace), wears the creator window look, and waits for
+  **Next step** at each step (Auto-play optional; the check/ship runs play themselves). Run it with a
+  copy of the owner's own settings (LaunchMode=Creator), not an old scratch settings file.
+- 2026-11-04 — **Lessons + the sidebar layout made whole.** `GameLoop.Creator.Lessons.cs`: four
+  follow-along lessons (A bolt / Draw your own / Moving things / A ward on yourself) plus "Watch an
+  expert: Stormwing" (the showcase, in place). Each step: words, a pulsing gold outline on the control
+  (`LessonMarked(key, widget)` at the widget, scrolled into view once per step), a tick when the
+  design shows it done, "Show me" through the controls' own calls. Opened from the Spell section's
+  "Lessons" button. Probe: `MSUI_SPELL_LESSON=<1-4> MSUI_SPELL_LESSON_AUTO=1` plays a lesson through
+  (Show me on any step not done in 1 s), one frame per step, `[lesson] ... DONE/FAIL mark=shown`:
+  all four pass every step with every outline shown. Sidebar layout fixes: a Rules section (the
+  rules card was reachable only from the docked layout's inspector), the Sketch window drawn in this
+  layout, full height, foldable anatomy, a 7-row piece list box and cards never under 420 px; Body
+  (aura) dials one per line and `CreatorFlow` wrapping for the weapon-trail row. Lab 40,202.

@@ -535,9 +535,14 @@ public sealed partial class GameLoop
         // content happened to be on the frame it was created, so the moment the anatomy list
         // grew - the moment a plan was picked - the shape shelf, the piece list and all four
         // cards were simply clipped off the bottom with no scrollbar to reach them.
-        float maxHeight = MathF.Max(io.DisplaySize.Y - _spellIdeStripHeight - 24f, 260f);
-        ImGui.SetNextWindowSize(new Vector2(width, MathF.Min(maxHeight, 820f * cs)), ImGuiCond.Always);
-        var pos = new Vector2(io.DisplaySize.X - width - 8f - SpellIdeRightInset, _spellIdeStripHeight + 8f);
+        // Under the IDE strip in the docked spell layout, under the top bar in the sidebar layout
+        // (which never drew this window at all until 2026-11-03: "open Sketch" did nothing there).
+        float top = SpellFocusActive ? _spellIdeStripHeight + 8f : CreatorSidebarTop;
+        float maxHeight = MathF.Max(io.DisplaySize.Y - top - 16f, 260f);
+        // Top to bottom of the screen: the cards are the part worked in most, and a capped window
+        // left them a sliver under the anatomy and piece list (owner, 2026-11-03).
+        ImGui.SetNextWindowSize(new Vector2(width, maxHeight), ImGuiCond.Always);
+        var pos = new Vector2(io.DisplaySize.X - width - 8f - SpellIdeRightInset, top);
         // Docked BESIDE the inspector, every frame: on the first frame the inspector has not yet
         // said where it sits (SpellIdeRightInset is 0 until it draws once), and a FirstUseEver
         // position froze the window ON TOP of it - both unreadable (frame of 2026-10-26).
@@ -640,7 +645,7 @@ public sealed partial class GameLoop
         // ── shape shelf: one click = one new piece ──────────────────────────
         // Draw first: the shelf is seven shapes somebody else chose, and this is the one that
         // lets the owner make their own.
-        if (CreatorButton("Draw", 56f * cs)) OpenSketchDrawCanvas();
+        if (LessonMarked("shape.Draw", CreatorButton("Draw", 56f * cs))) OpenSketchDrawCanvas();
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Draw your own shape by hand, then place it and move it like any other piece.");
 
@@ -652,7 +657,7 @@ public sealed partial class GameLoop
             float next = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X +
                          ImGui.GetStyle().ItemSpacing.X + 62f * cs;
             if (next < shelfRight) ImGui.SameLine();
-            if (ImGui.SmallButton(SketchShapeNames[i]))
+            if (LessonMarked("shape." + SketchShapeNames[i], ImGui.SmallButton(SketchShapeNames[i])))
             {
                 if (sketch.Pieces.Count >= SketchWriter.MaxPieces)
                     _sketchStatus = $"Too many pieces (max {SketchWriter.MaxPieces}).";
@@ -675,6 +680,12 @@ public sealed partial class GameLoop
         ImGui.Spacing();
         if (sketch.Pieces.Count == 0)
             ImGui.TextDisabled("No pieces yet - click a shape above.");
+        // A long list (the 19-bolt impact) scrolls in a box of about seven rows instead of pushing
+        // the cards off the bottom.
+        const int listRows = 7;
+        bool listBox = sketch.Pieces.Count > listRows;
+        if (listBox)
+            ImGui.BeginChild("##sketch-pieces", new Vector2(0f, (listRows + 0.5f) * ImGui.GetTextLineHeightWithSpacing()), true);
         for (int i = 0; i < sketch.Pieces.Count; i++)
         {
             SketchPiece piece = sketch.Pieces[i];
@@ -687,6 +698,7 @@ public sealed partial class GameLoop
             ImGui.TextDisabled(piece.StateLine());
             ImGui.PopID();
         }
+        if (listBox) ImGui.EndChild();
 
         // ── copy / paste / delete ───────────────────────────────────────────
         ImGui.Spacing();
@@ -731,7 +743,10 @@ public sealed partial class GameLoop
         if (current is not null)
         {
             ImGui.Separator();
-            if (ImGui.BeginChild("##sketch-cards", new Vector2(0f, 0f), false))
+            // The rest of the window - but never less than a usable height: when the parts above
+            // leave too little, the cards keep their height and the whole window scrolls instead.
+            float cardsHeight = MathF.Max(ImGui.GetContentRegionAvail().Y, 420f * cs);
+            if (ImGui.BeginChild("##sketch-cards", new Vector2(0f, cardsHeight), false))
             {
                 DrawSketchLookCard(current, cs);
                 ImGui.Separator();
@@ -787,7 +802,7 @@ public sealed partial class GameLoop
 
         Vector3 colour = piece.Look.Colour;
         ImGui.SetNextItemWidth(150f * cs);
-        if (ImGui.ColorEdit3("Colour", ref colour, ImGuiColorEditFlags.NoInputs))
+        if (LessonMarked("look.colour", ImGui.ColorEdit3("Colour", ref colour, ImGuiColorEditFlags.NoInputs)))
         {
             piece.Look.Colour = colour;
             SketchChanged();
@@ -806,7 +821,7 @@ public sealed partial class GameLoop
         float glow = piece.Look.Glow;
         ImGui.BeginDisabled(solid || piece.Look.Image is not null);
         ImGui.SetNextItemWidth(110f * cs);
-        if (ImGui.SliderFloat("Glow", ref glow, 0f, 1f, "%.2f"))
+        if (LessonMarked("look.glow", ImGui.SliderFloat("Glow", ref glow, 0f, 1f, "%.2f")))
         {
             piece.Look.Glow = glow;
             SketchChanged();
@@ -981,7 +996,7 @@ public sealed partial class GameLoop
 
         int facing = (int)piece.Place.Facing;
         ImGui.SetNextItemWidth(150f * cs);
-        if (ImGui.Combo("Facing", ref facing, SketchFacingNames, SketchFacingNames.Length))
+        if (LessonMarked("place.facing", ImGui.Combo("Facing", ref facing, SketchFacingNames, SketchFacingNames.Length)))
         {
             piece.Place.Facing = (SketchFacing)facing;
             SketchChanged();
@@ -1007,7 +1022,7 @@ public sealed partial class GameLoop
             names.AddRange(rideSketch.Pieces.Where(p => !ReferenceEquals(p, piece)).Select(p => p.Name));
             int current = piece.Place.Parent is { } parentName ? Math.Max(names.IndexOf(parentName), 0) : 0;
             ImGui.SetNextItemWidth(150f * cs);
-            if (ImGui.Combo("Rides on", ref current, names.ToArray(), names.Count))
+            if (LessonMarked("place.parent", ImGui.Combo("Rides on", ref current, names.ToArray(), names.Count)))
             {
                 piece.Place.Parent = current == 0 ? null : names[current];
                 SketchChanged();
@@ -1218,7 +1233,7 @@ public sealed partial class GameLoop
 
         int mode = (int)piece.Motion.Mode;
         ImGui.SetNextItemWidth(150f * cs);
-        if (ImGui.Combo("Travel", ref mode, SketchTravelNames, SketchTravelNames.Length))
+        if (LessonMarked("move.travel", ImGui.Combo("Travel", ref mode, SketchTravelNames, SketchTravelNames.Length)))
         {
             piece.Motion.Mode = (SketchTravelMode)mode;
             SketchChanged();
@@ -1233,7 +1248,7 @@ public sealed partial class GameLoop
             ImGui.SameLine();
             float distance = piece.Motion.Distance;
             ImGui.SetNextItemWidth(90f * cs);
-            if (ImGui.DragFloat("yd", ref distance, 0.05f, 0f, 60f, "%.2f"))
+            if (LessonMarked("move.distance", ImGui.DragFloat("yd", ref distance, 0.05f, 0f, 60f, "%.2f")))
             {
                 piece.Motion.Distance = MathF.Max(distance, 0f);
                 SketchChanged();
@@ -1241,7 +1256,7 @@ public sealed partial class GameLoop
 
             int direction = (int)piece.Motion.Direction;
             ImGui.SetNextItemWidth(110f * cs);
-            if (ImGui.Combo("Direction", ref direction, SketchDirectionNames, SketchDirectionNames.Length))
+            if (LessonMarked("move.direction", ImGui.Combo("Direction", ref direction, SketchDirectionNames, SketchDirectionNames.Length)))
             {
                 piece.Motion.Direction = (SketchDirection)direction;
                 SketchChanged();
@@ -1271,7 +1286,7 @@ public sealed partial class GameLoop
             float speed = speedRules?.Speed ?? piece.Motion.Speed;
             piece.Motion.Speed = speed;
             ImGui.SetNextItemWidth(90f * cs);
-            if (ImGui.DragFloat("yd/s", ref speed, 0.25f, 0.5f, 200f, "%.1f") && speedRules is not null)
+            if (LessonMarked("move.speed", ImGui.DragFloat("yd/s", ref speed, 0.25f, 0.5f, 200f, "%.1f")) && speedRules is not null)
             {
                 speedRules.Set("speed", MathF.Round(MathF.Max(speed, 0.5f), 1));
                 piece.Motion.Speed = speedRules.Speed;
@@ -1283,7 +1298,7 @@ public sealed partial class GameLoop
 
         float duration = piece.Motion.Duration;
         ImGui.SetNextItemWidth(90f * cs);
-        if (ImGui.DragFloat("in s", ref duration, 0.01f, 0.05f, 10f, "%.2f"))
+        if (LessonMarked("move.duration", ImGui.DragFloat("in s", ref duration, 0.01f, 0.05f, 10f, "%.2f")))
         {
             piece.Motion.Duration = MathF.Max(duration, 0.05f);
             SketchChanged();
@@ -1293,7 +1308,7 @@ public sealed partial class GameLoop
         ImGui.SameLine();
         int ease = (int)piece.Motion.Ease;
         ImGui.SetNextItemWidth(100f * cs);
-        if (ImGui.Combo("Ease", ref ease, SketchEaseNames, SketchEaseNames.Length))
+        if (LessonMarked("move.ease", ImGui.Combo("Ease", ref ease, SketchEaseNames, SketchEaseNames.Length)))
         {
             piece.Motion.Ease = (SketchEase)ease;
             SketchChanged();
@@ -1317,11 +1332,18 @@ public sealed partial class GameLoop
 
         float spin = piece.Motion.SpinDegreesPerSecond;
         ImGui.SetNextItemWidth(110f * cs);
-        if (ImGui.DragFloat("Spin deg/s", ref spin, 5f, -2000f, 2000f, "%.0f"))
+        if (LessonMarked("move.spin", ImGui.DragFloat("Spin deg/s", ref spin, 5f, -2000f, 2000f, "%.0f")))
         {
             piece.Motion.SpinDegreesPerSecond = spin;
             SketchChanged();
         }
+        ImGui.SameLine();
+        bool forward = piece.Motion.SpinAboutForward;
+        if (ImGui.Checkbox("about forward", ref forward)) { piece.Motion.SpinAboutForward = forward; SketchChanged(); }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Turn about the piece's own FORWARD axis (the flight line, for an unturned piece) " +
+                             "instead of its face. Spin a hub this way and every piece riding it circles the " +
+                             "missile like rifling, keeping its own pose.");
         if (billboarded) ImGui.EndDisabled();
         CreatorHelp(billboarded
             ? "A camera-facing piece is turned to the camera every frame, which overrides any turn " +
@@ -1331,7 +1353,7 @@ public sealed partial class GameLoop
 
         Vector2 grow = new(piece.Motion.GrowFrom, piece.Motion.GrowTo);
         ImGui.SetNextItemWidth(160f * cs);
-        if (ImGui.DragFloat2("Grow", ref grow, 0.02f, 0.05f, 10f, "%.2f"))
+        if (LessonMarked("move.grow", ImGui.DragFloat2("Grow", ref grow, 0.02f, 0.05f, 10f, "%.2f")))
         {
             piece.Motion.GrowFrom = MathF.Max(grow.X, 0.05f);
             piece.Motion.GrowTo = MathF.Max(grow.Y, 0.05f);
@@ -1341,7 +1363,7 @@ public sealed partial class GameLoop
 
         Vector2 fade = new(piece.Motion.FadeIn, piece.Motion.FadeOut);
         ImGui.SetNextItemWidth(160f * cs);
-        if (ImGui.DragFloat2("Fade in/out s", ref fade, 0.01f, 0f, 5f, "%.2f"))
+        if (LessonMarked("move.fade", ImGui.DragFloat2("Fade in/out s", ref fade, 0.01f, 0f, 5f, "%.2f")))
         {
             piece.Motion.FadeIn = MathF.Max(fade.X, 0f);
             piece.Motion.FadeOut = MathF.Max(fade.Y, 0f);
@@ -1373,7 +1395,7 @@ public sealed partial class GameLoop
         ImGui.Spacing();
         Vector2 orbit = new(m.OrbitRadius, m.OrbitTurnsPerSecond);
         ImGui.SetNextItemWidth(160f * cs);
-        if (ImGui.DragFloat2("Orbit yd, turns/s", ref orbit, 0.01f, -10f, 10f, "%.2f"))
+        if (LessonMarked("move.orbit", ImGui.DragFloat2("Orbit yd, turns/s", ref orbit, 0.01f, -10f, 10f, "%.2f")))
         {
             m.OrbitRadius = MathF.Max(orbit.X, 0f);
             m.OrbitTurnsPerSecond = orbit.Y;
@@ -1396,7 +1418,7 @@ public sealed partial class GameLoop
 
         Vector3 jitter = new(m.JitterYards, m.JitterDegrees, m.JitterRate);
         ImGui.SetNextItemWidth(220f * cs);
-        if (ImGui.DragFloat3("Jitter yd, deg, /s", ref jitter, 0.01f, 0f, 60f, "%.2f"))
+        if (LessonMarked("move.jitter", ImGui.DragFloat3("Jitter yd, deg, /s", ref jitter, 0.01f, 0f, 60f, "%.2f")))
         {
             m.JitterYards = MathF.Max(jitter.X, 0f);
             m.JitterDegrees = Math.Clamp(jitter.Y, 0f, 180f);
@@ -1415,6 +1437,19 @@ public sealed partial class GameLoop
             if (ImGui.SmallButton("re-roll##jitter")) { m.JitterSeed++; SketchChanged(); }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Another, equally random, pattern.");
         }
+
+        var flash = new Vector2(m.FlashEvery, m.FlashOn);
+        ImGui.SetNextItemWidth(160f * cs);
+        if (ImGui.DragFloat2("Flash every, on (s)", ref flash, 0.005f, 0f, 2f, "%.3f"))
+        {
+            m.FlashEvery = MathF.Max(flash.X, 0f);
+            m.FlashOn = Math.Clamp(flash.Y, 0.001f, 2f);
+            SketchChanged();
+        }
+        CreatorHelp("Re-strike: the piece flashes on every so often for a moment and is gone between, " +
+                    "for its whole life (the fade-out dims the late strikes). Crackling lightning is a " +
+                    "few jagged bolts flashing every 0.08-0.15 s, each with stepped jitter at about the " +
+                    "same rate so every strike lands in a new pose. 0 = shown steadily.");
     }
 
     // ── EXTRAS ──────────────────────────────────────────────────────────────
@@ -1465,7 +1500,7 @@ public sealed partial class GameLoop
         SketchSparks sparks = piece.Extras.Sparks;
         int preset = (int)sparks.Preset;
         ImGui.SetNextItemWidth(150f * cs);
-        if (ImGui.Combo("Sparks", ref preset, SketchSparkNames, SketchSparkNames.Length))
+        if (LessonMarked("extras.sparks", ImGui.Combo("Sparks", ref preset, SketchSparkNames, SketchSparkNames.Length)))
         {
             sparks.Preset = (SketchSparkPreset)preset;
             sparks.Rate = null; sparks.Speed = null;   // a new donor starts as Blizzard made it

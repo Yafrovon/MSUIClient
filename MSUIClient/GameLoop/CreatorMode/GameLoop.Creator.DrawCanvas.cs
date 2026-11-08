@@ -152,7 +152,7 @@ public sealed partial class GameLoop
             // ── keep it, or do not ──────────────────────────────────────────
             bool empty = _sketchDrawStrokes.Count == 0;
             if (empty) ImGui.BeginDisabled();
-            if (CreatorButton("Keep it", 80f * cs) || ImGui.IsKeyPressed(ImGuiKey.Enter))
+            if (LessonMarked("canvas.keep", CreatorButton("Keep it", 80f * cs)) || ImGui.IsKeyPressed(ImGuiKey.Enter))
                 AcceptSketchDrawing(doc, sketch);
             if (empty) ImGui.EndDisabled();
 

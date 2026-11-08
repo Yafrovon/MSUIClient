@@ -192,7 +192,12 @@ public sealed partial class GameLoop
                 case CreatorPanel.XRay: DrawCreatorSectionPanel("XRay", "Collision X-Ray", 460f, 560f); break;
                 case CreatorPanel.World: DrawCreatorSectionPanel("World", "World Builder", 560f, 820f); break;
             }
+            // The Sketch window belongs to the spell, not to a layout: the docked spell layout
+            // draws it from DrawCreatorSpellFocus, this one draws it here.
+            DrawSketchWindow();
         }
+        DrawSpellShowcase();
+        DrawCreatorLessons();
         UpdateWorldBuilder();
         DrawCreatorGizmoLabels();
         DrawPoppedCreatorSections();
@@ -244,6 +249,17 @@ public sealed partial class GameLoop
     // to a fraction of the window - resizing the window resizes the list.
 
     private float CreatorResultRowHeight => ImGui.GetTextLineHeight() + 8f * CreatorUiScale;
+
+    /// <summary>SameLine when the next item (<paramref name="nextWidth"/> wide) still fits in the
+    /// window, otherwise a new line starting at <paramref name="indent"/> - so a row of dials wraps in
+    /// a narrow sidebar instead of running off its right edge.</summary>
+    private static void CreatorFlow(float nextWidth, float indent)
+    {
+        ImGui.SameLine();
+        if (ImGui.GetContentRegionAvail().X >= nextWidth) return;
+        ImGui.NewLine();
+        ImGui.SetCursorPosX(indent);
+    }
 
     private bool BeginCreatorResults(string id, int itemCount, float maxFraction = 0.45f)
     {

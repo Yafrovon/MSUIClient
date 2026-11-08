@@ -1131,6 +1131,9 @@ public sealed partial class GameLoop
 
         if (_creatorSpell is not { } doc) return;
 
+        // The rules card (what the spell DOES) - the docked spell layout shows it in the
+        // inspector; this layout had no way to reach it at all until 2026-11-03.
+        CreatorSection("Spells", "ws-rules", "Rules", false, DrawCreatorRulesBody);
         CreatorSection("Spells", "ws-loop", _creatorLoopOn ? "Loop  (running)" : "Loop", true,
             DrawCreatorLoopBody);
         CreatorSection("Spells", "ws-audio", doc.Audio.Count == 0 ? "Audio" : "Audio *", true,
@@ -1183,6 +1186,7 @@ public sealed partial class GameLoop
     private void DrawCreatorSpellPickerBody()
     {
         float cs = CreatorUiScale;
+        DrawCreatorLessonsButton();
         if (_spellCatalog is null || _spellVisualCatalog is null || _spellEffects is null)
         {
             ImGui.TextWrapped("Spell catalogs are unavailable - check the console.");
@@ -1204,7 +1208,7 @@ public sealed partial class GameLoop
         string newName = BufToString(_creatorNewSpellNameBuf).Trim();
         bool nameable = newName.Length >= 2;
         if (!nameable) ImGui.BeginDisabled();
-        if (CreatorButton("New spell", 90f * cs))
+        if (LessonMarked("spell.new", CreatorButton("New spell", 90f * cs)))
         {
             StartNewCreatorSpell(newName);
             Array.Clear(_creatorNewSpellNameBuf);
@@ -1342,7 +1346,7 @@ public sealed partial class GameLoop
                         _creatorLoopImpactPhase || _creatorLoopStateHold || _creatorLoopChannelHold ||
                         _creatorLoopAreaHold;
         if (!anyPhase && !_creatorLoopOn) ImGui.BeginDisabled();
-        if (CreatorButton(_creatorLoopOn ? "Stop" : "Loop", 70f * cs)) ToggleCreatorLoop();
+        if (LessonMarked("loop.toggle", CreatorButton(_creatorLoopOn ? "Stop" : "Loop", 70f * cs))) ToggleCreatorLoop();
         if (!anyPhase && !_creatorLoopOn) ImGui.EndDisabled();
 
         if (!anyPhase)
