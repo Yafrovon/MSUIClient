@@ -294,6 +294,290 @@ in attempt 13), then the four Healers woke immune together — Shadow Shock 100�
 (attempts 16–17, release machinery) killed one Healer in 41–82 s but the released one runs loose and raid damage
 fell to ~1.5–1.8k/s: worse. Playbook left at Elites first. Variance between identical attempts is large (0–4 Elites).
 
+### 0.19 MAJORDOMO DEFEATED (2026-11-09 19:20 → 20:20, same lockout, instance 100) — 9/9
+Owner (11-09, answering §0.10 item 0): **"keep own loot, go week 3"** = healers stay on own-loot gear, keep going in this
+(week 3) lockout. Attempts 86–89; **attempt 89 (pull ~19:59:40, last add 20:05:26) killed all eight adds in normal combat:
+E22 E43 E70 E95 H170 H239 H258 H315, 15 of 40 alive at the end**. Majordomo yielded (stock script: `SetData(TYPE_MAJORDOMO,
+DONE)`, evade, immune-to-player); `characters.instance` 100 data = `3 3 3 3 3 3 3 3 3 0 …` (index 8 = Majordomo DONE, 9 =
+Ragnaros not started). The fight record says "wipe … Majordomo 100 %" because he never dies (fights.py does not know a
+yield) — the instance data is the proof. Kills per attempt: 86 E86 E106 E121 E147 (one tank by the sheeps, wake-up lost);
+87 E35 E54 E73 E92 (wake-up clean, four dead in 1 s to Shadow Shock 21 s later); 88 E20 E48 E81 E99 H129 (tanks died from 150 s,
+healers dry); 89 the kill.
+
+Fixes (Core, uncommitted). Letters continue §0.18:
+- bm. **A held healer kind nobody can sheep any more is held like any elite** (`TankDuty`: `heldHealer` needs
+  `!IsImmuneToMechanic(MECHANIC_POLYMORPH)`), and **a held elite is not left for a loose boss while that boss's own off-tank
+  lives** (`bossTankAlive`). Attempt 85: tanks left their woken Healers for Majordomo after each threat wipe; the loose Healers
+  killed four casters in 13 s.
+- bn. **Free tanks look 80 yd for a sheep to stand by** (was 45: the tanks drag their Elites away from the sheeps, fix bk), and
+  **`SleepersMayWake` fires with the last awake add under 50 %** (was 35 %: they walk 60 yd and the last Elite fell from 35 % in
+  8 s). Attempt 86: one tank by four sheeps → 87: three tanks by three sheeps.
+- bo. **A wounded melee leaves the whole burst circle and does so while chasing**: `!woundedMelee` skipped the pulse-radius
+  keep (it stepped to 14 yd inside a 20 yd Shadow Shock), and the spacing step returned early whenever the bot was moving -
+  a melee chasing a Healer the tank drags is always moving. Attempt 87: three rogues at 20–48 % took two more Shocks.
+- bp. Telemetry: **overheal per healer** (`overhealByHealer`, `"overheal"` per member in the fight record, `overNN%` on the
+  fights.py healer line). Attempt 89: 23–47 % per healer.
+- bq. **`.autopilot loot <member> [restore]`**: bots loot only corpses, so the Cache of the Firelord (a chest) was never opened.
+  First call: the member is moved to the nearest chest spawn on the map with a loot table (setup move; NOTE mining nodes are
+  chests too - put the member closer to the wanted chest than to any node first, e.g. `.tele name X ragna2` for the cache);
+  second call opens it the way `Player::SendLoot`'s chest branch does and stores the items in the member's bags. `restore`
+  re-shows a chest the instance script spawned once and a server restart hid (vmangos keeps no state for it).
+- br. **`.autopilot give <from> <to> <item id>`**: one item moves from bags to bags; the receiver runs its own `TryAutoEquip`.
+
+**Loot (SETUP-labelled steps around our own loot):** the restart that installed bq hid the cache (spawntimesecs -600, spawned
+only by `SetData DONE`), so `.autopilot loot Boomwarrior restore` re-showed it once (log: `chest Cache of the Firelord (spawn
+362148) shown again after the restart (setup)`); its loot is rolled only on opening, so this is the same roll it would have
+had. Contents: **Wristguards of True Flight (18812) → Fensap (equipped), Core Hound Tooth (18805) → Keldimp (he equipped it in
+the MAIN hand over Dal'Rend's Sacred Charge — his own scoring; it breaks the Dal'Rend set and Sword Specialization, review),
+The Eye of Divinity (18646) → Ashbeard (bags; priest quest item)**. Seen in passing: Galengaze and Noodlebandit carry Talisman
+of Ephemeral Power (18820, a caster trinket) in their bags from earlier rolls.
+
+State at the end: autopilot OFF (not enabled after the last restart), all 40 online in MC instance 100 at the entrance,
+installed = running = build **8b6f7b8f**. Backups: `/tmp/bak-1109/*.pre-1109ad … *.pre-1109ah`. Nothing committed.
+
+### 0.18 Majordomo, off-tank in tank gear + Elites first again (2026-11-09 14:20 → 16:25, same lockout, instance 100) — still 8/9
+Owner (11-09, answering §0.10 item 0): **"the OTs probably don't have any epics yet, but they likely have their pre-raid
+BIS"**. SETUP: `.autopilot equip Stormdoom 17705 12602 18289 13397 14620 18500 11669 13966 11810` = Thrash Blade, Draconian
+Deflector, Barbed Thorn Necklace, Stoneskin Gargoyle Cape, Deathbone Girdle, Tarnished Elven Ring, Naglering, Mark of Tyranny,
+Force of Will (all quality 3; Stockade Pauldrons is an epic, so the Valor shoulders stay; Blackhand's Breadth, an epic, is gone).
+He keeps the Valor set and the Arms talents; health stays ~5.3k, but he held Majordomo 125-170 s in every attempt.
+
+Attempts 77–85 (9), all wipes. Kills (E/H, s after the pull):
+- Healers first: 77 E59 H122 H142; **78 H39 H93 H128** (40 alive to 85 s); 79 E79 E93 H161 (Boomwarrior dead at 9 s, one Healer
+  never sheeped, so the fallback killed Elites); **80 H49 H94 H128**; 81 H93 H133. Raid dps 2.0-3.6k. In all five the healers
+  were under 10 % mana from ~100 s and the raid collapsed at 130-150 s.
+- Elites first (playbook switched back after 81): 82 E44 E44 E60 E83 (dps 6.6k, 40 alive to 83 s; nine dead in 15 s at the
+  wake-up, the melee in overlapping Shadow Shock circles); 83 E18 E35 E52 E77 (wake-up: three dead, then the Healers loose on the
+  casters); **84 E16 E42 E65 E102 H123 H166 = six of eight**; 85 E22 E53 E69 E100 H181 (**clean wake-up**: three free tanks
+  at three sheeps, nobody dead for 27 s; then the four awake Healers took 81 s for the first kill, ranged 384 clear steps).
+Installed = running = build **902508ee** (with bl, ran attempt 85). Backups: `/tmp/bak-1109/*.pre-1109u … *.pre-1109ac`, playbook
+`/tmp/bak-1109/sui-raid-playbook.json.dist.pre-1109z`.
+
+Fixes (Core, uncommitted). Letters continue §0.17:
+- be. `.autopilot equip`: a second ring/trinket in the same call goes to the paired slot (it destroyed the first one).
+- bf. **A released add stays "released" 10 min, not 60 s** (`PlaybookReleaseTarget`): the record is refreshed only while it
+  sleeps; a woken Healer that took 117 s to die stopped counting at 60 s and the floor let its Elites die (attempt 77).
+- bg. `[AIBOT-FLOOR]` probe: logs (5 s throttle) a melee/ranged pick of a later kind under the 45 % floor with every ordered
+  add in reach (guid, hp, comb/cc/rel). It showed the fallback working as designed in 79 (no released add, no free tank).
+- bh. **Sight moves**: a cast the game refused for LINE_OF_SIGHT (`m_losRefusedGuid/Ms`, set in `TrySpecSpell`) lets the
+  ranged sight move run although the target is >45 yd from the anchor (Majordomo's Healers are tanked 50+ yd from the leader
+  on the boss); when the straight path has no spot, a ring round the target (outside its burst and every other awake burster's,
+  ≤29 yd, walkable, nearest 4 tried) is used; `[AIBOT-SIGHT]` when nothing is found. **Ranged LOS refusals 883 (79) → 95 (85)**
+  against ~600 casts.
+- bi. **The full-fight off-tank is the boss's tank** (`IsBossOffTank`; `TankDuty` returns the world boss first, no claim so the
+  nearest tank still takes him while the off-tank walks back from a port). Before, `TankDuty` gave Stormdoom an Elite and
+  Majordomo's resets put him on the healers (80: three healers dead in 25 s).
+- bj. **Melee hold out of a second awake wide burster's circle** (`MaintainRangedSpacing` heldBurstMelee): while my target
+  bursts ≥18 yd, another awake one within its reach + 4 yd holds me outside (82: six rogues dead at the wake-up).
+- bk. **Tanks take held mobs away from sleeping bursters** (`MaintainTankFacing`): a held non-boss mob within a sheep's circle
+  + 8 yd is walked 8 yd away from the sheeps' middle (TankStepOk rules); `[AIBOT-TANK] … takes X away from N sleeping
+  burster(s)`. The raid follows its tanks, so the sheeps no longer lie among the casters at the wake-up.
+- bl. **`SleepersMayWake` ignores awake adds of a sleeping kind**: one Healer broke its sheep early and was held 36 yd off; it
+  counted as a second awake add, so no tank stood by the sheeps and nobody cleared their circles (84: six dead). After (85):
+  `[AIBOT-TANK] stands by the sleeping …` for three sheeps and a clean wake-up.
+- Data: Majordomo's `killOrder` is **Elites first** again ([11664, 11663]; reason appended to its `why`).
+
+**The wall now is healer mana** (owner's gear rule): the nine healers have 3.2–3.9k health (own loot only), start at 100 %
+mana and are under 10 % (`oom` in fights.py) by 80–110 s in every attempt, Healers first or Elites first. They already
+downrank by deficit (Holy Light ranks 1–9, Greater Heal 1–5 all seen) and drink one mana potion (17531; the next is on
+cooldown). At today's dps a kill needs 200+ s: Elites first = all Elites by 77–100 s, then four awake Healers; Healers first
+= three Healers by 120–130 s, then four Elites.
+
+### 0.17 Majordomo with an off-tank (2026-11-09 08:37 → 12:55, same lockout, instance 100) — still 8/9
+Owner (11-09, asked at the start): **Shield Wall/Last Stand cooldowns: leave them, fix the pull**; **6th tank: "rather than a
+tank, a warrior/druid who OTs"** → a NEW warrior bot; **run until Majordomo dies** (before the 11-13 23:00 reset).
+None of the 39 is a spare warrior or a druid, so (all SETUP, labelled as such):
+- **Stormdoom (guid 171)**, human warrior: `POST /Bots/AddBots {"spawns":[{"race":"human","cls":"warrior","count":1}]}`,
+  `.character level Stormdoom 60` (the level-up repair learned Arms 31/20, Taunt, Defensive Stance, max skills),
+  `.autopilot equip Stormdoom 16731 16733 16730 16735 16737 16736 16732 16734 15411 13340 13098 17713 11815 13965 12784`
+  (Valor set + pre-raid blues + Arcanite Reaper - the Arms profile needs a two-handed axe; all quality 3 here).
+- The raid group was full (39 bots + **Testwar, offline**): `.autopilot join Boomwarrior Stormdoom Testwar` took Testwar out
+  of the group (offline only) and put Stormdoom in; `.tele name Stormdoom mc`. **Testwar is no longer in the raid group** -
+  re-invite him when he plays. `scratch/autopilot/{reconnect.ps1,recover.sh,restart.sh}` now include 171 ("all 40 online").
+- Two new setup verbs (`SuiAutopilot.cpp`): `.autopilot equip <name> <item...>` (replaces what each slot holds; bots read no
+  mail) and `.autopilot join <leader> <member> [offline member to make room]`.
+
+Attempts 53–67 (15), all wipes. Kills (E = Elite, H = Healer, s after the pull): 53 H46 E72 E128 H137; 54 E26 H71 H105; 55 E21
+H75 E147 H154; 56 E20 H92 H128 E136; **57 E21 E55 H74 H100 H149 E159 H222 = seven of eight (336 s, Majordomo to 79 %)**; 58 E21
+H52 E55 H115; 59 E17 H75 H112 H145 (first clean E,H,H,H); 60 E23 H61 E76 H117; 61 H51 E60 E81 H99; 62 E54 E62 H85 E108 H146; 63 H65
+E72 E109 H136; 64 E18 H50 H114; 65 E17 H56 E60 H86 H133 (40 alive to ~100 s, raid 5.0k dps); 66 E114 E151 H164; 67 E19 E37 H73 E105.
+Installed = running = build **7da8ab72** (after 67). Backups of every patched source: `/tmp/bak-1109/*.pre-1109a … *.pre-1109m`.
+
+Fixes (Core, uncommitted). Letters continue §0.16:
+- al. **Off-tank on demand** (`AiBotAI::UpdateOffTankDuty`, run at the top of the 1 Hz behaviour tick; `IsOffTankOnDuty`;
+  `GetCombatActiveRole` returns TANK while on duty): a melee damage dealer with a taunt (Taunt 355 / Growl 6795) tanks while
+  the fight has more awake elites on the group than living tanks for 6 s, or an elite/boss has been loose on a non-tank for
+  3 s (not in the fight's first 8 s - the opening belongs to the sheeps); back to damage after 8 s of enough tanks with nothing
+  on it. Logs `[AIBOT-OFFTANK]`. Every tank rule then counts it (TankDuty, healers' tank deal, Defensive Stance rotation).
+  Seen working: it took Majordomo off the healers (attempt 55, held him 75 s on 5.2k health) and loose Healers at the pull.
+- am. **A wanted crowd control is begun before any clear step** (`MaintainRangedSpacing`, mage Polymorph / warlock Banish, above
+  half health): attempt 52's mages stepped out of an Elite's circle for 10 s at the pull and sheeped one Healer of four.
+  After: four sheeps by +3 s (53, 54, 58, 59).
+- an. The release gate counts an off-tank only while it holds something and never as a free taunter; an off-tank never wakes
+  a released sheep (it had let a Healer go at +5 s, attempt 53). Mages treat an off-tank's add as loose (sheep it).
+- ao. Sheeps in flight are not "awake" for the off-tank trigger.
+- ap. A healer finishes a heal that lands within 1.2 s before a clear step (above half health).
+- aq. **A tank with nothing to hold follows the kill order** (`ResolvePartyFocus`): it used to stack on another tank's Elite via
+  "a member's attacker", past the floor (attempt 55).
+- ar. A melee's kill-order pick is kept 4 s while above half (rogues switched Healer↔Elite every 1-2 s: 30-54 switches each).
+- as. Telemetry `[TELEMETRY] KILL <foe> (guid) at +Ns, under 30 % by: member / ability dmg; ...` (elites) - who finished it.
+- at. **Majordomo's Champion is not a rebound**: at one add left his script casts Champion (21090) and the add stands at full;
+  `ObserveRebound` learned the Elite as "heals itself whole" → left for last → the raid hit Majordomo 110 s beside the last
+  Elite (attempt 57, the 7/8). A rebound under any aura another creature cast is not learned. 11664 removed from
+  `run/etc/sui-autopilot-rebounders.txt` (backup `.bak-1109`).
+- au. **Death-order floor** (`KillPriority`): a later kind is not picked below **45 %** (was 30: ten casters' bolts in flight
+  carried an Elite 30 % → dead) while any earlier kind is up - released **or awake** (a loose Healer counts); a floor skip marks
+  the bot held; **held off = stop the swing** (`IDoctrine::HoldsOffVictim`, main tick stops attack/chase and skips the solo
+  reselect - rogues' white swings and the anchor rungs had finished floored Elites, 61-62).
+- av. The order boss is looked for 100 yd out (`KillPriority`, `PlaybookReleaseTarget` 60→100): a rogue on an Elite 50 yd from
+  Majordomo applied no playbook rule at all (63). After au+av no Elite died under the floor (64, 65).
+- aw. Melee step out of a bursting kind below 65 % (back at 90 %; was 50/80): four rogues died in one Blast Wave (64).
+- ax. ~~`SleepersMayWake` also when any awake add is under 20 %~~ **reverted after 70**: an Elite parked at the floor kept it
+  true, the free tanks stood by the sheeps 30 s and nobody woke the released Healer (70 killed nothing).
+- ay. au's "any awake earlier kind" counted a Healer loose from the pull and held the first Elite (the one whose death frees
+  a tank) at the floor until 108 s (68): **back to released ones only**; 45 % and the hold-off stay.
+- az. Melee wait out an Elite's Damage Shield only below 75 % health (the shield is up a third of the time); the off-tank's
+  loose trigger is 1 s (not 3) when the loose one is a world boss.
+- ba. **Stock unreachable-target evade** (`Creature.cpp`, outside SuperUiContent; backup `/tmp/bak-1109/Creature.cpp.pre-1109q`):
+  a victim within 5 yd never counts as unreachable. Attempt 71: Majordomo teleported his tank, evaded at 0.2 yd after 24 s
+  ("target unreachable 24 s") and re-summoned all eight adds beside the living ones. (Majordomo has no
+  `CREATURE_FLAG_EXTRA_NO_UNREACHABLE_EVADE`; setting it would be a DB write.)
+- bb. **The off-tank tanks the whole fight of a boss whose playbook orders its adds** (`m_offTankBoss`; `IsOffTankOnDuty` = the
+  stopgap only): a 6th full tank frees one from the pull, so the plan can kill the Healers H,H,H,H before any Elite - the 4th
+  death is then the last Healer and none is left to wake immune. Attempt 73: released at +6 s as planned, but H1 took 61 s.
+- bc. A sleeping sheep counts for the death-order floor and the melee hold (`IsInCombat() || HasBreakableByDamageCrowdControlAura()`):
+  the released Healer slept out its 12 s, the floor never saw it, the rogues' white swings killed an Elite 3rd (73).
+
+- bd. A sheepable add **held by a tank** is not ranked "re-sheep, don't kill" (rank 9) while no tank is free: it is as good as
+  released (no other is released while it is awake), and the raid killed Elites beside a tanked Healer instead (74).
+
+Attempts 68-76: 68 H96 E108 E137 H209; 69 E41 H83 H111 (37 present); 70 nothing (ax); 71 E17 H39 + Majordomo evade/re-summon (ba);
+72 E22 H65 E72 H145 E156; 73 H67 E96 H142 E144; 74 E53 H104; 75 H55 E75 H116 E121 (Boomwarrior dead at 18 s); 76 H72 E119
+(**Stormdoom dead at 5 s**: as a full tank from the pull it took Elites with 5.2k health, blues, no shield).
+**Stopped 12:55** (24 attempts, no kill): autopilot OFF, all 40 alive at the MC entrance (instance 100), installed = running =
+build **00fd3a09**, Testwar offline and out of the raid group.
+
+**Owner decision pending (the 6th tank's gear):** bb works as a plan (73: Healer released at +6 s) but the off-tank cannot hold
+an Elite: Stormdoom is an Arms warrior in pre-raid blues with a two-hander (5.2k health). Either gear him as a tank (shield,
+defense pieces - more GM gear than the "modest" setup), or keep him a stopgap: then let bb start only after the opening (the
+`m_offTankFightMs >= 8000` gate the loose trigger already uses) - not built.
+
+What limits it now: (1) **the 4th add death** - the remaining Healers turn immune, their sheeps break and they wake untanked
+in the casters; the raid dies within ~60 s (59, 60, 64, 65); (2) Majordomo loose on healers after his threat resets (on-tank
+47-82 %; Bubbleguy has no taunt, the off-tank helps only after 3 s loose); (3) melee: ~120 dps a rogue (white-swing uptime
+~50 %, Sinister Strike gated by energy ~350× a fight) for ~95k damage taken a fight; (4) healer throughput 2.4-4k hps; (5) the
+off-tank (5.2k health, blues, no shield) dies at 60-130 s. Opening and death order are no longer the main losses.
+
+### 0.16 Majordomo, the tank swap round (2026-11-08 15:45 → 17:25, same lockout, instance 100) — still 8/9
+Owner (11-08 afternoon): **"Yes, tank swap"** (the §0.10 item 1 road). Five tanks, Healers first. Attempts 44–52, all
+wipes; best = five of eight adds (44 E22 H57 H83 H123 E144; 46 E17 E88 H108 H139 E165 with the first raid death at
+148 s; 45 and 48 also five). Stopped 17:25: autopilot OFF, 39 alive and online at the MC entrance (instance 100),
+Testwar offline, installed = running = build **e0ed93bf**. No better than §0.15's best (7/8); variance between
+openings is bigger than any single change measured here.
+
+Fixes (Core, uncommitted; backups `/tmp/bak-1107a/*.pre-1108ab … *.pre-1108ak`). Letters continue §0.15:
+- ab. **Tank swap.** `AiBotAI::TankCanTaunt` (Taunt 355 / Growl 6795). `PlaybookReleaseTarget` wakes a sheep only when
+  a taunting tank holds nothing (log `stays sheeped: … N of M taunting tanks free`); `TankDuty` lets a tank without a
+  taunt wake one only if no taunting tank is alive within 80 yd; a free taunt-less tank with nothing loose takes the
+  boss a taunting tank holds (`[AIBOT-TANK] X: no taunt, nothing loose - takes Majordomo Executus off Y`) - his threat
+  resets every 20–30 s, the paladin gets him, the warrior is free for the next sheep. Seen live (46, 51); after it the
+  warriors woke every released Healer.
+- ac. **Lay on Hands mid-cast** (`TryLayOnHandsSave`, called from the main tick while casting): healers were casting
+  80 % of their ticks, so fix x never ran. Cuts the heal short, a tank first; fired 7 times in 45–52 (`(cast cut
+  short)`); one paladin per target for 8 s (attempt 45 spent two on one priest).
+- ad. Tank separation: the tank whose mob has the smaller pulse circle moves; the higher guid only breaks ties.
+- ae/af/ai/ak. **Melee and the 20 yd Healers**: a melee damage dealer leaves an ordered add with a pulse ≥ 18 yd
+  (Shadow Shock) while a tanked later-kind add is above half, and takes those to half; under half it leaves them while
+  an earlier kind lives, unless a tank must be freed and no earlier kind is awake. A melee held off everything in
+  45 yd looks 90 yd out, else stands down (`focus -> (none) (held off by the kill order)`) - the sticky rung kept seven
+  rogues on an Elite the hold refused (attempt 50). Results mixed: 46 first death at 148 s; 47 five melee dead to Elite
+  Blast Wave / Damage Shield by 60 s; the last fix (ak) ran only in 51–52, whose openings collapsed - **unverified**.
+  Revert = restore `AiBotDoctrinePlayerParty.cpp.pre-1108ae` and re-apply ah (the sheeping guard) if it is not wanted.
+- ag. **Sheep renewal out of sight**: in reach but out of LOS, the renew walk aimed 22 yd from the sheep on the mage's
+  own line - where she stood - and Halddawn "walked" 12 s without moving until it ran out (attempt 46). Now 8–15 yd
+  out, round the sheep, to a spot that sees it (`IsWithinLOSAtPosition`).
+- ah. `TankDuty`: a loose add a mage of ours is casting Polymorph on is not loose (a free tank's Seal of Righteousness
+  broke a fresh re-sheep at once and an Elite then died out of order, attempt 46).
+- aj. A Protection paladin under 25 % held by an elite casts **Divine Shield** (its mobs keep swinging at it in this
+  version), else Lay on Hands on itself under 15 % (Bubbleguy went 96 % → dead in 6 s, attempt 49). Not yet seen fire.
+
+What limits it now: (1) **the opening** - 45, 47, 51, 52 lost a tank or had a Healer loose in the first 5–20 s: the
+puller (Boomwarrior) takes all nine mobs ("9 elites on the raid") and died in 6 s (51); his Shield Wall (30 min) and
+Last Stand (10 min) are on cooldown between ~11 min attempts (871:gate 16); a Healer hit by a rogue at +2 s before any
+sheep (47). (2) Five tanks with no spare: any tank death before ~120 s forces an Elite to die out of order and the
+fourth death wakes two immune Healers (49, 50). (3) The four rogues that died together in lava at 138 s (48) - not
+looked at.
+
+### 0.15 Majordomo, fixing the AI further (2026-11-08 11:37 → 14:42, same lockout, instance 100) — still 8/9
+Owner (11-08 midday): **"keep fixing the AI - dont need to ask me - take a road and try it."** Five tanks, Healers
+first, same release plan as §0.14. 17 attempts (27–43), all wipes; best = **seven of eight adds** (attempt 39, 322 s;
+one Elite left). Stopped 14:42: autopilot OFF, 39 alive and online in MC instance 100, Testwar offline, installed =
+running = build **24e152f9**, playbook Healers first. Attempt 33 had the fastest six (Elite 15 s, Healers 37/62/84/115 s, Elite 119 s, raid 4.2k dps). Typical: 4–5.
+
+Fixes (Core, uncommitted; backups `/tmp/bak-1107a/*.pre-1108m … *.pre-1108x` on the box). Letters continue §0.14:
+- m. **Majordomo's threat resets** (`boss_majordomo_executus.cpp`: his teleport calls `DoResetThreat` every 20–30 s).
+  (1) `MaintainTankFacing` re-chases a mob that turned on someone else (before: only one still on me), log
+  `[AIBOT-TANK] X: Y turned on Z - chases it again`; Ironwarden stood 30 s on his facing point while Majordomo killed
+  two priests. (2) `TankDuty`: a tank whose elite is on a non-tank takes it back before waking a released sheep.
+  Majordomo on-tank 57 % → 77–98 %.
+- n. Probe `[AIBOT-CLEAR] X (role): from Y entry E [asleep] on Z, d of keep yd [circle]` (4 s per bot) - which enemy
+  each ranged/healer clear step runs from. Attempt 29: 186 of 357 from the one awake Healer's 21 yd circle, 100
+  from Elites' 14 yd.
+- o. (1) **Healers never got their loadout**: the autopilot called `SuiRaidSupply::Supply(.., 0)` for everyone, so
+  healers fell in the caster bucket - the Demonic Runes listed for them since 11-07 were never handed out. Now the
+  bot's role is passed (1 tank, 3 healer, 4 melee). (2) A clear step out of a burst circle lands 5 yd outside, not
+  on its rim (the tank walks the Healer a yard and the ring steps again).
+- p. **Clear steps keep sight**: ranged casts failed LINE_OF_SIGHT (result 42) **3,286 times against 375 cast**
+  (attempt 30, rotation telemetry). The clear step now tries ±45°/±90° spots that still see the target (a healer:
+  its tank) within 33 yd first, then the old way. Next attempt: 17 refusals.
+- q. Sheep guards: Multi-Shot checks 20 + 6 yd (it jumps 10 yd twice); **any** damaging cast in flight at a unit
+  that became crowd-controlled is stopped (an Immolate landed 2 s after a mage re-sheeped its target).
+- r. `KillPriority` always counts a released add within 90 yd: tanked 25–30 yd from the stack it fell out of some
+  bots' 45 yd list, ten switched to an Elite "by kill order", and that Elite was the 4th death (attempt 32).
+- s. `SelectHealTarget` (PlayerBots base): **every healer is a tank healer while fewer than three non-tanks are
+  hurt** (before: 2 in 5 always). After the Healers die the Elites carry Encouragement (+8 % damage per add
+  death, `21086`) and three tanks died in 12 s with healers topping scratched dps.
+- t. `TankStepOk`: a tank step may not end more than 35 yd from the healers' middle unless it gets closer (a
+  paladin tank held an Elite 52–73 yd from eight healers); 28 yd stacked the Healer on Majordomo (both tanks in its
+  Shock), so 35. `ActiveTank` keeps a healer's dealt tank 15 s while it lives (before: re-dealt every few seconds).
+- v. **Interrupt duty** (`TrySpecInterruptNearby`): mages Counterspell, rogues Kick any nearby add casting a
+  silenceable spell, one interrupt per cast (1.5 s claim), log `[AIBOT-INTERRUPT]`. Elite Fireball fell out of the
+  top damage sources (47–64k → not listed).
+- x. Paladin healers **Lay on Hands** (10310) a tank under 15 % held by an elite, log `[AIBOT-HEAL] X: Lay on Hands`.
+- y. Damage dealers leave a still-sleeping released sheep alone **12 s** (was 6): the free tank 24 yd off needed 8 s
+  and a warlock's Immolate woke it first; the Healer spent 77 % of its life off a tank (attempt 40).
+- z. **A healer holds its ground** (no clear step) while a tank within 36 yd and in sight is under 50 %, the healer is
+  over 50 % and nothing is hitting it, log `[AIBOT-HEAL] X: holds its ground`. Four healers within 15 yd of
+  Bubbleguy, two idle at full mana, stepped out of a Healer's circle while he died with 756 healed (attempt 41).
+- aa. Damage dealers leave a woken released add alone until a tank holds it (at most 15 s from the release): a
+  paladin's Judgement woke one from 10 yd and it spent 98 % of its life off the tanks (attempt 42).
+
+Records (E = Elite, H = Healer, seconds after the pull): 27 — E16 H41 H67 H103, the immune 4th H died at 165;
+Majordomo's resets killed healers (→ m). 28 — E21 H67 H116; a 4th Healer woke 2 s after its re-sheep cast began
+(resisted re-sheep?) and six rogues died in 8 s. 29 — E23 H55 H107, the leader tank died (6 of 10 healers no sight),
+gate closed, an Elite died 4th. 30 — runes handed out from here; E17 H63, H2 never died. 31 — LOS refusals 17; a
+Multi-Shot and an Immolate broke sheeps (→ q). 32 — 3.5k dps, Majordomo 98 % on tank; Sylwhisper died at 27 s, E15
+H39 E58 E107. **33 — best: E15 H37 H62 H84 H115 E119, then three tanks died 124–136 s to Encouraged Elites (→ s).**
+34 — clean order E17 H48 H81 H108; Bubbleguy died 98 s, the last (immune) H ran loose. 35–38 — 4/8 each: opening
+variance (a tank left its woken Healer for a loose Elite; a sheep broken 5 s in), Bubbleguy (5.4k health, the
+paladin tank) died at 44 s twice, H kills slowed to 41–77 s. **39 — best so far, seven of eight: E21 H68 E89 H125
+H163 H243 E282**, 38 alive at 140 s, first tank death at 160 s (Bubbleguy), 322 s fight; one Elite left when the
+last tank died (Majordomo only submits at AddCount 0, `SummonedCreatureJustDied`). The order went E, H, E, H, so
+the last two Healers were Polymorph-immune - and still died, tanked. Lay on Hands (fix x) never fired. **The
+record's `dead@0s` foes are NOT kills** (evaded/despawned at the wipe; attempt 39's fourth Elite shows it) - count
+kills from `diedAt > 0`. 40 — E16 H42 H72, the third release broken by an Immolate before its tank arrived (→ y),
+the 4th (immune) Healer loose. 41 — E20 H54 H100 E128; Bubbleguy dead at 62 s, healers beside him idle (→ z). 42 —
+E25 H68 H149 E182; healing 2.5k/s, Bubbleguy lived to 135 s; a Blizzard broke a sheep at 57 s; the first Healer, woken
+by Bubbleguy's Judgement, was on a tank 2 % of its life (→ aa). 43 — E19 H60 H107; Bubbleguy woke the second Healer
+in melee and it was still on a tank only 17 %: **a paladin tank (no taunt, low threat) cannot keep a woken Healer**;
+all five tanks died 145–173 s.
+
+What limits it now: (1) **the first tank death** (Bubbleguy first in 4 of 6) - the add cycle needs every tank
+alive to ~120 s; he stands in stacks of Majordomo + two Elites (two Blast Waves + melee) because only the
+higher-guid tank moves in a separation and he has the highest guid; (2) Healer kill speed varies 22–77 s; (3) the
+endgame: two Elites with 6+ Encouragement stacks after the Healers. Fights record: `fights.py` splits mid-fight
+again (dead@0s) - use Server.log.
+
 ### 0.14 Majordomo, Healers first with a working release (2026-11-08 07:34 → 09:35, same lockout, instance 100) — still 8/9
 Owner (11-08 morning): **"Yes, Healers first"**. Five tanks (Bubbleguy still Protection, revision 1). 12 attempts
 (15–26), all wipes; best = **five of the eight adds dead** (attempt 22). Stopped 09:35: autopilot OFF, 39 alive and
@@ -493,30 +777,38 @@ Fixes (Core, uncommitted), each from a record:
    **Not enough on its own**: the last wipe shows the Firewalker pack is picked first anyway as Geddon's ROOM TRASH
    (bosses-last), before the lure is ever considered.
 
-### 0.10 Next steps (in order; updated 2026-11-08 09:35)
-Same lockout (instance 100) until **2026-11-13 23:00**: only Majordomo Executus is alive (8/9). Five tanks, Healers
-first with the free-tank release (§0.14).
-1. **Tank survival in the Elite-held phase** — the main limiter: tanks die at 50–130 s, the gate closes and the death
-   order breaks. Read the tank DEATH lines (`healers:` distances) of the next attempts with fix l (healer split) in;
-   if tanks still die in range, look at heal targeting (healers casting long heals on others while a tank drops) and
-   whether a healer's own tank gets priority; consider the rescue threshold (75 %) higher or distance-scaled (fix k).
-2. **Kill speed of a released Healer** (19–64 s for 98k): ranged cast 36–48 %. Log which enemy each ranged "clear"
-   step runs from (reason + entry) to see whether the 10 yd Elite circles or the 20 yd Healer circles fence them in;
-   tanked Elites' circles may not need a ranged keep-out at 15+ yd.
-3. **Death order** (fix j): confirm the 4th death is the third Healer when the tanks live; if a tank dies mid-cycle the
-   raid falls back to Elites — an Elite whose death would be the 4th while two Healers still sleep might be held at
-   30 % until a Healer dies (extend j beyond "a release is up").
-4. **Majordomo's tank loses him**: Majordomo melee killed healers in several attempts (25: two priests at ~97 s).
-5. Mana: `[AIBOT-POTION]` still in; healers ran out 0–50 s in attempt 25 — runes never handed out.
-6. If the owner wants: a 6th tank (another Protection paladin) would make the release cycle independent of one death.
-7. Shazzrah: 7 of 8 melee dead in 19 s to Arcane Explosion (30 yd, every ~6 s) — melee should not stand in it.
-8. Magmadar's Conflagration (Lava Bomb GO 177704, trap radius 5, spell 19428: 400/s for 8 s, NOT dispellable) killed
+### 0.10 Next steps (in order; updated 2026-11-09 20:20, see §0.19)
+Same lockout (instance 100) until **2026-11-13 23:00**: **9/9 — Majordomo defeated 20:05 (attempt 89)**; only Ragnaros is
+left. Five tanks + the off-tank warrior Stormdoom (171, pre-raid tank gear, Majordomo's tank all fight), **Elites first**
+(playbook), fixes m–ak (§0.15-0.16), al–bd (§0.17), be–bl (§0.18), bm–br (§0.19). Owner: healers keep own-loot gear.
+0. **Owner: Ragnaros or not.** The owner's goal was "until Majordomo dies"; failing Ragnaros for 1–3 weeks is fine (§0). He
+   is summoned by Majordomo's gossip in his lair (stock script, `boss_majordomo_executus.cpp` dialogue); the autopilot has no
+   gossip step yet, and Ragnaros needs knockback/Magma Blast/Sons of Flame handling (Sept Commander notes in
+   `COMMANDER_RAID_STATE.md`). Ask before starting.
+0a. **Majordomo repeatability**: one kill in 89 attempts, on the build with bm–bp; n=1. Next lockout, run him 2+ times before
+   believing the order of fixes. **Healer overheal in attempt 89 (bp): 23–47 % per healer (Chargesniper 47, Gankreaper 39,
+   most 29–35)** - a third of the healers' mana lands on full health; the next mana lever (heal choice / incoming-heal
+   prediction / cancelling a cast whose target is full).
+0b. Keldimp's Core Hound Tooth in the main hand (§0.19 loot): check `ScoreItem` for set bonuses / weapon specialization.
+1. **The four-Healer phase** (Elites first, after the clean wake-up of 85): 81 s to the first Healer kill. Ranged made 384
+   clear steps between four awake 20 yd circles; tanks should separate the Healers (the separation step exists for two held
+   bursters, §0.13) and park them so one is killed while the others' circles stay off the casters.
+2. **Damage taken** = healer mana: Shadow Shock 100–200k a fight is the top source (anyone inside 20 yd of an awake Healer).
+3. **Melee uptime** in Healers first: melee idle most of the fight (held off the 20 yd Healers, Elites only to half).
+4. **Endgame**: the last two Elites carry 4-7 Encouragement stacks.
+5. Death order holds; with Healers first an Elite dies 2nd only when no tank is free (79: tank dead at 9 s).
+6. **Tanks into Damage Shield**: Boomwarrior lost ~1.9k in 2.6 s to his own swings into an Elite's shield. A tank
+   cannot simply AttackStop (it drops its victim and `TankDuty`'s "held" with it) - needs a swing pause that keeps
+   the victim, and only with a safe threat lead.
+7. Healer mana: runes now handed out (fix o); healers still dry at 30–70 s in long fights.
+8. Shazzrah: 7 of 8 melee dead in 19 s to Arcane Explosion (30 yd, every ~6 s) — melee should not stand in it.
+9. Magmadar's Conflagration (Lava Bomb GO 177704, trap radius 5, spell 19428: 400/s for 8 s, NOT dispellable) killed
    10 tonight and topped weeks 1–2: the burn continues after stepping out, so it is a healing problem (victims had
    healed8 0).
-9. Healer mana and throughput: dry at Geddon (Ignite Mana, oom 85–109 s) and Magmadar. In the 476 s Geddon wipe the
+10. Healer mana and throughput: dry at Geddon (Ignite Mana, oom 85–109 s) and Magmadar. In the 476 s Geddon wipe the
    mages spent up to 200 s out of mana; Ignite Mana (19659, magic, 5 min) is valued by `DispelValue`, but no dispel is
    logged, so whether priests/paladins actually remove it is unverified.
-10. Rogues die to Flame Imp Fire Nova in a 17-imp pull (7 dead, a win) and to Firesworn melee at Garr.
+11. Rogues die to Flame Imp Fire Nova in a 17-imp pull (7 dead, a win) and to Firesworn melee at Garr.
 
 ### 0.7 Next steps after week 1 (historical)
 1. Week 2 = fresh lockout (`newlockout`, §0.1 recipe) and the full order 1–9; Majordomo Executus (boss 9) is
