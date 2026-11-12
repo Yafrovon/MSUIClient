@@ -184,7 +184,7 @@ public sealed partial class GameLoop
     /// <summary>A stage can play when the source authored it or the composition filled it.</summary>
     private static bool CreatorStageAvailable(CreatorSpellDoc doc, SpellStage stage) =>
         doc.Composition.TryGetValue(stage, out CreatorStageComposition? c)
-            ? c.Authored || c.Slots.Any(p => p is { Length: > 0 }) || c.Body.Any
+            ? c.Authored || c.Slots.Any(p => p is { Length: > 0 }) || c.Body.Any || c.AnimationId is > 0
             : SpellVisualCatalog.KitFor(doc.Stages, stage) != 0;
 
     private static bool CreatorCompositionChanged(CreatorSpellDoc doc) =>

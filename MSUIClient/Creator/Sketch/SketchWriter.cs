@@ -174,7 +174,9 @@ public static partial class SketchWriter
         // live 2026-10-26: a 6 s flight showed no ball at all. (SPELL_CREATOR_PLAN.md P2.)
         var notes = new List<string>();
         List<Extra> extras = ResolveExtras(doc, archive, notes);
-        byte[]? model = WriteModel(doc, piecePaths, extras, loopForEditing || doc.IsMissile, out Stats stats);
+        // So does every HELD phase (precast, channel, state): the game keeps its kit up until it
+        // releases it, so a one-shot would fade out under a cast bar still filling.
+        byte[]? model = WriteModel(doc, piecePaths, extras, loopForEditing || doc.IsHeld, out Stats stats);
         if (model is null) return null;          // over the vertex budget a ushort index can address
         return new SketchBuild(
             model,
@@ -457,7 +459,7 @@ public static partial class SketchWriter
             Vector3 tint = quad.Glow
                 ? quad.Piece.Extras.Glow.Colour ?? quad.Piece.Look.Colour
                 : quad.Piece.Look.Colour;
-            colourRefs[q] = (WriteColourTrack(b, tint), WriteAlphaTrack(b, quad.Piece, lengthMs, doc.IsMissile));
+            colourRefs[q] = (WriteColourTrack(b, tint), WriteAlphaTrack(b, quad.Piece, lengthMs, doc.IsHeld));
         }
         int colourOffset = b.Mark();
         foreach ((TrackRef colour, TrackRef alpha) in colourRefs)
@@ -1032,8 +1034,9 @@ public static partial class SketchWriter
         float baseAlpha = Math.Clamp(piece.Look.Alpha, 0f, 1f);
         short peak = (short)Math.Clamp((int)MathF.Round(baseAlpha * AlphaOpaque), 1, AlphaOpaque);
 
-        // A missile's sequence LOOPS for the whole flight, so a fade would blink every loop:
-        // its pieces hold their alpha (the flight's start and end are the game's to decide).
+        // A missile's sequence LOOPS for the whole flight (a held phase's for as long as it is
+        // held), so a fade would blink every loop: its pieces hold their alpha (the start and
+        // end are the game's to decide).
         float fadeIn = missile ? 0f : MathF.Max(piece.Motion.FadeIn, 0f);
         float fadeOut = missile ? 0f : MathF.Max(piece.Motion.FadeOut, 0f);
 

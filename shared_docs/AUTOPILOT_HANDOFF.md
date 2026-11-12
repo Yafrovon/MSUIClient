@@ -294,6 +294,221 @@ in attempt 13), then the four Healers woke immune together — Shadow Shock 100�
 (attempts 16–17, release machinery) killed one Healer in 41–82 s but the released one runs loose and raid damage
 fell to ~1.5–1.8k/s: worse. Playbook left at Elites first. Variance between identical attempts is large (0–4 Elites).
 
+### 0.24 CLEAN RERUN, WEEK 0 → 3 (2026-11-11 →) — WEEK 1 RUNNING
+Owner (11-11): **"allow fire res gear that is obtainable as pre-raid, yes. However ... a clean week 0 to week 3 rerun now,
+so that we can verify what has been done thus far."** Answers: week 0 = a prep week before week 1; **MC loot REMOVED**
+from the raid; learned files and the playbook KEPT. Week rules as 11-03 (§0): a fresh lockout + one ~4 h night per week,
+retries allowed, review stop after every boss/wipe, gear only from that rerun's own kills; week 1 = bosses 1-8, week 2 =
+1-9, week 3 = 1-9 + Ragnaros (pre-raid fire resistance gear put on for Ragnaros only, as raids swap it).
+- **Week 0 (SETUP, 12:50-13:08, log `scratch/autopilot/week0-setup-1111.log`):** MC-only items = everything reachable from
+  MC creatures'/chests' loot tables (references expanded) minus anything reachable from loot outside MC
+  (`/tmp/mc_loot_held.py` on the box, read-only): 166 entries; the raid held 158 instances on 36 members (34 equipped, incl.
+  tier 1, epics, Fiery/Lava Cores, Tome of Tranquilizing Shot, plans). All taken with the new **`.autopilot take <member>
+  <item ids...>`** (equipped + bags + bank). 34 emptied slots refilled with `.autopilot equip` (`/tmp/mc_refill_pick.py`):
+  the member's own bag piece of that slot if item level >= 55, else the best RARE from 60 5-man dungeon loot (BRD, LBRS/
+  UBRS, Scholomance, Stratholme, Dire Maul) of its armour type / the removed weapon's subclass, scored for its raid role.
+  New **`.autopilot unlearn <member> <spell>`**: Tranquilizing Shot (19801, learned only from the MC tome) off Fensap,
+  Aelfury, Renewlock. Verified after: 0 MC-only items on the raid (Testwar holds none). Testwar untouched.
+- Build **e7927cee** (= 073628ea + take/unlearn + the GamePay rate hooks), deployed 13:03.
+- **Week 1:** `newlockout` 13:08 -> **instance 101** (fresh: no data, no cleared spawns), all 40 inside, autopilot on 13:09.
+  Its fight records start at line 487 of `sui-autopilot-fights.jsonl`. NOTE: vmangos renumbers instances at every startup,
+  so after the first restart the week's instance is **100** again and `fights.py --night` merges it with the old week-3
+  lockout's records - the week log (`week0-setup-1111.log`) is the tally.
+  **WEEK 1 RESULT (13:09 -> 17:22): 5/8 - Lucifron (attempt 2), Magmadar (1), Gehennas (1), Garr (3), Baron Geddon (7)**;
+  Shazzrah attempt 1 (begun past the 4 h budget) 31 %. Wipes: imp room (Lava Surger + a whole Flame Imp group), two
+  Firelords' Lava Spawn swarm, Lucifron's Core Hounds rising + his patrol, Garr x2 (room Destroyers fought in place beside
+  him; 6 of 8 Firesworn died in attempt 2 and stayed dead), Geddon x6 (neighbour packs joining; twice Shazzrah). Every
+  kill: no rez inside the fight (`bosswin.sh`). Original week 1 (11-03): 1 boss on night 1, 4/8 after night 2.
+  - ci. **An idle world boss's reach is never a fire-escape spot** (`CollectIdleBosses` in `AiBotAICombat.cpp`: 30 yd round
+    it and 35 yd + as far as it has roamed round its home; the escape spot search skips them; other idle mobs keep the +100
+    score). Found twice in Geddon's fights: a healer's and the off-tank's "out of the fire" steps pulled Shazzrah (all 40
+    dead). Builds 42887311 -> **bf36fb14**. Geddon died two attempts later.
+  - cj. **The cross-map teleport crash, found** (`Assertion in GetMap: m_currMap`, 11-10 x2 and 11-11 17:27 while moving
+    the raid into week 2's instance; gdb `/tmp/mangosd-gdb-1111-1647.txt`): `CombatBotBaseAI::SelectHealTarget` (a bot
+    healing out of combat) called `pMember->GetMap()` on a member BETWEEN maps (no current map -> assert -> abort). 25
+    group-member comparisons `X->GetMap() ==/!= me|leader->GetMap()` in CombatBotBaseAI, AiBotAIMain/SpecCombat/Combat,
+    SuiAutopilot, SuiRaidTelemetry rewritten as `X->IsInMap(me|leader)` (IsInWorld + FindMap, never asserts). Build
+    **470b716d**. The 2 s teleport gaps in `tele-all.ps1`/`recover.sh` were only making it rarer.
+  - Helpers (git-ignored): `retry.sh` (recover x2 + restart + autopilot on), `waitreview.sh HH:MM:SS [maxmin]` (block to the
+    next review pause / a restart / mangosd gone, print the fights since), `bosswin.sh <label>` (rez check of the last
+    fight, log, resume).
+
+### 0.23 RAGNAROS (2026-11-10 19:58 → 23:10, same lockout, instance 100) — 13 ATTEMPTS, NO KILL, STOPPED AT A GEAR WALL
+**Pick up here (supersedes §0.22):** state at 23:10 - autopilot OFF, all 40 alive at the MC entrance, instance 100 data
+`3 3 3 3 3 3 3 3 3 0 …` (the real result: Majordomo DONE 11-09, Ragnaros not), runes 16-22 = 3, installed = running =
+build **073628ea** under gdb (no crash since the bw fix), playbook in run/etc = src. Lockout resets **2026-11-13 23:00**.
+Last attempt A13 (Fire Resistance Aura on all four paladins): 54 % left after 151 s. Nothing committed.
+**Next (owner decision):** Ragnaros needs fire resistance / healing beyond this roster's own-loot gear (see "Why no kill"
+below) - either allow that (FR gear, a bigger healer share) or leave Ragnaros for later weeks. Without that, the next
+levers are small: static ranged spots instead of the reactive spread (Intense Heat), and a tank-swap rotation before
+Elemental Fire stacks kill the tank. A run of attempts: `rag-ready.sh <playbook>` + `waitpause.sh`, ~10 min each.
+Owner: **"once that's done, tackle rag, do not stop to ask me".** Per attempt: `scratch/autopilot/rag-ready.sh <playbook>`
+(recover, encounter 8 = 3 + runes = 3, deferrals cleared, playbook into run/etc AND src, restart, autopilot on; refuses to
+enable after a refused restart) then `waitpause.sh`. A restart usually removes a standing Ragnaros (not always - attempt 2
+found him), so each attempt starts from the summon. **The summon works end to end** (by - talk to the friendly Majordomo in
+the chamber, 3 options, Ragnaros rises, kills Majordomo, becomes fightable).
+- Attempt 1 (build 0c0f7150, planned pull from the west platform): **Ragnaros 100 -> 34 % in 162 s** (66 % in ~120 s, 36 of
+  40 alive at 119 s), raid DPS 4.6k. Collapse at 119 s: ONE Intense Heat killed ten stacked ranged in the same second.
+  Then Lava Burst, tanks dead to Elemental Fire (six tanks gone 65-147 s), and with no melee in reach Magma Blast wiped.
+  After it, "fights" 2-7 = the web brain rezzing bots at their corpses beside him (out of combat), dying again.
+- Mechanics (boss_ragnaros.cpp, spell data): **Might of Ragnaros** every 9-14 s on a random MANA user summons a Flame of
+  Ragnaros that casts **Intense Heat 21155: 2000 fire + knockback, 20 yd** (one-shots mages at 1.7-2.3k). Elemental Fire
+  aura on him = fire DoT on whoever he hits (the tank killer). Magma Blast 6000 when nobody is in melee reach. Wrath of
+  Ragnaros = melee knockback. Lava Burst = trap objects at 9 fixed spots (`PositionOfLavaBursts`), burst once on spawn - the
+  bot hazard code already skips them (trap radius 0, cooldown 0). Submerge at 3 min (8 Sons of Flame, 90 s). Rooted.
+- ca. **Playbook `spread`** (per boss, yards; `SuiRaidPlaybook::SpreadYards`, joins the learned splash in the bots' spread
+  rule in `AiBotAICombat.cpp`): Ragnaros 20. Attempt 4: no Intense Heat deaths at all.
+- cb. **No rez beside a living hostile raid boss** (bridge RESURRECT gate, 100 yd) - ends the post-wipe death loop.
+- cc. Summon step: never a setup move beside a boss already standing (cell search at the NPC's spot, `FindNearPoint`); after
+  the gossip the raid **waits until the boss is in combat** (it rises immune, not unselectable); no rune step once the next
+  boss is gossip-summoned and never a rune whose live object is used (the leader had teleported round all seven doused runes).
+- cd. **`summonGossip.standAt`**: where the raid waits and pulls from = the west platform (815, -838, -229). Attempt 4
+  (gathered by Majordomo on the east side, on three Lava Burst spots, inside the knockback): 79 %, ranged cast 15 % of the
+  time (34 % moving: "clear"/"hazard"), tanks dead by 78 s.
+- Builds: 0c0f7150 -> f8f4c6f0 (ca, cb) -> 063f9852 -> d33a22ba (cc) -> c5709096 (cd). `recover.sh` now teleports BEFORE it
+  revives (revived beside a standing Ragnaros, members pulled him before their teleport).
+- **Open walls:** the tanks (5.8k health, no fire resistance) die to Elemental Fire + melee in 30-80 s each, six tanks gone
+  by ~150 s; a kill needs ~190 s at attempt 1's pace AND the submerge at 180 s.
+- ce. **`standInPulse`** (playbook flag; `AiBotAICombat.cpp` pulse-keep): the raid does not keep clear of the boss's learned
+  pulse circle. Ragnaros' Wrath (25 yd, ~1000 + knockback, every ~26 s) was learned as a pulse after attempt 1; keeping 26 yd
+  off him made the ranged shuttle between 26 yd and their reach ("clear" steps 80/fight, cast 54 %).
+- cf. **Heal stop-cast** (`AiBotAI::StopNearlyFullHeal`, called on every 4 Hz sub-tick, mid-cast included - the spec rotation
+  is not called while casting, so the first version in `UpdateSpecCombatAI` never fired): a direct heal in its last 0.5 s
+  whose target misses (health missing + the melee about to land - other healers' casts in flight) less than half of it is
+  interrupted (`[AIBOT-HEALSTOP]`; mana is spent only on completion). Attempt 9: 54 stops, overheal 30-50 % -> 12-24 %.
+- Results (Ragnaros % left / seconds / main killers): A1 34 / 162 (Intense Heat x10 at once); A2 81 (raid gathered beside
+  him); A4 79 (east side); A5 63 / 130 (spread 20 + circle kept: Lava Burst x9); A6 68 / 155 (standInPulse, spread 20:
+  Intense Heat x16); A7 56 / 146 (spread 10); A8 47 / 150 (same, 3.97k/s); A9 54 / 129 (+ heal stop: Intense Heat x16, Lava
+  Burst x9, Wrath x5). Builds faeb8e96 (ce) -> 5d44b8aa -> 780ce6c7 (cf).
+- A10 54 / 179 (spread 15; first to reach the submerge - Sons of Flame at ~180 s); A11 42 / 185 (same + prePotions); A12 68 /
+  143 (identical to A11). **Variance between identical attempts is ±15-25 points** - single attempts cannot rank small
+  changes; best so far A1 34, A11 42, A8 47.
+- cg. **`prePotions`** (playbook item list; drunk by every member during the summon wait, `DrinkPrePotions`, log line counts
+  worn/cooldown/none/busy/refused): Ragnaros 13457 Greater Fire Protection Potion. Finding: 37 of 40 already WORE the
+  shield before the pull (the quartermaster's potions, drunk earlier) - not the missing lever.
+- ch. **`paladinAura`** (playbook spell ids, highest rank first; every paladin's `m_spells.paladin.pAura` set during the
+  summon wait): Ragnaros Fire Resistance Aura 19900/19899/19891 (the bots pick one of seven at random otherwise).
+- Build 634b8d92 also carries the GamePay session's rate hooks (`.sui rates`, XP/rep/honor; inert without conf keys) -
+  coordinated with that session, it verified `hooks=1`. Builds 5ebcbc86 (cg diagnostics) -> 073628ea (ch).
+- **Why no kill (the honest read):** fire damage on 1.7-2.3k-health casters (Intense Heat 2000 within 20 yd of a random
+  mana user every ~11 s - 26 mana users within ~33 yd of him cannot all be 20 yd apart - plus Lava Burst ~1000 at 35 yd)
+  and the tanks' 30-80 s lives under Elemental Fire. A kill needs ~240 s at the best pace plus the Sons phase. That is a
+  gear (fire resistance) / healing-throughput wall, not a positioning bug.
+
+### 0.22 The kill crash + Ragnaros summon step (2026-11-10 16:20 →, same lockout, instance 100) — batch C done (2/10)
+**Pick up here (supersedes §0.21's "Pick up here"): every Majordomo "kill" of 11-10 is VOID.** The web app's living-world
+brain (switched on by the web app at 10:23) answers each bot death with a RESURRECT ~15-25 s later, and the Core rezzed the
+bot at its corpse **mid-fight**: B1 had 118 deaths and 118 rezzes inside the fight, B3 56/56, B4 575/575 (Sylwhisper died
+five times in one pull). So A1, A3, B1, B3 (all "8 of 8") and B4/B5 (7 and 5, 12-16 min fights) were not normal-rules
+attempts. The 11-09 runs had 0 rezzes (brain off): §0.20's 0/10 and attempt 89's kill stand.
+- bz. **RESURRECT held while the raid fights** (`AiBotAIBridge.cpp`, RESURRECT handler): a bot in a raid group in a dungeon
+  ignores RESURRECT (rez and ghost port) while any living member on its map is in combat; logs `[AIBOT] X: RESURRECT held -
+  the raid is fighting` (once per 30 s per bot). The autopilot's regroup revives between fights as before, and the bot's own
+  fallback recovers in place once the group is out of combat. Build **0c0f7150** (18:00) = b2d6c1d9 + bz.
+- `domo-verify.sh` now prints `rezzed N held N deaths N` (since the run's start; rezzes AFTER the fight ended are normal) -
+  a run is valid only with no rez timestamp inside the fight. **Batch C (C1–C10) started 18:02** on 0c0f7150.
+- **Batch C result: 2 of 10 valid kills** (every rez checked: all at/after the fight's close; no crash in any run, two
+  kills included = bw verified). C1 E47 E121 E134 E170; C2 E19 E46 E67 E90 H173; C3 E28 E55 E108 E140; C4 E26 E72 E84 E111;
+  C5 E48 E64 E84 E145 H210; C6 E19 E38 E58 E91; **C7 KILL** E22 E78 E93 E119 H153 H178 H232 H269 (17 dead); **C8 KILL** E83
+  E103 E124 E174 H226 H253 H271 H308 (6 dead); C9 E19 E37 E53 E93; C10 E44 E53 E75 E95 H143. Compare §0.20: 0 of 10. The wall
+  is unchanged in the eight wipes: the four Elites die, the four Healers wake Polymorph-immune and their Shadow Shocks
+  (top damage source, 130-190k) kill the raid in 30-60 s. Overheal 33-60 % per healer.
+- Owner (11-10, during batch C): **"once that's done, tackle rag, do not stop to ask me".** 19:58: lockout put back to the
+  real result (`rag-ready.sh`: encounter 8 = 3, runes 16-22 = 3, deferrals cleared), the Ragnaros playbook installed in
+  BOTH `run/etc` and `src/mangosd` (src is now in sync = Elites first), restart, autopilot on.
+B1 (old build c870a2c5) was a "kill" (E36 E54 E75 E99 H225 H251 H298
+H329) and mangosd **crashed at the kill** (16:21:02), the same moment as the unexplained 14:46 SIGSEGV after A3's kill. gdb
+(`/tmp/mangosd-gdb-1110-1609.txt`): `AiBotAI::UpdateSpecCombatAI -> Unit::HasBreakableByDamageCrowdControlAura` on a
+**dangling cast target**. Majordomo's adds are `TEMPSUMMON_DEAD_DESPAWN` (deleted the moment they die); a member still
+casting or auto-shooting at the last add keeps the spell's raw `m_targets.getUnitTarget()` pointer until its spell updates,
+and the bot's "stop a damaging cast on a sheeped target" loop (and four other spots) dereferenced it.
+- bw. **`CastTarget(me, cast)`** (`AiBotAISpecCombat.cpp`): every bot read of a cast's target looks it up by guid on the map
+  (null once removed); no raw `getUnitTarget()` left in SuiBots. No combat behaviour change, so B1 still counts.
+- bx. **`doneData`** (playbook, `SuiRaidPlaybook::BossDead`): a boss whose instance data index reads DONE (3) is beaten -
+  for bosses that yield or are script-summoned. Code only; the data goes in after the batch (below).
+- by. **`summonGossip`** (playbook) + `UseSummonGossip` (`SuiAutopilot.cpp`, idle branch before the rune step): when the
+  first living boss has one and nothing else is left, the leader goes to the NPC (setup move, like the runes), the raid
+  gathers 20 s (Regroup), the leader picks option 0 `selects` times from the NPC's default menu, then holds 3 min while the
+  boss is NOT_SELECTABLE; once it is fightable the normal fight/pull logic takes it. Untested live.
+The batch loop was stopped, build **b2d6c1d9** (= c870a2c5 + bw-by) installed 16:30 under gdb, and **B2–B10 restarted
+16:33** from this session (`domo-verify.sh B$i`, results `scratch/autopilot/domo-B*.txt`, read as §0.21 says). Backups
+`/tmp/bak-1109/*.pre-1110d`. **B2 = harness failure:** B1's leader died 3 times on an Elite, the area deferral is written to
+`run/etc/sui-autopilot-deferred.txt` with a **120 min** wall-clock expiry (the log line says "30 min" - the in-memory
+deferral is 30, the file 120; a small inconsistency, not fixed) and survives the restart, so B2's raid stood 20 min "in a
+deferred zone". `domo-verify.sh` now empties both deferral files before the restart (appended to `*.qa-cleared`). Loop
+restarted 17:00 as **B3–B11** (ten real runs = B1 + B3–B11).
+**Playbook found out of sync:** the installed `run/etc/sui-raid-playbook.json.dist` (13:55, Elites first: killOrder
+[11664, 11663]) is newer than `src/mangosd/sui-raid-playbook.json.dist` (Healers first) - a `make install` would have put
+Healers first back. The Ragnaros draft (Majordomo `doneData` 8; Ragnaros 11502 `doneData` 9, `summonAt`, `summonGossip`
+npc 12018 at (847.1, -816.2, -229.8) selects 3) is built on the INSTALLED file, in this session's scratchpad
+(`rag/sui-raid-playbook.json.dist`); after the batch it goes to both places.
+
+### 0.21 Majordomo fixes + 10-run batch B (2026-11-10 11:10 → 16:10, same lockout, instance 100) — see §0.22
+Owner (11-10): **"Fix Majordomo first"** (then Ragnaros), and **"Yes, pull them back"** (the raid bots into MC, see below).
+**Pick up here:** a 10-run verification batch (B1–B10) was started 16:08 on build **c870a2c5** (installed = running, mangosd
+UNDER GDB, see ops) from the previous agent's session: `for i in 1..10: scratch/autopilot/domo-verify.sh B$i >
+scratch/autopilot/domo-B$i.txt`. If that session is gone the loop is gone too - check `ls -t scratch/autopilot/domo-B*.txt`
+and `pgrep -af run/bin/mangosd` on the box, then restart the missing runs. **Read the results:**
+`grep -a "KILL\|over after\|^3 \|start\|NOT\|ERROR" scratch/autopilot/domo-B*.txt` - a run is a KILL when its last line before
+"start" reads `3 3 3 3 3 3 3 3 3 0 …` (index 8 = 3) AND it has eight `KILL` lines; `3 … 3 0 0 …` = wipe; no KILL lines + "NOT
+RESTARTING"/"Connection refused" = harness failure (not a run). Compare with §0.20 (0 of 10 on the old build).
+Probe runs on this build before the batch: **A1 KILL** (E17 E45 E60 E80 H317 H355 H406 H442, 3 dead), **A3 KILL** (E17 E47 E60
+E81 H121 H193 H231 H255); A2 and the first A3s were harness failures (no Majordomo, fixed below).
+
+What happened first (11:10–12:25): at 10:23 the web app started a living-world run (`.bot add Aerhorn, Aggrocrits, …` over
+RA) and its brain gave every bot GRIND tasks - the raid roster included, because the raid group has no human online (Testwar
+left it 11-09), so `pparty` was 0. Boomwarrior hearthed out of MC ("stranded escape") and the 40 spread over the Burning
+Steppes, Duskwood, Kalimdor, Winterspring. My `recover.sh` teleports then crashed mangosd twice (`Assertion in GetMap:
+m_currMap`, 11:13 and 12:15, both on back-to-back cross-map `.tele name X mc`); with 3 s between teleports under gdb, no crash.
+
+Fixes (Core, uncommitted). Letters continue §0.19:
+- bs. **A raid group is the raid's, not the brain's** (`AiBotAIBridge.cpp`, STATE `pparty`): a bot in a raid group reports
+  pparty=1, so the C# brain holds it Idle. The web app never forms raid groups. Verified: after the restart the brain sent the
+  40 only IDLE.
+- bt. **Free tanks stand by the sheeps as soon as one add is left awake, at any health** (`SleepersMayWake(around, anyHealth)`;
+  the tank branch passes `!PlaybookReleaseTarget(me)`, so Healers-first releases are untouched). §0.20 V10: the last Elite
+  died 14 s after the third and only one tank reached a sheep.
+- bu. Diagnostics: `[AIBOT-TAUNT]` (why a taunt was not cast; first spell of the list only - Mocking Blow is always "form 86",
+  wrong stance, ignore it) and `[AUTOPILOT] nearest idle hostile X: <reason>` (which `Pullable` check refuses the nearest idle
+  hostile within 100 yd when the pick finds nothing). **Taunt is NOT broken**: the live probe `.autopilot why <tank> 355`
+  shows canTry=1 in reach and ready=0 after it fired; the `355:gate` counts are refusals out of reach.
+- bv. **Script-summoned bosses: `bosses.<entry>.summonAt [x,y,z]`** (playbook, `SuiRaidPlaybook::BossSpawn` falls back to it
+  when a boss has no spawn row) - Majordomo `[758.089, -1176.71, -118.64]` in both `.dist` files. Without it exploration knew
+  only spawn rows and never walked to his room. NOTE: a summonAt boss counts as alive forever (`BossDead` cannot judge a
+  summon), so after Majordomo is DONE the raid walks to his empty spot when idle - harmless now, must be solved for Ragnaros.
+- QA verbs: `.autopilot unit <leader> <data64 id>` (MC 14 = Majordomo: alive/position/faction/flags/distance) and
+  `.autopilot encounter` (§0.20). **`encounter` always WRITES** - there is no read-only form; to read a flag you must write it
+  back (I wrote 9 into four flags once by mistake and restored them).
+- **Harness facts (MC instance script)**: Majordomo is summoned the moment the last rune is doused (`GOHello_go_rune_MC`),
+  hostile if encounter 8 ≠ 3, and sets DATA_DOMO_SPAWNED (23, not saved). Rune states 16–22 ARE saved/loaded (the
+  `SetData(+16)` loop in `Load` is dead code, the stream reads them). After a kill all seven are saved doused.
+  `domo-verify.sh` therefore sets, BEFORE the restart: 8 = 0, runes 16 17 18 19 21 = 3 (doused), 20 22 = 0 (Blaz, Mohn): the
+  autopilot douses Mohn and Blaz, he appears, the raid walks to him via summonAt. `GridUnload = 0` on this server.
+
+Ops changes (`scratch/autopilot/`, git-ignored): `recover.sh` and `tele-all.ps1` wait 2 s between teleports (crashes);
+`tele-all.ps1` includes Stormdoom; `deploy.sh` tolerates a dead server and **starts mangosd under gdb when `~/sui-gdb-on`
+exists on the box** (it does now): a crash leaves `thread apply all bt` in `/tmp/mangosd-gdb-<MMDD-HHMM>.txt` - read the newest
+one after any "Connection refused". A **SIGSEGV at 14:46:10** (right after A3's kill, no trace - cpptrace is off) is unexplained;
+the gdb run is there to catch the next one. `taunt-probe.sh` = live Taunt probe (not needed any more).
+Backups: `/tmp/bak-1109/*.pre-1110a … pre-1110c`. Nothing committed.
+
+### 0.20 Majordomo verification: 0 of 10 (2026-11-09 20:39 → 22:41, same lockout, instance 100)
+Owner (11-09): **"rerun majordomo 10 times (pre kill), so that we can verify it, then we try rag."** Same build as the kill
+(fixes bm–br) plus one QA verb, no behaviour change between runs. **Result: 0 kills in 10.** Adds killed per run (E = Elite,
+H = Healer, s after the pull): V1 E19 E48 E66 E80 H124 H150; V2 E65 E81 E107 E140; V3 E91 E119 E136 E153; V4 E29 E54 E90 E117
+H162; V5 E25 E45 E74 E139; V6 E33 E45 E69 E87 H142 H173; V7 E50 E76 E92 E112; V8 E24 E44 E70 E108; V9 E47 E54 E80 E102 H149;
+V10 E28 E49 E66 E80 H148. So: **all four Elites die in every run; 0–2 Healers after that**; the raid collapses 30–60 s after
+the wake-up, often several deaths in one 5 s window, and in several runs (V5, V8, V10) with the healers NOT out of mana. The
+attempt-89 kill was the lucky tail. Overheal 30–59 % per healer in every run.
+- **`.autopilot encounter <leader> <type> <value>`** (QA, `SuiAutopilot.cpp`): sets one encounter of the leader's instance and
+  saves it. Order matters: on startup the MC script re-douses the runes itself and summons Majordomo at once — hostile only if
+  encounter 8 already reads 0, otherwise the friendly one in Ragnaros' chamber — so the reset goes BEFORE the restart.
+  `scratch/autopilot/domo-verify.sh <label>` = recover, `encounter Boomwarrior 8 0`, restart, autopilot on, wait, print kills
+  and the instance data (results in `scratch/autopilot/domo-V*.txt`).
+- After V10 the lockout was put back to the real result: `encounter Boomwarrior 8 3`, restart; instance 100 data =
+  `3 3 3 3 3 3 3 3 3 0 …` (Majordomo DONE from attempt 89, Ragnaros not started). The verification kills would have been QA,
+  not progression; none happened, and no Cache was opened.
+
 ### 0.19 MAJORDOMO DEFEATED (2026-11-09 19:20 → 20:20, same lockout, instance 100) — 9/9
 Owner (11-09, answering §0.10 item 0): **"keep own loot, go week 3"** = healers stay on own-loot gear, keep going in this
 (week 3) lockout. Attempts 86–89; **attempt 89 (pull ~19:59:40, last add 20:05:26) killed all eight adds in normal combat:
@@ -777,16 +992,24 @@ Fixes (Core, uncommitted), each from a record:
    **Not enough on its own**: the last wipe shows the Firewalker pack is picked first anyway as Geddon's ROOM TRASH
    (bosses-last), before the lure is ever considered.
 
-### 0.10 Next steps (in order; updated 2026-11-09 20:20, see §0.19)
-Same lockout (instance 100) until **2026-11-13 23:00**: **9/9 — Majordomo defeated 20:05 (attempt 89)**; only Ragnaros is
-left. Five tanks + the off-tank warrior Stormdoom (171, pre-raid tank gear, Majordomo's tank all fight), **Elites first**
-(playbook), fixes m–ak (§0.15-0.16), al–bd (§0.17), be–bl (§0.18), bm–br (§0.19). Owner: healers keep own-loot gear.
+### 0.10 Next steps (in order; updated 2026-11-10 16:10, see §0.21)
+Same lockout (instance 100) until **2026-11-13 23:00**: **9/9 — Majordomo defeated 11-09 20:05 (attempt 89)**; only Ragnaros
+is left. Five tanks + the off-tank warrior Stormdoom (171, pre-raid tank gear, Majordomo's tank all fight), **Elites first**
+(playbook), fixes m–ak (§0.15-0.16), al–bd (§0.17), be–bl (§0.18), bm–br (§0.19), bs–bv (§0.21). Owner: healers keep own-loot
+gear; "Fix Majordomo first", then Ragnaros.
+-1. **Finish and read batch B (§0.21 "Pick up here").** If it is clearly better than §0.20's 0/10 (A1 and A3 were kills),
+   report it to the owner and move to Ragnaros (item 0). If not, read the wipes (`/tmp/Server-1110-HHMM.log` per run,
+   `fights.py -n 10`) - the Healer phase after the wake-up is the wall (§0.20). **After the batch: put the lockout back to the
+   real result** - `.autopilot encounter Boomwarrior 8 3` and runes 16–22 = 3, then restart (QA kills are not progression; no
+   Cache opened in any QA run).
+-2. Any crash: newest `/tmp/mangosd-gdb-*.txt` on the box has the backtrace (the 14:46 SIGSEGV and the GetMap assertion).
 0. **Owner: Ragnaros or not.** The owner's goal was "until Majordomo dies"; failing Ragnaros for 1–3 weeks is fine (§0). He
    is summoned by Majordomo's gossip in his lair (stock script, `boss_majordomo_executus.cpp` dialogue); the autopilot has no
    gossip step yet, and Ragnaros needs knockback/Magma Blast/Sons of Flame handling (Sept Commander notes in
    `COMMANDER_RAID_STATE.md`). Ask before starting.
-0a. **Majordomo repeatability**: one kill in 89 attempts, on the build with bm–bp; n=1. Next lockout, run him 2+ times before
-   believing the order of fixes. **Healer overheal in attempt 89 (bp): 23–47 % per healer (Chargesniper 47, Gankreaper 39,
+0a. **Majordomo repeatability: 0 of 10 on the kill's build (§0.20)** - the owner's plan was "verify, then Rag"; verification
+   failed, so the owner decides between more Majordomo work (the Healer phase after the wake-up, item 1) and Ragnaros anyway.
+   Run any fix as a 10-run batch with `domo-verify.sh`. **Healer overheal in attempt 89 (bp): 23–47 % per healer (Chargesniper 47, Gankreaper 39,
    most 29–35)** - a third of the healers' mana lands on full health; the next mana lever (heal choice / incoming-heal
    prediction / cancelling a cast whose target is full).
 0b. Keldimp's Core Hound Tooth in the main hand (§0.19 loot): check `ScoreItem` for set bonuses / weapon specialization.

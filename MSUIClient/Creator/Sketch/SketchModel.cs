@@ -510,6 +510,12 @@ public sealed class SketchDoc
         }
     }
 
+    /// <summary>Does this Sketch stay up for as long as the game holds it - a missile for its
+    /// flight, a precast for the cast bar, a channel or a state for their length - rather than
+    /// play once? Then its sequence loops and its pieces hold their alpha: a one-shot with a
+    /// fade-out was gone 0.6 s into a 1.5 s cast.</summary>
+    public bool IsHeld => IsMissile || Stage is "precast" or "channel" or "state";
+
     public SketchDoc Clone()
     {
         var copy = new SketchDoc { Stage = Stage };

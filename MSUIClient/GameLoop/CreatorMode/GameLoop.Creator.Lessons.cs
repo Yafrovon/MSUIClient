@@ -158,7 +158,8 @@ public sealed partial class GameLoop
         // Missile pieces (Travel "To the target") play as the missile, not the cast.
         bool Drawn(SpellStage stage) => SketchForStage(doc, stage).Pieces.Any(p => p.Motion.Mode != SketchTravelMode.ToTarget);
         bool flies = SketchForStage(doc, SpellStage.Cast).Pieces.Any(p => p.Motion.Mode == SketchTravelMode.ToTarget);
-        return (!Drawn(SpellStage.Impact) || _creatorLoopImpactPhase) &&
+        return (!Drawn(SpellStage.Precast) || _creatorLoopPrecast) &&
+               (!Drawn(SpellStage.Impact) || _creatorLoopImpactPhase) &&
                (!Drawn(SpellStage.State) || _creatorLoopStateHold) &&
                (!Drawn(SpellStage.Cast) || _creatorLoopCast) &&
                (!flies || _creatorLoopMissilePhase);
@@ -192,11 +193,37 @@ public sealed partial class GameLoop
         Enter: () => { _sketchOpen = true; if (_sketchStage != stage) SketchEditStage(stage); },
         Where: "Sketch window > the row of shape buttons");
 
+    /// <summary>What a stage's body does (the ANATOMY's "body does" button): the first of
+    /// <paramref name="names"/> AnimationData.dbc knows.</summary>
+    private LessonStep LessonBody(SpellStage stage, string title, string say, params string[] names) => new(
+        title,
+        $"In the Sketch's ANATOMY, the button beside \"body does\" under {stage} is what your body " +
+        $"does in that part. Click it and pick {names[0]} - hover any row first to watch your " +
+        $"character perform it. {say}",
+        Mark: $"anim.{stage}",
+        Done: () => _creatorSpell is { } doc && doc.Composition.TryGetValue(stage, out CreatorStageComposition? c) &&
+                    c.AnimationId is > 0,
+        ShowMe: () =>
+        {
+            foreach (string name in names)
+                if (LessonAnimation(name) is { } id) { SetCreatorAnimation(stage, id); return; }
+        },
+        Enter: () => { _sketchOpen = true; _sketchAnatomyFolded = false; },
+        Where: $"Sketch window > ANATOMY, under {stage}");
+
+    private ushort? LessonAnimation(string name)
+    {
+        foreach (AnimationDataRow row in _animationData?.Rows ?? Array.Empty<AnimationDataRow>())
+            if (string.Equals(row.Name, name, StringComparison.OrdinalIgnoreCase)) return (ushort)row.Id;
+        return null;
+    }
+
     private LessonStep LessonPlay(string say) => new(
         "Watch it",
         say + " In the Sketch, untick Hold if it is ticked (Hold plays only the part you are " +
-        "drawing). Then press Loop in the Loop section: every part plays, over and over, and " +
-        "any change you make shows up on the next pass.",
+        "drawing). Then press Loop in the Loop section: the whole spell plays in order, A to Z - " +
+        "the wind-up for the cast time, the release, the flight, what lands - and then again " +
+        "from the top. Any change you make shows up on the next pass.",
         Mark: "loop.toggle",
         Done: LessonPlayingAll,
         ShowMe: LessonPlayAll,
@@ -209,8 +236,9 @@ public sealed partial class GameLoop
     private Lesson[] Lessons => _lessons ??= new[]
     {
         new Lesson("A bolt", "projectile",
-            "Fireball's shape: a glowing ball flies from your hands to the target and bursts on it. " +
-            "Rules from a recipe, a sphere that travels, sparks, a ring on impact.",
+            "Fireball's shape: you wind up, a glowing ball flies from your hands to the target and " +
+            "bursts on it. Rules from a recipe, a charge-up and the body's animations, a sphere that " +
+            "travels, sparks, a ring on impact.",
             LessonBolt),
         new Lesson("Draw your own", "free-hand",
             "Draw a shape by hand on the paper, keep it, then make it spin, rise and fade. " +
@@ -238,8 +266,30 @@ public sealed partial class GameLoop
             ShowMe: () => LessonRecipe("Bolt"),
             Enter: () => { _creatorLastRecipe = ""; LessonReveal(SpellIdeKind.Rules, "ws-rules"); },
             Where: "Spell Workshop > Rules section"),
+        LessonPart(SpellStage.Precast, "The precast is the wind-up: it plays on you while the cast bar " +
+                                       "fills (1.5 s with these rules) and ends when the spell leaves your hands."),
+        LessonBody(SpellStage.Precast, "Wind up the body",
+            "A precast animation is HELD: the body stays in it until the cast bar is full.",
+            "ReadySpellDirected", "ReadySpellOmni"),
+        LessonShape(SpellStage.Precast, SketchShapeKind.Sphere, "Sphere",
+            "The charge: a ball at your chest that stays up for as long as the cast bar fills."),
+        new LessonStep("Gather power",
+            "MOVE: drag Grow's two numbers to 0.3 and 1 - the ball swells from a spark to full size. " +
+            "A precast repeats until the cast bar is full, so it pulses as it charges. Give it an " +
+            "orange in LOOK too.",
+            Mark: "move.grow",
+            Done: () => LessonPiece(SpellStage.Precast, SketchShapeKind.Sphere) is { Motion.GrowFrom: <= 0.7f },
+            ShowMe: () => LessonEdit(LessonPiece(SpellStage.Precast, SketchShapeKind.Sphere), p =>
+            {
+                p.Motion.GrowFrom = 0.3f; p.Motion.GrowTo = 1f;
+                p.Look.Colour = new Vector3(1f, 0.5f, 0.15f);
+            }),
+            Where: "Sketch window > MOVE card"),
         LessonPart(SpellStage.Cast, "The missile lives in the cast part: any piece there whose Travel " +
                                     "is \"To the target\" is what flies."),
+        LessonBody(SpellStage.Cast, "Throw it",
+            "A cast animation plays ONCE, at the moment the spell is released: the throw.",
+            "SpellCastDirected", "SpellCastOmni"),
         LessonShape(SpellStage.Cast, SketchShapeKind.Sphere, "Sphere",
             "A real 3D ball appears at your chest, white, one yard across."),
         new LessonStep("Colour it",
@@ -248,12 +298,16 @@ public sealed partial class GameLoop
             Done: () => LessonPiece(SpellStage.Cast, SketchShapeKind.Sphere) is { } p && p.Look.Colour != Vector3.One,
             ShowMe: () => LessonEdit(LessonPiece(SpellStage.Cast, SketchShapeKind.Sphere), p => p.Look.Colour = new Vector3(1f, 0.5f, 0.15f)),
             Where: "Sketch window > LOOK card"),
+        // A sphere is a solid: LOOK's Glow (a halo baked into a drawn shape's image) is disabled
+        // for it, so its halo is the EXTRAS shell.
         new LessonStep("Make it glow",
-            "Drag Glow up to 0.8 or more: a soft halo round the ball.",
-            Mark: "look.glow",
-            Done: () => LessonPiece(SpellStage.Cast, SketchShapeKind.Sphere) is { Look.Glow: >= 0.75f },
-            ShowMe: () => LessonEdit(LessonPiece(SpellStage.Cast, SketchShapeKind.Sphere), p => p.Look.Glow = 0.85f),
-            Where: "Sketch window > LOOK card"),
+            "Scroll the cards down to EXTRAS and drag Glow yd up to 0.4 or more: a soft halo, a " +
+            "larger shell of the ball, round it. (LOOK's Glow is greyed out on a sphere - that one " +
+            "is for drawn shapes.)",
+            Mark: "extras.glow",
+            Done: () => LessonPiece(SpellStage.Cast, SketchShapeKind.Sphere) is { Extras.Glow.Radius: >= 0.35f },
+            ShowMe: () => LessonEdit(LessonPiece(SpellStage.Cast, SketchShapeKind.Sphere), p => p.Extras.Glow.Radius = 0.45f),
+            Where: "Sketch window > EXTRAS card (bottom of the cards)"),
         new LessonStep("Make it fly",
             "In the MOVE card, set Travel to \"To the target\". That one setting makes it the missile: " +
             "the game flies it from your hands to whatever you cast at, at the spell's speed.",
@@ -437,6 +491,9 @@ public sealed partial class GameLoop
             ShowMe: () => LessonRecipe("Self buff"),
             Enter: () => { _creatorLastRecipe = ""; LessonReveal(SpellIdeKind.Rules, "ws-rules"); },
             Where: "Spell Workshop > Rules section"),
+        LessonBody(SpellStage.Cast, "Raise your hands",
+            "The cast is the moment the buff goes on: the body plays it once.",
+            "SpellCastOmni"),
         LessonPart(SpellStage.State, "The State plays on you for as long as the buff lasts."),
         LessonShape(SpellStage.State, SketchShapeKind.Ring, "Ring", "It lies flat on the ground round your feet."),
         new LessonStep("Gold, glowing",
@@ -567,8 +624,8 @@ public sealed partial class GameLoop
                 FinishAutoStep(step, step.Done?.Invoke() ?? true);
                 return;
             }
-            case 3:
-                if (now - _lessonAutoAt < 2.0) return;
+            case 3:   // long enough for the finished spell to loop through A to Z at least once
+                if (now - _lessonAutoAt < 7.0) return;
                 Console.WriteLine($"[lesson] DONE failures={_lessonAutoFailures}");
                 Console.Out.Flush();
                 _quitRequested = true;

@@ -1461,7 +1461,7 @@ public sealed partial class GameLoop
 
         float radius = piece.Extras.Glow.Radius;
         ImGui.SetNextItemWidth(110f * cs);
-        if (ImGui.DragFloat("Glow yd", ref radius, 0.02f, 0f, 5f, "%.2f"))
+        if (LessonMarked("extras.glow", ImGui.DragFloat("Glow yd", ref radius, 0.02f, 0f, 5f, "%.2f")))
         {
             piece.Extras.Glow.Radius = MathF.Max(radius, 0f);
             SketchChanged();

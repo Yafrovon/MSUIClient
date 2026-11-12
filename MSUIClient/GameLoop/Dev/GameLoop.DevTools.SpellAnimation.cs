@@ -70,8 +70,10 @@ public sealed partial class GameLoop
             kit = CreatorComposedKit(composed, composedStage, haveKit
                 ? kit
                 : new SpellVisualKitInfo(null, null, Array.Empty<SpellVisualKitEffect>(), Array.Empty<SpellVisualCharProc>()));
-            // A phase that only changes the BODY (tint, see-through, a weapon trail) plays too.
-            haveKit = kit.Effects.Count > 0 || kit.CharProcs.Count > 0;
+            // A phase that only changes the BODY (tint, see-through, a weapon trail) plays too -
+            // and so does one that only MOVES it: a bolt's cast is its throw animation alone once
+            // the ball has become the missile.
+            haveKit = kit.Effects.Count > 0 || kit.CharProcs.Count > 0 || kit.AnimationId is > 0;
         }
         if (!haveKit) return false;
         ReapPresentedEffect();

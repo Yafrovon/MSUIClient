@@ -48,7 +48,7 @@ public sealed partial class GameLoop
         string label = CreatorAnimationLabel(composition);
         bool changed = composition.AnimationId != composition.AuthoredAnimation;
         if (changed) ImGui.PushStyleColor(ImGuiCol.Text, SpellIdeGold);
-        if (ImGui.Button($"{label}##anim-{stage}", new Vector2(width, 0f)))
+        if (LessonMarked($"anim.{stage}", ImGui.Button($"{label}##anim-{stage}", new Vector2(width, 0f))))
             OpenCreatorAnimationPicker(stage);
         if (changed) ImGui.PopStyleColor();
         if (ImGui.IsItemHovered())

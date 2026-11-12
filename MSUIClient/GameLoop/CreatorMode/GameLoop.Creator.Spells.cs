@@ -255,6 +255,8 @@ public sealed partial class GameLoop
     private double _creatorLoopCastAt = double.MaxValue;
     private double _creatorLoopMissileAt = double.MaxValue;
     private double _creatorLoopImpactAt = double.MaxValue;
+    private double _creatorLoopChannelEndAt = double.MaxValue;
+    private bool _creatorLoopStateAtLanding, _creatorLoopStateAtCast, _creatorLoopStateAtChannelEnd;
     private double _creatorMissileSoundEndsAt = double.MaxValue;
     private readonly Dictionary<CreatorAudioCue, long> _creatorAudioVoices = [];
     private readonly HashSet<CreatorAudioCue> _creatorSustainedAudio = [];
@@ -266,12 +268,18 @@ public sealed partial class GameLoop
 
     // ── loop machine (called every Update while the creator owns the world) ──
     //
-    // Each cycle sequences the CHECKED phases: precast fires at the tick, cast
-    // releases after a short precast hold, the missile launches with the cast,
-    // and impact lands when the missile arrives (or shortly after the cast when
-    // no missile is looped). Impact is anchored ON the spawned target when one
-    // exists. State/channel are holds, re-presented each tick so byte-patches
-    // keep landing.
+    // Each cycle plays the CHECKED phases as the spell runs in the game, A to Z (owner,
+    // 2026-11-10: "the looping should loop the full spell A-Z"): the precast holds for the
+    // rules' cast time, the cast releases and the missile leaves with it, impact lands when
+    // the missile arrives (or a beat after the cast when nothing flies), and the state - the
+    // aura the spell leaves - goes up when it lands. A channel holds from the release for
+    // the rules' duration. Impact is anchored ON the spawned target when one exists.
+    //
+    // The next cycle starts only once this one has played out: Period is the SHORTEST a
+    // cycle may be, never a clock that cuts in. It used to be that clock, and a 2 s period
+    // under a 1.5 s precast and a 1.7 s flight started the next precast while the missile
+    // was still in the air - and since precast and state are both held kits (one replaces
+    // the other), everything ticked read as one jumble played at once.
 
     private void UpdateCreatorSpellLoop()
     {
@@ -289,14 +297,27 @@ public sealed partial class GameLoop
             StopCreatorAudio(CreatorAudioCue.Missile);
         }
 
+        // ── the cast bar fills: release ──
         if (now >= _creatorLoopCastAt)
         {
             _creatorLoopCastAt = double.MaxValue;
             StopCreatorAudio(CreatorAudioCue.Precast);
-            if (!SketchSoloBlocks(SpellStage.Cast) && PresentSpellEffect(spell, "cast"))
+            if (_creatorLoopCast && !SketchSoloBlocks(SpellStage.Cast) && PresentSpellEffect(spell, "cast"))
                 StartCreatorAudio(CreatorAudioCue.Cast, LocalPlayerGuid,
                     _controller?.Position ?? Vector3.Zero);
+            else if (_presentedEffectStage == "PRECAST" && !SketchHoldsStage("precast"))
+            {
+                // The cast bar is full: the charge-up ends whether or not a cast follows it
+                // (unless Hold keeps it up to be worked on).
+                ReapPresentedEffect();
+                if (!ControlledBodyTacticallyFrozen) _character?.CancelSpellVisual();
+            }
+            if (_creatorLoopChannelHold && !SketchSoloBlocks(SpellStage.Channel))
+                PresentSpellEffect(spell, "channel");
+            if (_creatorLoopStateAtCast) PresentCreatorLoopState(spell, now);
+            BumpCreatorLoopEnd(now + CreatorLoopCastTail);
         }
+        // ── the missile leaves the hands ──
         if (now >= _creatorLoopMissileAt)
         {
             _creatorLoopMissileAt = double.MaxValue;
@@ -307,9 +328,10 @@ public sealed partial class GameLoop
                     _controller?.Position ?? Vector3.Zero, forceLoop: true);
                 _creatorMissileSoundEndsAt = now + flight;
             }
-            if (_creatorLoopImpactPhase)
-                _creatorLoopImpactAt = now + (flight > 0 ? flight : 0.5);
+            _creatorLoopImpactAt = now + (flight > 0 ? flight : 0.5);
+            BumpCreatorLoopEnd(_creatorLoopImpactAt + CreatorLoopLandingTail);
         }
+        // ── it lands ──
         if (now >= _creatorLoopImpactAt)
         {
             _creatorLoopImpactAt = double.MaxValue;
@@ -321,51 +343,126 @@ public sealed partial class GameLoop
                 _creatorAreaUntil = now + CreatorAreaPreviewSeconds(_creatorSpell);
                 RestartCreatorArea();
             }
-            ulong target = CreatorMissileTargetGuid();
-            ulong anchor = target != 0 ? target : LocalPlayerGuid;
-            // A ground spell lands on its SPOT unless a dummy stands there to be hit.
-            Vector3? spot = target == 0 && CreatorGroundTargeted(_creatorSpell) ? CreatorGroundPreviewPoint() : null;
-            if (!SketchSoloBlocks(SpellStage.Impact) &&
-                PresentSpellEffect(spell, "impact", target != 0 ? target : null, spot))
+            if (_creatorLoopImpactPhase)
             {
-                var pose = SpellEffectUnitPose(anchor);
-                StartCreatorAudio(CreatorAudioCue.Impact, anchor,
-                    pose.Found ? pose.Position : _controller?.Position ?? Vector3.Zero);
+                ulong target = CreatorMissileTargetGuid();
+                ulong anchor = target != 0 ? target : LocalPlayerGuid;
+                // A ground spell lands on its SPOT unless a dummy stands there to be hit.
+                Vector3? spot = target == 0 && CreatorGroundTargeted(_creatorSpell) ? CreatorGroundPreviewPoint() : null;
+                if (!SketchSoloBlocks(SpellStage.Impact) &&
+                    PresentSpellEffect(spell, "impact", target != 0 ? target : null, spot))
+                {
+                    var pose = SpellEffectUnitPose(anchor);
+                    StartCreatorAudio(CreatorAudioCue.Impact, anchor,
+                        pose.Found ? pose.Position : _controller?.Position ?? Vector3.Zero);
+                }
             }
+            // After the impact: presenting the impact reaps the held kits, the state among them.
+            if (_creatorLoopStateAtLanding) PresentCreatorLoopState(spell, now);
+            BumpCreatorLoopEnd(now + CreatorLoopLandingTail);
+        }
+        // ── the channel runs out ──
+        if (now >= _creatorLoopChannelEndAt)
+        {
+            _creatorLoopChannelEndAt = double.MaxValue;
+            if (_presentedEffectStage == "CHANNEL" && !SketchHoldsStage("channel"))
+            {
+                ReapPresentedEffect();
+                if (!ControlledBodyTacticallyFrozen) _character?.CancelSpellVisual();
+            }
+            if (_creatorLoopStateAtChannelEnd) PresentCreatorLoopState(spell, now);
         }
 
         if (now < _creatorLoopNextAt) return;
+        // A new cycle, from the top: whatever the last one left held (a precast nobody
+        // released, a channel, the state) goes, so each pass starts from a clean caster.
+        ReapPresentedEffect();
         _creatorLoopNextAt = now + Math.Max(_creatorLoopPeriod, 0.25f);
+        _creatorLoopCastAt = _creatorLoopMissileAt = _creatorLoopImpactAt = _creatorLoopChannelEndAt = double.MaxValue;
+        _creatorLoopStateAtCast = _creatorLoopStateAtLanding = _creatorLoopStateAtChannelEnd = false;
 
-        bool any = false;
-        if (_creatorLoopPrecast)
-        {
-            if (!SketchSoloBlocks(SpellStage.Precast) && PresentSpellEffect(spell, "precast"))
-                StartCreatorAudio(CreatorAudioCue.Precast, LocalPlayerGuid,
-                    _controller?.Position ?? Vector3.Zero);
-            any = true;
-        }
-        // Cast (and the missile it releases) waits out a short precast hold when
-        // precast is looped too; otherwise it fires at the tick.
-        double castDelay = _creatorLoopPrecast ? Math.Min(_creatorLoopPeriod * 0.35, 1.2) : 0.0;
-        if (_creatorLoopCast) { _creatorLoopCastAt = now + castDelay; any = true; }
-        if (_creatorLoopMissilePhase) { _creatorLoopMissileAt = now + castDelay; any = true; }
-        else if (_creatorLoopImpactPhase)
-        {
-            // No missile to carry it: impact lands shortly after the cast release.
-            double impactDelay = castDelay +
-                (_creatorLoopCast ? Math.Min(_creatorLoopPeriod * 0.45, 0.9) : 0.0);
-            _creatorLoopImpactAt = now + impactDelay;
-            any = true;
-        }
-        if (_creatorLoopStateHold) { PresentSpellEffect(spell, "state"); any = true; }
-        if (_creatorLoopChannelHold) { PresentSpellEffect(spell, "channel"); any = true; }
-        if (_creatorLoopAreaHold) any = true;   // the hold runs continuously below
+        // Hold solos one phase: the others stand down, and so does the time they would take.
+        bool precast = _creatorLoopPrecast && !SketchSoloBlocks(SpellStage.Precast);
+        bool released = _creatorLoopCast || _creatorLoopChannelHold || _creatorLoopMissilePhase || precast;
+        bool lands = _creatorLoopMissilePhase || _creatorLoopImpactPhase;
+        bool any = released || lands || _creatorLoopStateHold || _creatorLoopAreaHold;
         if (!any)
         {
             _creatorLoopOn = false;   // nothing checked - stop rather than spin
             StopAllCreatorAudio();
+            return;
         }
+
+        if (precast)
+        {
+            if (PresentSpellEffect(spell, "precast"))
+                StartCreatorAudio(CreatorAudioCue.Precast, LocalPlayerGuid,
+                    _controller?.Position ?? Vector3.Zero);
+        }
+        double release = now + (precast ? CreatorLoopPrecastSeconds(_creatorSpell) : 0.0);
+        if (released || lands)
+        {
+            _creatorLoopCastAt = release;
+            BumpCreatorLoopEnd(release + CreatorLoopCastTail);
+        }
+        if (_creatorLoopChannelHold)
+        {
+            _creatorLoopChannelEndAt = release + CreatorLoopChannelSeconds(_creatorSpell);
+            BumpCreatorLoopEnd(_creatorLoopChannelEndAt + 0.4);
+        }
+        if (_creatorLoopMissilePhase) _creatorLoopMissileAt = release;
+        else if (_creatorLoopImpactPhase)
+        {
+            // No missile to carry it: impact lands a beat after the cast release.
+            _creatorLoopImpactAt = release + (_creatorLoopCast ? 0.6 : 0.0);
+            BumpCreatorLoopEnd(_creatorLoopImpactAt + CreatorLoopLandingTail);
+        }
+        // The aura goes up when the spell lands on its target; a spell that lands nothing
+        // (a self buff) has it up from the release; with only the state ticked, at once. A
+        // channel and a state are both held kits on the caster and one replaces the other, so
+        // beside a channel the state is what it leaves when the channel ends.
+        if (_creatorLoopStateHold)
+        {
+            if (lands) _creatorLoopStateAtLanding = true;
+            else if (_creatorLoopChannelHold) _creatorLoopStateAtChannelEnd = true;
+            else if (released) _creatorLoopStateAtCast = true;
+            else PresentCreatorLoopState(spell, now);
+        }
+    }
+
+    /// <summary>Seconds a cycle lingers after its release when nothing lands, and after a
+    /// landing: long enough for a cast burst or an impact to play out before the next pass.</summary>
+    private const double CreatorLoopCastTail = 0.8, CreatorLoopLandingTail = 1.2;
+
+    /// <summary>Seconds the state stays up in the loop before the next pass reaps it.</summary>
+    private const double CreatorLoopStateSeconds = 2.0;
+
+    /// <summary>Push the start of the next cycle out to at least <paramref name="at"/>.</summary>
+    private void BumpCreatorLoopEnd(double at) => _creatorLoopNextAt = Math.Max(_creatorLoopNextAt, at);
+
+    private void PresentCreatorLoopState(uint spell, double now)
+    {
+        if (!SketchSoloBlocks(SpellStage.State)) PresentSpellEffect(spell, "state");
+        BumpCreatorLoopEnd(now + CreatorLoopStateSeconds);
+    }
+
+    /// <summary>How long the loop holds the precast: the rules' cast time - what the cast bar
+    /// fills over in the game - so a 1.5 s Fireball charges for 1.5 s. An instant spell that
+    /// still has a precast gets a beat to show it.</summary>
+    private double CreatorLoopPrecastSeconds(CreatorSpellDoc doc)
+    {
+        int ms = CreatorRules(doc) is { } rules && SpellRuleTablesLoaded is { } tables &&
+                 tables.CastTimes.TryGetValue((uint)rules.GetInt("castingTimeIndex"), out var cast) ? cast.BaseMs : 0;
+        return ms > 0 ? Math.Clamp(ms / 1000.0, 0.3, 5.0) : 0.8;
+    }
+
+    /// <summary>How long the loop holds a channel: the rules' duration, kept to a watchable
+    /// few seconds (a ten-minute channel would never let the loop come round).</summary>
+    private double CreatorLoopChannelSeconds(CreatorSpellDoc doc)
+    {
+        int ms = CreatorRules(doc) is { } rules && SpellRuleTablesLoaded is { } tables &&
+                 tables.Durations.TryGetValue((uint)rules.GetInt("durationIndex"), out var duration) ? duration.BaseMs : 0;
+        return ms > 0 ? Math.Clamp(ms / 1000.0, 1.0, 6.0) : 3.0;
     }
 
     private uint? CreatorAuthoredSound(CreatorSpellDoc doc, CreatorAudioCue cue)
@@ -1339,8 +1436,10 @@ public sealed partial class GameLoop
         ImGui.SetNextItemWidth(110f * cs);
         ImGui.SliderFloat("Period", ref _creatorLoopPeriod, 0.5f, 6f, "%.1fs");
         if (CreatorResetKnob("period")) _creatorLoopPeriod = 2f;
-        CreatorHelp("Seconds between loop cycles. Each cycle plays the checked phases " +
-            "in sequence (precast, then cast, missile in flight, impact on arrival).");
+        CreatorHelp("The shortest a loop cycle may be. Each cycle plays the checked phases A to Z, " +
+            "as the spell runs in the game: the precast for the rules' cast time, then the cast " +
+            "and the missile, impact on arrival, then the state. The next cycle waits until this " +
+            "one has played out, so a longer spell simply takes longer.");
         ImGui.SameLine();
         bool anyPhase = _creatorLoopPrecast || _creatorLoopCast || _creatorLoopMissilePhase ||
                         _creatorLoopImpactPhase || _creatorLoopStateHold || _creatorLoopChannelHold ||
@@ -1363,7 +1462,7 @@ public sealed partial class GameLoop
     {
         _creatorLoopOn = !_creatorLoopOn;
         _creatorLoopNextAt = 0;
-        _creatorLoopCastAt = _creatorLoopMissileAt = _creatorLoopImpactAt = double.MaxValue;
+        _creatorLoopCastAt = _creatorLoopMissileAt = _creatorLoopImpactAt = _creatorLoopChannelEndAt = double.MaxValue;
         if (!_creatorLoopOn)
         {
             ReapPresentedEffect();
@@ -1432,7 +1531,7 @@ public sealed partial class GameLoop
         // no phase is checked, so _creatorLoopOn must be set only once the boxes are.
         _creatorLoopOn = true;
         _creatorLoopNextAt = 0;
-        _creatorLoopCastAt = _creatorLoopMissileAt = _creatorLoopImpactAt = double.MaxValue;
+        _creatorLoopCastAt = _creatorLoopMissileAt = _creatorLoopImpactAt = _creatorLoopChannelEndAt = double.MaxValue;
     }
 
     private static string CreatorAudioLabel(CreatorAudioCue cue) => cue switch
