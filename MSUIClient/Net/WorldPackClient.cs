@@ -100,6 +100,9 @@ public sealed class WorldPackClient
         /// <summary>The web app builds path "surface" textures and honours "grade": false (road painting). Until it says so,
         /// painted roads are preview-only: an older build would grade every path doc and ignore the paint.</summary>
         public bool RoadSurfaceSupported { get; set; }
+        /// <summary>The web app also builds road LOOKS (2026-11-15): ragged, patchy, seed and a shoulder texture. An older
+        /// build would paint those roads as plain bands, so the client will not save a look it cannot build.</summary>
+        public bool RoadLookSupported { get; set; }
         public List<Placement> Placements { get; set; } = new();
         public List<SculptTile> Sculpt { get; set; } = new();
         public List<SculptTile> PublishedSculpt { get; set; } = new();

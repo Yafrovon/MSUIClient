@@ -15,7 +15,8 @@ public sealed partial class GameLoop
     /// the view went up (ToggleFreeView parks it there and returns it there).</summary>
     private Vector3? PartySightEye()
     {
-        if (!_freeView || !Settings.Controls.CommandViewPartySightExperimental) return null;
+        // The World Builder camera sees the whole world, not one unit's view of it.
+        if (!_freeView || !Settings.Controls.CommandViewPartySightExperimental || WbFreeCameraActive) return null;
         Vector3? feet = _net is { IsInWorld: true }
             ? CommandViewPrimarySubject()
             : CreatorInWorld ? _creatorFreeViewReturn : null;

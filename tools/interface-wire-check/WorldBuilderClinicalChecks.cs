@@ -80,12 +80,39 @@ internal static class WorldBuilderClinicalChecks
             TerrainPaintLaw.PaintChunk(t4, a4, 9, (r, _) => r == 0 ? 1f : 0f);
             Check(t4.Count == 4 && t4.Contains(9) && !t4.Contains(4) && a4.Skip(1).All(a => a!.All(v => v % 17 == 0)),
                 "a fifth texture replaces the least-visible layer; alphas stay on the 4-bit grid");
+            var t5 = new List<int> { 1, 2, 3, 4 };
+            var a5 = new List<byte[]?> { null, (byte[])half.Clone(), (byte[])half.Clone(), new byte[TerrainPaintLaw.Pixels] };
+            a5[3]![0] = 17;
+            TerrainPaintLaw.PaintChunk(t5, a5, 9, (r, _) => r == 0 ? 1f : 0f, keep: 4);
+            Check(t5.Count == 4 && t5.Contains(4) && t5.Contains(9),
+                "a road never evicts the shoulder it was just laid on (the kept layer), even when that layer is the least visible");
             Check(TerrainPaintLaw.RoadAmount(2f, 6f, 2f, 1f) == 1f && TerrainPaintLaw.RoadAmount(6f, 6f, 2f, 1f) == 0f &&
                   MathF.Abs(TerrainPaintLaw.RoadAmount(4f, 6f, 2f, 1f) - 0.5f) < 1e-5f,
                 "road amount: full on the road, smoothstep across the soft edge");
             var p0 = TerrainPaintLaw.PixelWorld(32, 48, 0, 0, 0, 0);
             Check(MathF.Abs(p0.X - (-16 * WorldBuilderLaw.Tile - TerrainPaintLaw.ChunkSize / 128f)) < 1e-2f,
                 "alpha pixel rows run south along world X from the tile's north edge");
+
+            // Road looks (ragged edge, patchiness, seed): the web app's TerrainPaint copy asserts the SAME numbers
+            // (MangosSuperUI.Tests WorldPackPaintTests.RoadLook_PinnedValues_MatchTheClient). From
+            // `road-survey --pins`; if the rule changes on purpose, regenerate and update both.
+            Check(TerrainPaintLaw.RoadAmountAt(new Vector2(-8914.25f, -135.5f), 2.5f, new(6f, 2f, 1f, 1.5f, 0.3f, 12345)) == 0.9095273f &&
+                  TerrainPaintLaw.RoadAmountAt(new Vector2(-8914.25f, -135.5f), 3.9f, new(6f, 2f, 1f, 1.5f, 0.3f, 12345)) == 0.21115795f &&
+                  TerrainPaintLaw.RoadAmountAt(new Vector2(-100f, 100f), 1f, new(8f, 3f, 0.9f, 0f, 0.5f, 7)) == 0.5614184f &&
+                  TerrainPaintLaw.RoadAmountAt(new Vector2(0.5f, 0.5f), 0f, new(4f, 1f, 1f, 3f, 0f, 2147483647)) == 1f &&
+                  TerrainPaintLaw.Fbm(12.5f, -3.25f, 99) == 0.075655505f && TerrainPaintLaw.SeedFor("Road QA") == 1267005859,
+                "road looks: ragged/patchy noise is the pinned, seeded pattern the web build reproduces");
+            Check(TerrainPaintLaw.RoadAmountAt(new Vector2(3f, 4f), 2f, new(6f, 2f, 1f)) == TerrainPaintLaw.RoadAmount(2f, 6f, 2f, 1f) &&
+                  TerrainPaintLaw.RoadAmountAt(new Vector2(3f, 4f), 3.5f, new(6f, 2f, 0.8f)) == TerrainPaintLaw.RoadAmount(3.5f, 6f, 2f, 0.8f),
+                "a road look without ragged or patchy paints exactly the old plain band (older paths unchanged)");
+
+            // The road-style catalog (tools/road-survey): every style names a stock ground texture and a sane look.
+            using var catalog = typeof(TerrainPaintLaw).Assembly.GetManifestResourceStream("MSUIClient.Data.road-styles.json");
+            Check(catalog is not null, "road-styles.json is embedded in the client");
+            var styles = RoadStyleCatalog.Load();
+            Check(styles.Count > 50 && styles.All(s => s.Texture.StartsWith("Tileset\\", StringComparison.OrdinalIgnoreCase) && s.Width > 0 &&
+                                                      (s.Shoulder is null || s.Shoulder.Texture.StartsWith("Tileset\\", StringComparison.OrdinalIgnoreCase))),
+                $"road styles: {styles.Count} loaded, all stock ground textures with a positive width");
         }
 
         // Wiring: every edit goes through the web app's audited /WorldPacks API.

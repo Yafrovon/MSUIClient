@@ -2124,7 +2124,8 @@ public sealed partial class GameLoop : IDisposable
         // RTS scheme: a turn — keyboard here, the mouse's share already applied by the window —
         // orbits the rig around the ground it looks at instead of spinning it in place.
         _commandViewYawDelta = turn * turnRate * dt + _window.AppliedLookYaw;
-        if (_freeView && CommandViewLaw.OrbitsFocus(commandViewScheme) && !CommandViewLocked)
+        if (_freeView && CommandViewLaw.OrbitsFocus(commandViewScheme) && !CommandViewLocked &&
+            !WbOrbitClaimsRightDrag)   // the World Builder fly camera's own orbit owns the rig
             OrbitCommandViewRig(_commandViewYawDelta);
 
         // The body being driven owns its movement intoxication. A non-player body
@@ -2147,7 +2148,8 @@ public sealed partial class GameLoop : IDisposable
         {
             // Under the knob schemes the view angle IS the knob: PageUp/PageDown turn it, and
             // the free-view frame re-asserts the camera pitch from it.
-            if (_freeView && CommandViewLaw.PitchLocked(commandViewScheme))
+            // The World Builder camera's tilt is free: PageUp/PageDown tilt it directly.
+            if (_freeView && CommandViewLaw.PitchLocked(commandViewScheme) && !WbFreeCameraActive)
                 Settings.Controls.CommandViewPitchDegrees = CommandViewLaw.ClampPitchDegrees(
                     Settings.Controls.CommandViewPitchDegrees +
                     tilt * _turnSpeed * 0.6f * dt * 180f / MathF.PI);
@@ -2405,11 +2407,15 @@ public sealed partial class GameLoop : IDisposable
         var portalEye = _window.Camera.Position;
         // Divinity-style cutaway: hand the renderer the commanded toon's position
         // (or null) BEFORE the cell update resolves this frame's seeds.
-        Vector3? cutawaySubject = FreeViewCutawaySubject();
+        // The World Builder camera edits the world as it is: none of the Command View's "see the party" cuts (cutaway,
+        // roof cut and its terrain leg, slice, sight tunnels, canopy cut, party sight). The roof cut's proximity square
+        // around the character near Stormwind's walls opened contour-shaped holes in the hills there (owner, 2026-11-15).
+        bool worldEditing = WbFreeCameraActive;
+        Vector3? cutawaySubject = worldEditing ? null : FreeViewCutawaySubject();
         _wmo?.SetCutawaySubject(cutawaySubject, cutawaySubject is Vector3 cutXy
             ? _terrain?.SampleHeight(cutXy.X, cutXy.Y) : null);
         Vector3? primarySubject = CommandViewPrimarySubject();
-        Vector3? cutPlaneSubject = Settings.Controls.CommandViewCutPlane ? primarySubject : null;
+        Vector3? cutPlaneSubject = Settings.Controls.CommandViewCutPlane && !worldEditing ? primarySubject : null;
         _wmo?.SetCutPlaneSubject(cutPlaneSubject, Settings.Controls.CommandViewCutHeight,
             cutPlaneSubject is Vector3 cutFeet ? _terrain?.SampleHeight(cutFeet.X, cutFeet.Y) : null);
         // Party sight (World/PartySight.cs): the subject's own rooms must draw for the cut to
@@ -2432,7 +2438,7 @@ public sealed partial class GameLoop : IDisposable
         {
             _wmo.SightTargets.Clear();
             _doodads.SightTargets.Clear();
-            CollectCommandViewSightTargets(_window.Camera.Position, _wmo.SightTargets);
+            if (!worldEditing) CollectCommandViewSightTargets(_window.Camera.Position, _wmo.SightTargets);
             _doodads.SightTargets.AddRange(_wmo.SightTargets);
             // The camera-side slice around the primary (WorldSlice): part of "Cut what hides the
             // party", and it needs the roof cut's footprint, so it is off whenever that is.

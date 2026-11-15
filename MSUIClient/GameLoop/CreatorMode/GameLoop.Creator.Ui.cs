@@ -788,20 +788,72 @@ public sealed partial class GameLoop
         if (x != pos.X || y != pos.Y) ImGui.SetWindowPos(new Vector2(x, y));
     }
 
+    // Horizontal scrolling without the layout running away. With HorizontalScrollbar alone, ImGui lays a window out at
+    // max(content width, visible width): once one row overflowed, wrapped text and every avail-sized control widened to
+    // match, so the scrollbar never went away and text ran under the vertical scrollbar (2026-11-15 QA shots). Instead
+    // the content width is set explicitly each frame: the visible width, or wider only by what last frame's FIXED-width
+    // items (buttons sized by their text) really needed. Everything else wraps and sizes to the visible width.
+    private sealed class CreatorContentFit { public float Need; public bool VScroll; }
+    private readonly Dictionary<uint, CreatorContentFit> _creatorContentFit = new();
+    private readonly Stack<(uint Id, Vector2 Pos, CreatorContentFit Next)> _creatorContentStack = new();
+
     /// <summary>The inset scroll region every chrome window's content lives in.
-    /// Ends above the border ring; fonts re-applied (a child is its own window).</summary>
+    /// Ends above the border ring; fonts re-applied (a child is its own window).
+    /// A fixed-width row wider than the window gets a horizontal scrollbar (shown only while something is cut off;
+    /// Shift+wheel scrolls it) instead of being clipped at the edge.</summary>
     private void BeginCreatorContent()
     {
         float ps = MathF.Max(ImGui.GetIO().DisplaySize.Y / GlueCanvasH, 0.5f) * CreatorUiScale;
-        ImGui.BeginChild("##creator-content", new Vector2(0f, -10f * ps));
+        uint id = ImGui.GetID("##creator-content");
+        var last = _creatorContentFit.TryGetValue(id, out var f) ? f : new CreatorContentFit();
+        // 1 px short of the inner width: ImGui's own rounding of the child's inner rect left a 0.1 px "overflow" that
+        // showed a scrollbar for nothing (2026-11-15 probe: visible 907.9, scrollMaxX 0.1).
+        float visible = MathF.Floor(ImGui.GetContentRegionAvail().X - (last.VScroll ? ImGui.GetStyle().ScrollbarSize : 0f)) - 1f;
+        // A button sized to fill its row ends exactly on the visible edge; only a real overflow (> 2 px) scrolls.
+        ImGui.SetNextWindowContentSize(new Vector2(MathF.Max(1f, last.Need > visible + 2f ? last.Need : visible), 0f));
+        ImGui.BeginChild("##creator-content", new Vector2(0f, -10f * ps), false, ImGuiWindowFlags.HorizontalScrollbar);
         ImGui.SetWindowFontScale(CreatorTextScale);
+        _creatorContentStack.Push((id, ImGui.GetWindowPos(), new CreatorContentFit()));
     }
 
     private void EndCreatorContent()
     {
         ImGui.SetWindowFontScale(1f);
+        // The sidebar handle's double-click widens by exactly this much.
+        if (_creatorSidebarDrawing) _creatorSidebarOverflowX = MathF.Max(_creatorSidebarOverflowX, ImGui.GetScrollMaxX());
+        if (_creatorContentStack.Count > 0)
+        {
+            var (id, _, next) = _creatorContentStack.Pop();
+            next.VScroll = ImGui.GetScrollMaxY() > 0f;
+            _creatorContentFit[id] = next;
+        }
         ImGui.EndChild();
     }
+
+    /// <summary>Record the right edge of the item just drawn as width the content region truly needs (a button sized by
+    /// its text cannot shrink). Only items drawn directly in the content region count, not ones in nested lists.</summary>
+    private void CreatorNoteItemRight()
+    {
+        if (_creatorContentStack.Count == 0) return;
+        var (_, pos, next) = _creatorContentStack.Peek();
+        if (ImGui.GetWindowPos() != pos) return;
+        next.Need = MathF.Max(next.Need, ImGui.GetItemRectMax().X - pos.X + ImGui.GetScrollX());
+    }
+
+    /// <summary>Stay on this row only when an item <paramref name="nextWidth"/> wide still fits; otherwise wrap to the
+    /// next row. Measured against the content region, so a scrollbar is never counted as room.</summary>
+    private void CreatorSameLineIfFits(float nextWidth)
+    {
+        float right = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
+        if (ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + nextWidth <= right) ImGui.SameLine();
+    }
+
+    /// <summary>The width <see cref="CreatorButton"/> will give <paramref name="label"/>.</summary>
+    private float CreatorButtonWidth(string label, float minWidth = 0f) =>
+        MathF.Max(minWidth * CreatorButtonMul, ImGui.CalcTextSize(label).X + 36f * CreatorUiScale * CreatorButtonMul);
+
+    private float CreatorCheckboxWidth(string label) =>
+        ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label).X;
 
     private bool BeginCreatorPanel(string title, string tuneId, float defaultW, float defaultH)
     {
@@ -834,11 +886,18 @@ public sealed partial class GameLoop
     private void EndCreatorPanel()
     {
         ImGui.SetWindowFontScale(1f);
-        if (_creatorSidebarDrawing) DrawCreatorSidebarResizeGrip();
+        bool sidebar = _creatorSidebarDrawing;
+        if (sidebar)
+        {
+            _creatorSidebarMin = ImGui.GetWindowPos();
+            _creatorSidebarSize = ImGui.GetWindowSize();
+        }
         ImGui.End();
         PopCreatorStyle();
         _creatorSidebarDrawing = false;
         _activePanelTune = null;
+        // Its own window, after the sidebar's: the handle sits outside the edge, clear of the content's scrollbar.
+        if (sidebar) DrawCreatorSidebarResizeGrip();
     }
 
     // ── section rendering ────────────────────────────────────────────────────
@@ -1217,6 +1276,7 @@ public sealed partial class GameLoop
 
         // The Atlas look uses flat hairline buttons; the classic look the vanilla UI-Panel-Button art.
         bool clicked = CreatorAtlasLook || _skin is null ? ImGui.Button(label, size) : _skin.PanelButton(label, size);
+        CreatorNoteItemRight();
         ObserveWorldBuilderUiItem(label);
         if (edit)
         {

@@ -805,6 +805,85 @@ Lessons that created checks (2026-09-26, Gilneas build #7):
   Publish confirm -> Cancel (no build). Pack left with only the earlier `qa-cobble-road` path. Not yet clicked through by
   a script: quest Discover-a-place pick, building Level-the-ground, terrain flatten pick, region move.
 
+- **2026-11-15 - fly camera, saved roads that stay, and road looks measured from the whole world (client + web app,
+  uncommitted; built and unit-tested, not yet deployed to WSL or clicked through live).** Owner: the fly camera's right
+  mouse only spun in place; a saved road vanished when another page opened ("Show saved paths" seemed broken); a cobble
+  road "is the correct stone but not the right mix"; then "make sure we have full coverage of all the various
+  roads/paths around the world".
+  - *Fly camera.* `WbFreeCameraActive` = free view (however entered: Fly camera, top-bar Free view, Ctrl+F) with the World
+    page open. Its tilt is free - the Command View angle knob does not apply (`WbFlyPitchOverride`/`_wbFlyOwned` are
+    gone). Right-drag is an in-place free look (yaw + pitch, -83..83 deg about the camera itself: the rig is put back along
+    the boom each frame, `WbUpdateFlyOrbit`), WASD/wheel/edge pan still fly while held; the View angle slider shows and
+    sets the live pitch; PageUp/PageDown tilt directly. The Command View outside the World page is unchanged. Same
+    camera, later that day: dark contour-shaped holes in the hills by Stormwind's gate were the Command View roof cut's
+    PROXIMITY square (WmoRenderer.ResolveCutPlane: a building within 12 yd of the character -> a 30x30 yd square around
+    them, everything above the cut height discarded, terrain included). The World Builder camera now feeds none of the
+    "see the party" cuts (cutaway, roof cut + terrain leg, slice, sight tunnels/canopy, party sight); QA shot
+    `gameplay-wb-cut-check` at the same spot shows the hills whole.
+  - *Saved roads stay.* `WbRoadSpecsToPreview`: with "Show saved paths in the world" ticked, every saved surface of the pack
+    on this map is painted on EVERY World Builder page (the route lines still only draw on the Paths page); the editor path
+    paints live on the Paths page and its saved version elsewhere.
+  - *Road looks* (`TerrainPaintLaw.RoadLook` / `RoadAmountAt`, verbatim in web `TerrainPaint`): `surface` gains
+    `ragged` (yd the edge wanders), `patchy` (0..1, ground showing through), `seed` (the pattern, stored so the build
+    paints the preview's pattern) and `shoulder {texture, extra, softEdge, strength[, patchy]}` - a second texture laid
+    FIRST, `width + 2 * extra` wide, the road's wobble, `seed + 101`. Noise is seeded integer-hash value noise in world
+    yards (continuous across tiles; no Random). All zero = the old plain band, so older docs paint unchanged. Paint order:
+    per path shoulder then road; across paths by name (ordinal) in both the build and the preview. Web: `PathSurface`
+    (`Look`, `ShoulderLook`, `Reach`), `PaintSurface` two passes, build loop ordered and checks the shoulder texture exists,
+    controller validates shoulder/ragged/patchy, `State.roadLookSupported = true`. The client refuses to SAVE a look (ragged,
+    patchy or shoulder) until the web app reports `roadLookSupported` - an older build would paint a plain band.
+  - *Full coverage.* `tools/road-survey` reads every stock ADT of every terrain map (patch-7 excluded; the Development map,
+    Emerald Dream and the GM islands left out), builds 512x512 visible-weight grids per texture per tile and measures road-like
+    bands (width 2A/P 2-16 yd, >= 30 yd long, >= 5x wide): width, interior strength, soft edge from the fade profile,
+    ragged from the raw/smoothed perimeter ratio, patchy from holes in the closed band, the shoulder as the texture most
+    enriched just outside the band, the ground 14-16 yd out. Output: `MSUIClient/Data/road-styles.json` (embedded,
+    `RoadStyleCatalog`) and `shared_docs/ROAD_STYLES.md`. First run: 20 maps, 2,155 tiles, **238 styles** (95 road, 142
+    trail, 1 paving); every one of the 39 road-named ground textures visible in the world has at least one style (e.g.
+    Elwynn: ElwynnCobbleStoneBase 4.2 yd on an ElwynnDirtBase2 shoulder +5.2 yd; Barrens: BarrensRoad01 3 yd on
+    BarrensBaseDirt +5.2 yd; Durotar: DurotarRoad 5.2 yd on DurotarRock +4.2 yd). Ragged and patchy are estimates
+    (described in the tool's header); the user can adjust every number after picking a style.
+  - *Paths page.* "Road style" (searchable, this map first, grouped by map, tooltip with the measured numbers); "Copy a road
+    from the ground" (pick tool: samples the STOCK textures under the click - a previewed tile is read from its snapshot -
+    and applies the best-matching style, or lists the textures with Road/Shoulder buttons); "See it in the world" (flies to
+    the longest measured stretch); Ragged edge, Patchy, New pattern; "Shoulder under the road" with its own texture, extra
+    width, soft edge, strength; the shoulder's outer edge drawn in the overlay. The doc records `style` (+ `styleAdjusted`).
+  - *Tests.* Client `interface-wire-check --world-builder-only` PASS (pinned `RoadAmountAt`/`Fbm`/`SeedFor` values, plain look
+    == old band, catalog loads with stock textures). Web `WorldPackPaintTests` +3 (the same pinned values; parse of look +
+    shoulder; a shoulder+road painted on Azeroth_32_48 reads back cobble on the centre line and dirt 4 yd out); WorldPack
+    suite 128/128. Full web suite 612/613: `FleetReportTests.RenderDetailed_KeepsBothBotsWhenNamesCollide` fails, in code
+    this change does not touch. Regenerate the catalog with `dotnet run -c Release --project tools/road-survey` whenever
+    the stock data or the measuring rules change.
+  - *Deployed and tested the same day (WSL).* Web app published Release and installed with `Scripts/deploy-auto.sh`
+    (health check OK, `roadLookSupported: true`); `~/deploy/backups` is root-owned on WSL, so the run used
+    `BACKUPS=$HOME/deploy-backups` (backups `auto-20261115T132007`, `auto-20261115T132807`). **Parity run** (scratch tool
+    referencing both projects: web `GradedPath.PaintSurface` + `AdtDocument.Write` vs the client's own `WbRoadPasses` +
+    `WbPaintRoadTile` by reflection, re-read with `AdtTerrainReader`, every chunk's visible weight per texture compared):
+    the first run found **2 of 256 chunks differing** on Azeroth_32_48 - in a full (4-layer) chunk the road had to evict a
+    layer, and (a) the least-visible choice summed alpha row/column 63, which the client reader overwrites with row/col 62
+    while the web reads raw, so near ties went different ways, and (b) the road could evict the shoulder it was just laid
+    on. Fixed in both copies of the law: visibility summed over rows/cols 0..62 only, and `PaintChunk(..., keep)` never
+    evicts the kept layer (the road keeps its shoulder; `AdtDocument.PaintTexture(keepTexture)`, client
+    `WbPaintRoadTile(keep)`); pinned by a new check in both suites. After the fix: **0 differing chunks, max weight
+    difference 0** for six styles (Elwynn cobble, Barrens road, Durotar road, Stranglethorn cobble, Westfall dirt trail,
+    Dun Morogh road) on their own example tiles; the only differences are in row/column 63, which every reader replaces.
+    **Live QA** (`scratch/worldbuilder/road-looks.txt`, `road-looks-reopen.txt`, hidden client, own pack `road-looks-qa`
+    created DISABLED so no publish includes it): Road style dropdown + search picked "The Barrens: road"; "Copy a road from
+    the ground" on stock cobble at (-9345.1, 164.8) picked "Elwynn Forest: road (Elwynn Cobble Stone Base)"; a 4-point road
+    saved as op #33 with the full look (`ragged`, `patchy`, `seed`, `shoulder ElwynnDirtBase2 +5.2`, `style`); it stayed
+    painted on the Terrain page; reopening restored every value. Shots `dumps/gameplay-wb-looks-*`, `gameplay-wb-reopen-*`.
+    Found and fixed on the way: the content region's horizontal scrollbar fed back into the layout (HorizontalScrollbar
+    makes ImGui lay out at max(content, visible), so one overflow widened all wrapped text for good) - the content width is
+    now set explicitly from fixed-width items only (`CreatorNoteItemRight`), with a 1 px margin for ImGui's own rounding;
+    and the save message reported the levelling width (12 yd) for a painted-only road.
+  - *Published (owner: "Publish it").* WSL build **#5** of `road-qa` (the only enabled pack; `road-looks-qa` stays
+    disabled), `restartServer: false` (roads change only textures): succeeded in 14.6 min, patch-7 sha1 c929cbe5...,
+    2,059,776 bytes, 383 server files installed, verifier 0 errors / 0 warnings. Build log: `qa-cobble-road` painted 6
+    chunks on 0:32,48 and `testpathSWentrance` 4 chunks on 0:31,49 - the counts the preview paints. The published
+    archive was downloaded to scratch (NOT into GameData - the QA rule) and checked with the parity tool's `--baked` mode:
+    both touched tiles, painted on stock by the client's preview code in name order, equal the published tiles (0 of 256
+    chunks differing, max weight difference 0). Both published roads are plain cobble (saved before road looks), so the
+    styled look is covered by the offline parity runs above; the styled QA road lives in the disabled `road-looks-qa`.
+
 ## 9. Building a zone — the playbook (humans AND agents)
 
 Owner rule (2026-09-27): every capability has two faces — a manual tool in Creator Mode for a human, and an

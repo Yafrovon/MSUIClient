@@ -36,6 +36,77 @@ public static class TerrainPaintLaw
         return strength * (1f - t * t * (3f - 2f * t));
     }
 
+    // ── road looks (2026-11-15) ─────────────────────────────────────────────────────────────────────────────────────
+    // A stock road is not a stamped band: its edge wanders, grass and dirt show through the stones in patches, and a dirt
+    // shoulder runs under it. RoadLook carries those (all zero = the plain band above, so older paths paint unchanged).
+    // The wobble and the patches come from a seeded value noise in WORLD yards, so a road crossing a tile border is
+    // continuous and the web build reproduces the preview exactly. Integer hashing only (unchecked), no Random.
+
+    /// <summary>Yards per edge wobble of a ragged road, and per patch of a patchy one.</summary>
+    public const float RaggedScale = 7f, PatchScale = 3.5f;
+
+    /// <summary>How a road is laid: width/soft edge/strength as <see cref="RoadAmount"/>; <c>Ragged</c> = yards the edge
+    /// wanders in and out; <c>Patchy</c> 0..1 = how much of the ground shows through in patches; <c>Seed</c> fixes the
+    /// pattern (stored in the doc, so the build paints the same one).</summary>
+    public readonly record struct RoadLook(float Width, float SoftEdge, float Strength, float Ragged = 0f, float Patchy = 0f, int Seed = 0)
+    {
+        /// <summary>Furthest from the centre line this look can paint.</summary>
+        public float Reach => Width / 2f + SoftEdge + MathF.Max(0f, Ragged);
+    }
+
+    /// <summary>Paint amount of a road look at world point <paramref name="p"/>, <paramref name="distance"/> yards from
+    /// its centre line.</summary>
+    public static float RoadAmountAt(Vector2 p, float distance, in RoadLook look)
+    {
+        float d = distance;
+        if (look.Ragged > 0f) d -= look.Ragged * Fbm(p.X / RaggedScale, p.Y / RaggedScale, look.Seed);
+        float a = RoadAmount(d, look.Width, look.SoftEdge, look.Strength);
+        if (a > 0f && look.Patchy > 0f)
+        {
+            float n = Fbm(p.X / PatchScale, p.Y / PatchScale, unchecked(look.Seed + 7919)) * 0.5f + 0.5f;
+            a *= 1f - Math.Clamp(look.Patchy, 0f, 1f) * SmoothStep(0.45f, 0.85f, n);
+        }
+        return a;
+    }
+
+    /// <summary>A stable seed for a path name (FNV-1a), used when a path is first given a ragged or patchy look.</summary>
+    public static int SeedFor(string name)
+    {
+        uint h = 2166136261;
+        foreach (char ch in name) h = unchecked((h ^ ch) * 16777619);
+        return unchecked((int)(h & 0x7FFFFFFF));
+    }
+
+    /// <summary>Three octaves of value noise, roughly -1..1.</summary>
+    public static float Fbm(float x, float y, int seed) =>
+        (Value(x, y, seed) * 0.6f + Value(x * 2.03f, y * 2.03f, unchecked(seed + 1)) * 0.3f +
+         Value(x * 4.07f, y * 4.07f, unchecked(seed + 2)) * 0.1f);
+
+    private static float Value(float x, float y, int seed)
+    {
+        float fx = MathF.Floor(x), fy = MathF.Floor(y);
+        int ix = (int)fx, iy = (int)fy;
+        float tx = x - fx, ty = y - fy;
+        tx = tx * tx * (3f - 2f * tx);
+        ty = ty * ty * (3f - 2f * ty);
+        float a = Hash(ix, iy, seed), b = Hash(ix + 1, iy, seed), c = Hash(ix, iy + 1, seed), e = Hash(ix + 1, iy + 1, seed);
+        return (a + (b - a) * tx) + ((c + (e - c) * tx) - (a + (b - a) * tx)) * ty;
+    }
+
+    private static float Hash(int x, int y, int seed)
+    {
+        uint h = unchecked((uint)x * 374761393u + (uint)y * 668265263u + (uint)seed * 1442695041u);
+        h = unchecked((h ^ (h >> 13)) * 1274126177u);
+        h ^= h >> 16;
+        return (h & 0xFFFFFF) / 16777215f * 2f - 1f;
+    }
+
+    private static float SmoothStep(float e0, float e1, float x)
+    {
+        float t = Math.Clamp((x - e0) / (e1 - e0), 0f, 1f);
+        return t * t * (3f - 2f * t);
+    }
+
     /// <summary>Visible weight of every layer at every pixel. <paramref name="alphas"/>[0] (the base) is ignored.</summary>
     public static float[][] Weights(IReadOnlyList<byte[]?> alphas)
     {
@@ -81,7 +152,7 @@ public static class TerrainPaintLaw
     /// chunk's layers bottom first (same length; alphas[0] unused) and are replaced in place. <paramref name="amount"/>
     /// (pixelRow, pixelCol) gives 0..1 per pixel. Returns false (lists untouched) when nothing is painted.
     /// </summary>
-    public static bool PaintChunk(List<int> textures, List<byte[]?> alphas, int texture, Func<int, int, float> amount)
+    public static bool PaintChunk(List<int> textures, List<byte[]?> alphas, int texture, Func<int, int, float> amount, int keep = -1)
     {
         var paint = new float[Pixels];
         bool any = false;
@@ -100,7 +171,11 @@ public static class TerrainPaintLaw
             else
             {
                 // Replace the least-visible layer; each pixel's share goes to the strongest remaining layer there.
-                slot = Enumerable.Range(0, tex.Count).OrderBy(i => weights[i].Sum()).First();
+                // Never the layer <paramref name="keep"/> (a road's own shoulder, painted the pass before). Visibility is
+                // summed WITHOUT the last alpha row and column: readers of 4-bit alpha overwrite those with their
+                // neighbours (stock files carry padding there), so counting them let the client preview and the web
+                // build pick different layers on a near tie (2026-11-15 parity run, Azeroth_32_48 chunks 8,9 and 8,11).
+                slot = Enumerable.Range(0, tex.Count).Where(i => tex[i] != keep).OrderBy(i => VisibleSum(weights[i])).First();
                 for (int p = 0; p < Pixels; p++)
                 {
                     int best = -1;
@@ -128,4 +203,13 @@ public static class TerrainPaintLaw
     }
 
     private static float[] Filled(float v) { var a = new float[Pixels]; Array.Fill(a, v); return a; }
+
+    /// <summary>A layer's visible weight summed over alpha rows/columns 0..62 (row and column 63 are reader padding).</summary>
+    private static float VisibleSum(float[] w)
+    {
+        float s = 0f;
+        for (int r = 0; r < AlphaSize - 1; r++)
+            for (int c = 0; c < AlphaSize - 1; c++) s += w[r * AlphaSize + c];
+        return s;
+    }
 }
