@@ -31,6 +31,48 @@ public sealed class QuestAtlasClient
         return await res.Content.ReadFromJsonAsync<ZoneBundle>(Json);
     }
 
+    /// <summary>
+    /// Live facts for the quest guardrails (QUEST_TABLETOP.md §13.2): GET /QuestAtlas/Facts. Returns the "facts" object
+    /// (creatures/objects/quests/followers/items/holders keyed by id string), or throws with the web app's error.
+    /// </summary>
+    public async Task<System.Text.Json.Nodes.JsonObject> FactsAsync(string baseUrl, IEnumerable<uint> creatures, IEnumerable<uint> objects,
+        IEnumerable<uint> quests, IEnumerable<uint> items, IEnumerable<uint> holders, IEnumerable<uint>? texts = null)
+    {
+        static string L(IEnumerable<uint> ids) => string.Join(",", ids.Where(i => i != 0).Distinct());
+        string url = U(baseUrl, $"Facts?creatures={L(creatures)}&objects={L(objects)}&quests={L(quests)}&items={L(items)}&holders={L(holders)}&texts={L(texts ?? Array.Empty<uint>())}");
+        using var res = await _http.GetAsync(url);
+        if (res.StatusCode == System.Net.HttpStatusCode.NotFound) throw new InvalidOperationException("this web app has no /QuestAtlas/Facts yet (update it)");
+        res.EnsureSuccessStatusCode();
+        var root = System.Text.Json.Nodes.JsonNode.Parse(await res.Content.ReadAsStringAsync()) as System.Text.Json.Nodes.JsonObject;
+        if (root?["success"]?.GetValue<bool>() != true || root["facts"] is not System.Text.Json.Nodes.JsonObject facts)
+            throw new InvalidOperationException((string?)root?["error"] ?? "no facts in the reply");
+        return facts;
+    }
+
+    /// <summary>Spawn guids and places of one entry on a map (GET /QuestAtlas/Spawns): [{ guid, x, y, z, o, movement }].</summary>
+    public async Task<System.Text.Json.Nodes.JsonArray> SpawnsAsync(string baseUrl, string table, uint entry, int map)
+    {
+        using var res = await _http.GetAsync(U(baseUrl, $"Spawns?table={table}&entry={entry}&map={map}"));
+        if (res.StatusCode == System.Net.HttpStatusCode.NotFound) throw new InvalidOperationException("this web app has no /QuestAtlas/Spawns yet (update it)");
+        res.EnsureSuccessStatusCode();
+        var root = System.Text.Json.Nodes.JsonNode.Parse(await res.Content.ReadAsStringAsync()) as System.Text.Json.Nodes.JsonObject;
+        if (root?["success"]?.GetValue<bool>() != true || root["spawns"] is not System.Text.Json.Nodes.JsonArray spawns)
+            throw new InvalidOperationException((string?)root?["error"] ?? "no spawns in the reply");
+        return spawns;
+    }
+
+    /// <summary>A stock quest as the editor loads it (GET /QuestAtlas/StockQuest): row, givers/enders, override possible.</summary>
+    public async Task<System.Text.Json.Nodes.JsonObject> StockQuestAsync(string baseUrl, uint entry)
+    {
+        using var res = await _http.GetAsync(U(baseUrl, $"StockQuest?entry={entry}"));
+        if (res.StatusCode == System.Net.HttpStatusCode.NotFound) throw new InvalidOperationException("this web app has no /QuestAtlas/StockQuest yet (update it)");
+        res.EnsureSuccessStatusCode();
+        var root = System.Text.Json.Nodes.JsonNode.Parse(await res.Content.ReadAsStringAsync()) as System.Text.Json.Nodes.JsonObject;
+        if (root?["success"]?.GetValue<bool>() != true || root["quest"] is not System.Text.Json.Nodes.JsonObject q)
+            throw new InvalidOperationException((string?)root?["error"] ?? "no quest in the reply");
+        return q;
+    }
+
     // ── §3.1 ────────────────────────────────────────────────────────────────
     public sealed record ZoneSummary(uint AreaId, int MapId, string Name, int Team, int Quests, int MinLevel, int MaxLevel, bool HasMapRect);
 
@@ -175,6 +217,7 @@ public sealed class QuestAtlasClient
         public float BoxY { get; set; }
     }
 
-    public sealed record Line(uint Script, string Phase, int Delay, int Command, int TargetType, uint TargetParam, int? ChatType, string? Text, string? Comments);
+    /// <summary>TextId: the broadcast_text a talk line speaks (0 for other commands; absent from older web apps).</summary>
+    public sealed record Line(uint Script, string Phase, int Delay, int Command, int TargetType, uint TargetParam, int? ChatType, string? Text, string? Comments, uint TextId = 0);
     public sealed record Greeting(string Kind, uint Entry, string? Text);
 }

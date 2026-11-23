@@ -59,6 +59,8 @@ public sealed partial class GameLoop
     /// <summary>A button that arms the pick tool, shown as "Picking..." while armed.</summary>
     private bool WbPickButton(string label, string what, Action<Vector3> done, float radius = 0f)
     {
+        // On the Quest Tabletop the pick lands on the board (GameLoop.Creator.Tabletop.Edit.cs), not the game world.
+        if (TabletopActive) return TtGroundPickButton(label.Replace("on the ground", "on the board", StringComparison.Ordinal), what, done);
         bool armed = _wbTool == WorldBuilderTool.Pick && _wbPickWhat == what;
         bool clicked = CreatorButton(armed ? "Click the ground... (Esc)" : label);
         ObserveWorldBuilderUiItem(label);

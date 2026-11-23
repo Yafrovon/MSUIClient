@@ -37,20 +37,15 @@ public sealed partial class GameLoop
     private bool _wbQuestItemsAttempted;
     private int _wbQuestCheckPack;
     private int _wbQuestSavingPack;
+    /// <summary>Signature of each quest as its pack last held it (loaded or saved), so the table can say "unsaved".</summary>
+    private readonly Dictionary<(int Pack, uint Entry), string> _wbQuestSavedSigs = new();
     private static readonly string[] WbObjectiveKinds = { "(none)", "Kill creature", "Collect item", "Use object", "Discover a place" };
 
     private void DrawWbQuestSection()
     {
         float w = CreatorControlWidth;
         if (_wbDocs is null) { if (_wbDocsTask is null) WbRequestDocs(); ImGui.TextDisabled("loading pack content..."); return; }
-        if (_wbQuestPack != _wbPackId)
-        {
-            if (_wbQuestPack > 0) _wbQuestDrafts[_wbQuestPack] = (_wbQuest, _wbQuestEditing);
-            _wbQuestPack = _wbPackId;
-            var saved = _wbQuestDrafts.GetValueOrDefault(_wbPackId, (new QuestAuthoringLaw.Draft(), 0u));
-            _wbQuest = saved.Item1; _wbQuestEditing = saved.Item2;
-            _wbQuestFindings.Clear(); _wbQuestSaveStatus = ""; _wbQuestItemTarget = -1;
-        }
+        WbQuestFollowPack();
         ImGui.TextWrapped("Choose who offers the quest, what the player does, and what they receive. Save stores a draft in this pack; publish applies it to the world.");
 
         // ── which quest ────────────────────────────────────────────────────
@@ -77,7 +72,8 @@ public sealed partial class GameLoop
         }
         if (_wbQuestEditing != 0 && quests.FirstOrDefault(q => WbNum(q["entry"]) == _wbQuestEditing) is { } openQuest)
         {
-            ImGui.BeginDisabled(_wbOps.Count > 0);
+            bool deleteClear = DrawWbQuestDeleteGuard((uint)_wbQuestEditing, openQuest);
+            ImGui.BeginDisabled(_wbOps.Count > 0 || !deleteClear);
             if (WbConfirmButton("Delete this quest", $"Delete the quest \"{openQuest["Title"]}\" from this pack, with its giver/ender links and discovery trigger? Undo brings it back."))
             {
                 uint entry = (uint)_wbQuestEditing;
@@ -89,6 +85,7 @@ public sealed partial class GameLoop
             ImGui.EndDisabled();
         }
         var d = _wbQuest; // A selection above changes the draft in this same frame.
+        DrawWbStockQuestHeader(d);
 
         // ── text ───────────────────────────────────────────────────────────
         if (WbQuestHeader("1. Story and level##wbq", true))
@@ -163,12 +160,14 @@ public sealed partial class GameLoop
                 case QuestAuthoringLaw.ObjectiveKind.Explore:
                 {
                     var goal = g;
+                    int pickMap = WbQuestPickMap;
                     WbPickButton("Pick the place on the ground", $"the place to discover (objective {i + 1})", at =>
-                    { goal.ExploreMap = _config.Start.Map; goal.ExploreX = at.X; goal.ExploreY = at.Y; goal.ExploreZ = at.Z; }, g.ExploreRadius);
+                    { goal.ExploreMap = pickMap; goal.ExploreX = at.X; goal.ExploreY = at.Y; goal.ExploreZ = at.Z; }, g.ExploreRadius);
                     bool placed = g.ExploreX != 0 || g.ExploreY != 0;
                     var spot = new Vector3(g.ExploreX, g.ExploreY, g.ExploreZ);
                     if (!placed) ImGui.TextDisabled("Not picked yet.");
-                    else if (g.ExploreMap != _config.Start.Map) ImGui.TextDisabled("The place is on another map.");
+                    else if (g.ExploreMap != pickMap) ImGui.TextDisabled("The place is on another map.");
+                    else if (TabletopActive) ImGui.TextDisabled(Inv($"Ringed on the table at ({spot.X:F0}, {spot.Y:F0})."));
                     else
                     {
                         WbMarker(spot, $"Discover: {(d.Title.Length > 0 ? d.Title : "quest")}", 0xFF40FF80u, g.ExploreRadius);
@@ -267,13 +266,26 @@ public sealed partial class GameLoop
         // ── save ───────────────────────────────────────────────────────────
         var problems = QuestAuthoringLaw.Problems(d, WbQuestContext());
         foreach (var p in problems) ImGui.TextColored(new Vector4(1f, 0.6f, 0.3f, 1f), p);
+        // Guardrails (QUEST_TABLETOP.md §13.2): nothing saves while it would leave the world broken or unconfirmed.
+        bool guarded = problems.Count > 0 || DrawWbQuestGuardrails(d);
         bool saving = _wbQuestSaveTask is { IsCompleted: false };
-        bool ready = _wbPackId != 0 && problems.Count == 0 && !saving;
+        bool ready = _wbPackId != 0 && problems.Count == 0 && guarded && !saving;
         if (!ready) ImGui.BeginDisabled();
         if (CreatorButton(saving ? "Saving quest..." : _wbQuestEditing == 0 ? "Create quest" : "Save quest changes")) WbSaveQuest();
         if (!ready) ImGui.EndDisabled();
         if (_wbQuestSaveStatus.Length > 0) ImGui.TextWrapped(_wbQuestSaveStatus);
         foreach (var f in _wbQuestFindings) ImGui.TextWrapped(f);
+    }
+
+    /// <summary>The selected pack changed: park the open draft under its pack and bring back the new pack's.</summary>
+    private void WbQuestFollowPack()
+    {
+        if (_wbQuestPack == _wbPackId) return;
+        if (_wbQuestPack > 0) _wbQuestDrafts[_wbQuestPack] = (_wbQuest, _wbQuestEditing);
+        _wbQuestPack = _wbPackId;
+        var saved = _wbQuestDrafts.GetValueOrDefault(_wbPackId, (new QuestAuthoringLaw.Draft(), 0u));
+        _wbQuest = saved.Item1; _wbQuestEditing = saved.Item2;
+        _wbQuestFindings.Clear(); _wbQuestSaveStatus = ""; _wbQuestItemTarget = -1;
     }
 
     private bool WbQuestHeader(string label, bool open = false)
@@ -323,7 +335,8 @@ public sealed partial class GameLoop
         float w = CreatorControlWidth;
         var npcs = WbDocBodies("dbrow:creature_template").ToList();
         string shown = value == 0 ? "Choose an NPC" : npcs.FirstOrDefault(n => WbNum(n["entry"]) == value) is { } t ? (string?)t["name"] ?? "Unnamed NPC"
-            : _creatorCreatures?.Search(value.ToString(CultureInfo.InvariantCulture), 1) is { Count: > 0 } stock ? stock[0].Name + " (game creature)" : $"Creature {value}";
+            : _creatorCreatures?.Search(value.ToString(CultureInfo.InvariantCulture), 1) is { Count: > 0 } stock ? stock[0].Name + " (game creature)"
+            : TabletopActive && TabletopCreatureInfo(value) is { Name.Length: > 0 } censusNpc ? censusNpc.Name + " (game creature)" : $"Creature {value}";
         ImGui.SetNextItemWidth(w);
         bool expanded = ImGui.BeginCombo($"{label}##{id}", shown);
         ObserveWorldBuilderUiItem(label);
@@ -352,9 +365,13 @@ public sealed partial class GameLoop
             else if (search.Length < 2) ImGui.TextDisabled("Type 2+ letters to search every creature in the game.");
             ImGui.EndCombo();
         }
-        uint selected = _wbNpcEditEntry;
-        if (selected == 0 && _entities.TryGet(_selectionGuid, out var sel) && sel.IsCreature) selected = sel.Entry;
-        if (selected != 0 && ImGui.SmallButton($"Use the NPC I have selected##{id}")) value = selected;
+        if (TabletopActive) value = TtBoardPickButton("npc", id, value);
+        else
+        {
+            uint selected = _wbNpcEditEntry;
+            if (selected == 0 && _entities.TryGet(_selectionGuid, out var sel) && sel.IsCreature) selected = sel.Entry;
+            if (selected != 0 && ImGui.SmallButton($"Use the NPC I have selected##{id}")) value = selected;
+        }
         if (ImGui.TreeNode($"Advanced NPC entry##{id}"))
         { int manual = (int)value; ImGui.SetNextItemWidth(w * 0.6f); if (ImGui.InputInt($"Entry##{id}", ref manual, 0)) value = (uint)Math.Max(manual, 0); ImGui.TreePop(); }
         return value;
@@ -391,6 +408,7 @@ public sealed partial class GameLoop
             foreach (var (entry, label) in choices) if (ImGui.Selectable($"{label}##wbq-object{entry}", entry == value)) value = entry;
             ImGui.EndCombo();
         }
+        if (TabletopActive) value = TtBoardPickButton("object", "wbq-object", value);
         if (choices.Count == 0) ImGui.TextWrapped("Place the object first (Chests page); it then appears here.");
         if (ImGui.TreeNode("Advanced object entry##wbq"))
         { int entry = (int)value; ImGui.SetNextItemWidth(CreatorControlWidth * .6f); if (ImGui.InputInt("Entry##wbq-object", ref entry, 0)) value = (uint)Math.Max(0, entry); ImGui.TreePop(); }
@@ -399,7 +417,9 @@ public sealed partial class GameLoop
 
     private int WbQuestPicker(string label, int value, List<JsonObject> quests, string id)
     {
-        string shown = value == 0 ? "(none)" : quests.FirstOrDefault(q => WbNum(q["entry"]) == Math.Abs(value)) is { } q2 ? $"{(string?)q2["Title"]} ({value})" : value.ToString(CultureInfo.InvariantCulture);
+        string shown = value == 0 ? "(none)" : quests.FirstOrDefault(q => WbNum(q["entry"]) == Math.Abs(value)) is { } q2 ? $"{(string?)q2["Title"]} ({value})"
+            : TabletopActive && _qaBoard?.Quests.GetValueOrDefault((uint)Math.Abs((long)value)) is { } bq ? $"{bq.Title} ({value})"
+            : value.ToString(CultureInfo.InvariantCulture);
         ImGui.SetNextItemWidth(CreatorControlWidth * 0.6f);
         if (ImGui.BeginCombo($"{label}##{id}", shown))
         {
@@ -407,6 +427,13 @@ public sealed partial class GameLoop
             foreach (var q in quests)
                 if (WbNum(q["entry"]) != _wbQuest.Entry && ImGui.Selectable($"{(string?)q["Title"]}##{id}{WbNum(q["entry"])}", WbNum(q["entry"]) == Math.Abs((long)value))) value = (int)WbNum(q["entry"]);
             ImGui.EndCombo();
+        }
+        // On the table any quest on the board can be linked, stock ones included (a pin that offers one quest).
+        if (TabletopActive)
+        {
+            ImGui.SameLine();
+            uint picked = TtBoardPickButton("quest", id, (uint)Math.Abs((long)value), compact: true);
+            if (picked != (uint)Math.Abs((long)value)) value = value < 0 ? -(int)picked : (int)picked;
         }
         return value;
     }
@@ -438,12 +465,15 @@ public sealed partial class GameLoop
         else if (target is >= 20 and < 24) _wbQuest.Fixed[target - 20] = (item, 1);
     }
 
-    private QuestAuthoringLaw.Context WbQuestContext()
+    private QuestAuthoringLaw.Context WbQuestContext(uint? forEntry = null)
     {
+        uint entry = forEntry ?? _wbQuest.Entry;
+        WbStockContext(new QuestAuthoringLaw.Context(), entry, out bool stock, out var stockGivers, out var stockEnders, out bool stockTrigger);
         var ctx = new QuestAuthoringLaw.Context
         {
             NextTriggerId = Math.Max(7100u, (uint)((_wbDocs ?? new JsonArray()).OfType<JsonObject>()
                 .Where(x => (string?)x["kind"] == "dbc:AreaTrigger").Select(x => WbNum(JsonValue.Create((string?)x["docKey"] ?? "0"))).DefaultIfEmpty(0).Max() + 1)),
+            StockOverride = stock, StockGivers = stockGivers, StockEnders = stockEnders, StockExploreTrigger = stockTrigger,
         };
         foreach (var t in WbDocBodies("dbrow:creature_template")) ctx.PackTemplates[(uint)WbNum(t["entry"])] = t;
         foreach (var r in WbDocBodies("dbrow:areatrigger_involvedrelation")) ctx.ExploreTriggerOf[(uint)WbNum(r["quest"])] = (uint)WbNum(r["id"]);
@@ -458,15 +488,22 @@ public sealed partial class GameLoop
             if (!ctx.MenuOptions.TryGetValue(menu, out var l)) ctx.MenuOptions[menu] = l = new();
             l.Add(o);
         }
+        if (stock) WbStockContext(ctx, entry, out _, out _, out _, out _);   // the stock row + its stock relations
         return ctx;
     }
 
     /// <summary>Fill the panel from a saved quest row (edit mode).</summary>
-    private void WbLoadQuestDraft(JsonObject q)
+    private void WbLoadQuestDraft(JsonObject q, bool discardLocal = false)
     {
-        _wbQuestWorkingDrafts[(_wbPackId, _wbQuestEditing)] = _wbQuest;
         uint entry = (uint)WbNum(q["entry"]);
-        _wbQuest = _wbQuestWorkingDrafts.TryGetValue((_wbPackId, entry), out var local) ? local : QuestAuthoringLaw.Read(q, WbQuestContext());
+        // discardLocal (Restore the original): the open draft is the version just removed - neither park nor reuse it.
+        if (discardLocal) { _wbQuestWorkingDrafts.Remove((_wbPackId, entry)); if (_wbQuestEditing != entry) _wbQuestWorkingDrafts[(_wbPackId, _wbQuestEditing)] = _wbQuest; }
+        else _wbQuestWorkingDrafts[(_wbPackId, _wbQuestEditing)] = _wbQuest;
+        // What the pack holds, as the table's "saved" reference (a local working draft may already differ from it).
+        var held = QuestAuthoringLaw.Read(q, WbQuestContext(entry));
+        if (held.Ender == held.Giver) held.Ender = 0;   // the form's own normal form (below)
+        _wbQuestSavedSigs[(_wbPackId, entry)] = QuestDraftSignature(held);
+        _wbQuest = _wbQuestWorkingDrafts.TryGetValue((_wbPackId, entry), out var local) ? local : QuestAuthoringLaw.Read(q, WbQuestContext(entry));
         if (_wbQuest.Ender == _wbQuest.Giver) _wbQuest.Ender = 0;
         _wbQuestEditing = _wbQuest.Entry;
         _wbQuestFindings.Clear();
@@ -480,6 +517,15 @@ public sealed partial class GameLoop
         if (_wbQuestSaveTask is { IsCompleted: false }) return;
         if (_wbDocs is null) { WbRequestDocs(); _wbMessage = "loading pack content first - press Save again"; return; }
         var d = _wbQuest;
+        // Guardrails (QUEST_TABLETOP.md §13.2) hold for every caller - the button, questui scripts, probes.
+        var guard = WbQuestGuardState(d);
+        if (guard.Pending) { _wbMessage = "quest: still checking the world - save again in a moment"; return; }
+        if (guard.Open > 0)
+        {
+            _wbMessage = $"quest: {guard.Open} check(s) to resolve before saving";
+            _wbQuestSaveStatus = "Not saved: resolve the checks above first.";
+            return;
+        }
         if (d.Entry == 0)
         {
             d.Entry = Math.Max(WbNextId("dbrow:quest_template", "entry", WbTemplateBase), WbReservedEntry + 1);
@@ -487,7 +533,16 @@ public sealed partial class GameLoop
         }
         var ctx = WbQuestContext();
         if (QuestAuthoringLaw.Problems(d, ctx) is { Count: > 0 } problems) { _wbMessage = "quest: " + string.Join("; ", problems); return; }
-        var items = QuestAuthoringLaw.Items(d, ctx);
+        bool stockQuest = d.Entry < WbTemplateBase;
+        var items = stockQuest ? QuestAuthoringLaw.OverrideItems(d, ctx) : QuestAuthoringLaw.Items(d, ctx);
+        // The holders' quest state, when the author chose a reset: one request, run once at the next restarting publish.
+        string? resetScope = _wbQuestReset.TryGetValue(d, out var rs) ? rs : null;
+        if (resetScope is not null)
+            items.Add(new JsonObject
+            {
+                ["kind"] = "quest-reset", ["key"] = d.Entry.ToString(CultureInfo.InvariantCulture),
+                ["body"] = new JsonObject { ["entry"] = d.Entry, ["scope"] = resetScope, ["requestId"] = Guid.NewGuid().ToString("N") },
+            });
         uint entry = d.Entry;
         _wbQuestCheckEntry = entry;
         _wbQuestFindings.Clear();
@@ -495,9 +550,18 @@ public sealed partial class GameLoop
         _wbQuestSavingPack = pack;
         _wbQuestSaveStatus = "Saving quest...";
         _wbQuestSaveTask = _wbClient.ContentAsync(SuiWebAppUrl, pack, $"quest {d.Title} ({entry})", items.ToJsonString());
+        string savedSig = QuestDraftSignature(d);
         WbOp($"quest {d.Title} ({entry})", _wbQuestSaveTask,
             r =>
             {
+                _wbQuestSavedSigs[(pack, entry)] = savedSig;
+                if (resetScope is not null)
+                {
+                    // The request is stored: it is one-time, so the next save asks again (holders may have changed by then).
+                    _wbQuestReset.Remove(d);
+                    _wbQuestConfirmed.GetValue(d, _ => new HashSet<string>()).RemoveWhere(k => k.StartsWith("holders:", StringComparison.Ordinal));
+                    _wbMessage = $"quest {entry}: players' progress will be reset ({resetScope}) at the next publish that restarts the server";
+                }
                 _wbQuestDrafts[pack] = (d, entry);
                 _wbQuestWorkingDrafts[(pack, entry)] = d;
                 if (_wbQuestWorkingDrafts.TryGetValue((pack, 0), out var newDraft) && ReferenceEquals(newDraft, d)) _wbQuestWorkingDrafts.Remove((pack, 0));
@@ -559,7 +623,31 @@ public sealed partial class GameLoop
         if (d.Fixed.Length < 4) d.Fixed = d.Fixed.Concat(new (uint, int)[4 - d.Fixed.Length]).ToArray();
         _wbQuest = d;
         _wbQuestEditing = d.Entry;
+        // Guardrails: the save waits for the world checks (wait state "questsave"); a script confirms findings only by
+        // naming them: "confirm": ["kill.questnpc", ...] (key prefixes). Anything else unresolved refuses the save.
+        using var doc = JsonDocument.Parse(File.ReadAllText(file));
+        _wbScriptQuestConfirm = doc.RootElement.TryGetProperty("confirm", out var c) && c.ValueKind == JsonValueKind.Array
+            ? c.EnumerateArray().Select(x => x.GetString() ?? "").Where(x => x.Length > 0).ToList() : new List<string>();
+    }
+
+    private List<string> _wbScriptQuestConfirm = new();
+
+    /// <summary>Script wait "questsave": true once the save went out (or was refused with its findings printed).</summary>
+    private bool WbScriptQuestSaveStep()
+    {
+        var d = _wbQuest;
+        var guard = WbQuestGuardState(d);
+        if (guard.Pending) return false;
+        var confirmed = _wbQuestConfirmed.GetValue(d, _ => new HashSet<string>());
+        foreach (var f in guard.Findings)
+            if (f.Level == QuestGuardrailLaw.Level.Confirm && _wbScriptQuestConfirm.Any(p => f.Key.StartsWith(p, StringComparison.Ordinal)))
+                confirmed.Add(f.Key);
+        foreach (var f in guard.Findings)
+            Console.WriteLine($"[questui] check {f.Level} {f.Key}: {f.Message}{(confirmed.Contains(f.Key) ? " (confirmed by script)" : "")}");
         WbSaveQuest();
+        if (_wbQuestSaveTask is null) Console.WriteLine($"[questui] not saved: {_wbMessage}");
+        _wbScriptWaitFor = "idle";   // then wait for the save op like any other edit
+        return false;
     }
 
     /// <summary>A quest's own pack docs: the template, giver/ender links (creature and object) and its discovery trigger.</summary>
@@ -573,6 +661,7 @@ public sealed partial class GameLoop
             string kind = d["kind"]?.ToString() ?? "";
             var b = d["body"]!;
             return kind == "dbrow:quest_template" ? WbNpcUInt(b["entry"]) == entry
+                : kind == "quest-reset" ? (string?)d["docKey"] == entry.ToString(CultureInfo.InvariantCulture)   // a pending reset goes with it
                 : kind.EndsWith("relation", StringComparison.OrdinalIgnoreCase) ? WbNpcUInt(b["quest"]) == entry
                 : kind.Equals("dbc:AreaTrigger", StringComparison.OrdinalIgnoreCase) ? triggers.Contains(WbNpcUInt(d["docKey"]))
                 : kind.Contains("areatrigger", StringComparison.OrdinalIgnoreCase) && triggers.Contains(WbNpcUInt(b["id"]));

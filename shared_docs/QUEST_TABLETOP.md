@@ -230,8 +230,8 @@ quests on the board that kill it or need an item it drops.
   filters, quest list, compact card, link-out; layers popover with persistence.
 - **P4 — Polish to the owner's eye.** Labels, level tint/lift, critters, figure scale, performance
   pass with measured numbers.
-- **P5 — (not in this build) Edit on the board** with the existing World Builder tools and `wp_op`
-  documents, never raw SQL.
+- **P5 — Edit on the board** with the existing World Builder tools and `wp_op`
+  documents, never raw SQL. **Built 2026-11-15 — §13.**
 
 ## 10. Acceptance (per phase; nothing counts until the owner has seen it)
 
@@ -282,6 +282,90 @@ particles. Beyond it the board stays populated by the brain feed's bots and the 
 **Known gaps:** player corpses are not drawn on the live table; spell effects are not cut at the board edge (they can
 poke over the skirt there); the live area is only the server's 100 yd bubble (a SUI-only larger eye radius would be a
 Core change, measured first); abilities outside the bubble need a Core event feed.
+
+## 13. P5 — Editing on the board (owner decisions 2026-11-15; built 2026-11-15, all six slices probed)
+
+**Where editing stands today (verified in code 2026-11-15):** the only quest editor is World Builder → **Quests**
+(`GameLoop.Creator.WorldBuilder.Quest.cs`, rules in `Engine/UI/QuestAuthoringLaw.cs`, WORLD_BUILDER.md "Quest
+Creator"). It edits **pack-owned quests only** (entries 7,000,000+): a draft becomes one audited, undoable
+`POST /WorldPacks/Content` op (quest row, giver/turn-in relations, quest-only loot, explore trigger, quest-giver flag
+on pack NPCs), then the pack pre-flight runs and the quest's own findings show. The table and the web Quest Atlas are
+read-only; the table's card offers only **Open in web**. Nothing links the table to the World Builder form.
+
+### 13.1 Decisions
+
+| Topic | Decision |
+|---|---|
+| Scope | Pack quests **and stock (Blizzard) quests through pack-owned overrides**. |
+| Where | The **client is the complete editor** (100%): places, people, chains, rewards, levels, text. The web keeps a real subset (text first, later chain links/rewards), writing the same `wp_op` documents; the client never forces text/items to the web. Spatial editing stays client-only for now. |
+| Feedback | Edits show on the board **instantly as a draft** (pins, posts, arcs, rings, objective dots), visibly marked unsaved until Save. |
+| Edit kinds | Everything: places and people (giver/ender, kill targets, collect sources, explore rings), chains (prev/next, breadcrumbs, exclusive groups; drag pin-to-pin, "add a follow-up"), text, rewards and levels. Typical work is editing in place or **adding to** what exists (follow-ups, turning a single quest into a chain). |
+| Retire a stock quest | **Allowed, guarded**: every follow-up, breadcrumb, item and NPC that depended on it must be resolved first; disabling the pack brings the quest back. |
+| Move stock spawns | **Allowed as a spawn override** (a new override kind beside `npc-replacement`): the pack owns the move, the original position is recorded, disabling the pack restores it. |
+| NPC lines | **Text yes, script actions later**: greetings and the spoken lines of quest start/end scripts are editable; script actions (spawns, emotes, timing) are a later step. |
+| Two packs, one stock quest | **Blocked**: one enabled pack owns a stock quest at a time (same rule as NPC replacements); the second is refused until the first releases it. |
+| Override unit | **Whole-quest replacement under the same quest id** (agent's call, owner deferred). Players' logs, `character_queststatus` and every chain link already point at the id; a new id would strand them. The pack records the original when it takes the quest over (baseline, like `wp_npc_baseline`), disabling restores it exactly, and the editor shows a per-field diff against that baseline. Per-field patches only pay off when packs share a quest, which is blocked. |
+
+### 13.2 Guardrails (the never-leave-broken law)
+
+Heavy by default, overridable, but **an override never leaves the game broken**. "Broken" means any of:
+
+1. **Unreachable** — a quest no character can obtain: no spawned giver (NPC, object or item start), a prerequisite or
+   exclusive group that can no longer be completed, a chain cut that strands its follow-ups.
+2. **Uncompletable** — an objective that cannot be achieved: kill target not spawned, item that neither drops nor
+   exists elsewhere, explore area unreachable, turn-in NPC missing or not flagged.
+3. **Damaged shared content** — something else that uses what was edited: an NPC's other quests, an item another quest
+   or loot table uses, a gossip menu, a script line shared with another quest.
+
+**Override flow:** a guardrail lists exactly what would be stranded. You may override it, but **Save stays blocked
+until each listed item is resolved** in a guided list (re-link it, pick a new giver, keep the old one, retire it with
+its own guardrail…). No silent auto-repair.
+
+**Characters mid-quest (warn, show who):** an edit that changes a quest characters hold in their log or have completed
+lists them (name, state). You accept it, or choose to reset their quest state on publish.
+
+**When checks run:** per edit while drafting (live problem markers on the board), the full check **on every Save**
+(everything the quest touches), and again **on Publish** against the live world; Publish is blocked by any unresolved
+problem.
+
+### 13.3 Slices (each ends with the owner looking at it)
+
+1. **Pack quests on the board (first slice).** The quest card gets **Edit**; the existing Quest Creator form
+   (`QuestAuthoringLaw` + its rules, unchanged) docks beside the table; giver/ender, kill targets, collect sources and
+   explore rings are picked by clicking the board; the draft draws live; Save/pre-flight as today. Stock quests stay
+   read-only on the table in this slice (card says why).
+2. **Guardrail engine.** Reachability/completability/shared-content analysis over the zone bundle + pack docs, the
+   guided resolve list, mid-quest character lookup (read-only), checks on Save and Publish.
+3. **Stock quest overrides.** Pack-owned replacement + baseline + restore on disable, the one-pack-per-quest lock,
+   retire, the per-field diff view. Needs the open items in 13.5 settled first.
+4. **Stock spawn overrides** (move a stock giver/ender/objective spawn on the board).
+5. **NPC line text** (greetings, start/end script lines).
+6. **Web subset** (text editing in the Quest Atlas over the same documents) and the **web navigation change** below.
+
+### 13.4 Web navigation (MangosSuperUI `Views/Shared/_Sidebar.cshtml`)
+
+A new top section **Worldbuilding** beside Gameplay Tuning (which is crowded). It takes: the **Quest Atlas** as its own
+sub-section, **World Map** and **World Editor** (today's World group), **Game Objects** (out of Archive) and the
+**World Packs** pages. Items, Loot, Spells, Rates stay in Gameplay Tuning.
+
+### 13.5 The open items, settled (2026-11-15)
+
+- **How a published change reaches the server:** publish writes the world DB (measured on WSL: ~26 s per publish);
+  mangosd loads quests, spawns and texts at startup, so players see it after the publish's server restart (or
+  `.reload quest_template` for quests). The check below published with `restartServer: false` and read the DB.
+- **How a quest override lands in the DB — additively, no stock row edited.** mangosd loads the highest
+  `quest_template` row with `patch <= WowPatch` (10 on these servers). Only 21 of 4,433 stock quests have a patch-10
+  row, so an override is an EXTRA row at patch 10 (`WorldPackQuestOverrides`, doc kind `quest-override`, tracked in
+  `wp_quest_override`); removing it brings the stock row back. The 21 quests already at patch 10 are refused, read-only
+  in the editor with the reason — an in-place edit there still needs the owner's sign-off. Relations between two stock
+  ids are never added or removed: a stock quest keeps its stock givers and may only GAIN a pack NPC.
+- **Spawn moves and line rewrites are in place, with a baseline** (the owner chose "a spawn override beside the NPC
+  replacement"): `WorldPackSpawnOverrides` / `WorldPackTextOverrides`, baselines `wp_spawn_baseline` /
+  `wp_text_baseline` written BEFORE the change (original + target), every write a compare-and-swap; a row changed
+  outside the pack refuses the publish. One enabled pack per quest / spawn / line.
+- **Undo:** a draft is undone in the form (Revert, or reopen the saved version); a saved op by World Builder Undo (each
+  save, re-link, restore and move is one audited op); Blizzard content by its own Restore / Put it back. A guardrail
+  confirmation belongs to the draft and is asked again when what it said changes.
 
 ## 11. Open questions for the owner / as-built log
 
@@ -460,3 +544,90 @@ Core change, measured first); abilities outside the bubble need a Core event fee
   world yards, flat ground untouched), and the relief eases with zoom (`TabletopLaw.ShownExaggeration`: full slider
   value from 1200 yd out, a fifth of the extra height by 200 yd; Layers -> "Relief eases close up", on by default).
   Regression `regress-4`: VERDICT PASS 30/30; Debug + Release green; shared-docs, ImGui and possess-law checks PASS.
+- **2026-11-15 — near layer no longer pops out on camera moves (built, Debug + Release green, not yet seen live).** Owner:
+  textures, spawns and buildings vanished while dragging, buildings sometimes stayed gone until another drag/zoom. Cause
+  (msui-console.log): every tile crossing hid the whole near layer (`ReadyTiles` empty, WMOs/props drawn only when
+  Ready) until the LAST prop model of the new ring had warmed (~30 ms per model upload, 5-9 s); the owner's screenshot
+  was taken 2 s after the 45 Sentinel Hill buildings were placed but still hidden. `TabletopNearScene` now keeps the
+  shown ring drawing while the next warms, swaps terrain + buildings + water in one frame, re-places warm props at once
+  and streams the rest in, and holds the centre within 64 yd of the tile edge (hysteresis).
+- **2026-11-15 — P5 (editing on the board) decided with the owner; SPEC in §13, unbuilt.** Stock quests through
+  whole-quest pack overrides (same id, baseline + restore), never-leave-broken guardrails with must-resolve overrides,
+  live drafts, client as the complete editor with a web text subset, a Worldbuilding top section on the web. First
+  slice: pack quests edited on the board.
+- **2026-11-15 (later) — P5 slice 1 built (pack quests on the board); Debug + Release green, shared-docs / ImGui-policy /
+  world-builder checks PASS; NOT yet exercised live.** New `GameLoop/CreatorMode/GameLoop.Creator.Tabletop.Edit.cs`. The quest
+  card's **Edit on the table** (pack quests, entry >= 7,000,000; disabled with a reason on stock quests and on the live
+  table) and the panel's **New quest** open the World Builder's own Quest Creator form (`DrawWbQuestSection`, unchanged
+  rules, one audited op per save, the pre-flight after) in the card's place, with a pack line (an existing quest stays
+  in its pack). Board picks: **Pick on the board** beside every NPC picker (figure or NPC pin), the object picker
+  (object pin), the chain pickers (a pin offering one quest, stock quests included) and the exploration place
+  (`WbPickButton` routes to the board on the table, map = the board's). Esc cancels a pick first. Live draft: whenever
+  the draft's signature changes the board is rebuilt from the published bundle with the draft spliced in (missing NPC
+  spawns from the packs' `dbrow:creature` docs and the census, the drop source as an item source, the exploration spot
+  as a synthetic trigger); a badge over the giver says "DRAFT - unsaved" or "saved, publish to play it"; closing the
+  editor brings the published board back. Small shared changes: `WbQuestFollowPack` (the pack-switch block, now shared),
+  `_wbQuestSavedSigs` (what each pack quest last held), `WbQuestPickMap`. Known limits: a UseObject target only shows
+  where the bundle already places that object; the quest list in the sidebar does not answer a chain pick.
+- **2026-11-15 (night) — P5 slices 1-6 built and probed. Client probe `p5-8` VERDICT PASS (44 edit checks + the P1-P4
+  checks), web tests 29/29 (`MangosSuperUI.Tests/WorldPackQuestGuardrailTests.cs`), real publish round trip PASS.**
+  Run: `powershell -File tools/tabletop/launch-tabletop.ps1 -Zones 40 -Edit -Name <n>` (stages 30-94 in
+  `GameLoop/Dev/GameLoop.Tabletop.EditProbe.cs`; writes only the draft-only `tabletop-edit-qa` pack on the WSL web app and
+  removes what it saved), and `python -I tools/tabletop/publish-overrides-check.py` (enables the QA pack, publishes twice,
+  disables it). Web deploys to WSL: `wsl -e bash tools/tabletop/deploy-webapp-wsl.sh` (no sudo: backup, rsync, kill -9,
+  systemd's Restart=on-failure starts the new build; restores the backup when it does not answer).
+  * **Slice 1** (pack quests on the board) - see the entry above; a crash after Save (stale visible ids) found and fixed.
+  * **Slice 2** (guardrails): `Engine/UI/QuestGuardrailLaw.cs` (pure; Blocker = fix the draft, Confirm = explicit
+    confirmation; `CheckDelete`), `GameLoop.Creator.WorldBuilder.QuestGuard.cs` (world = live facts + unpublished pack docs
+    + census; the resolve list in the form; Save refuses for every caller incl. `questui` scripts, which confirm only by
+    listed key prefixes; Delete re-links followers in one op). Web: `GET /QuestAtlas/Facts` (spawns, quest roles,
+    followers, item sources, holders, text uses), C8 prerequisite-loop check, and publish now refuses C8 errors.
+  * **Slice 3** (Blizzard quests): `quest-override` docs (above), `GET /QuestAtlas/StockQuest`, `QuestAuthoringLaw.OverrideItems`
+    (the stock row is the base, so every unexposed field is kept), Retire (MinLevel 255 on the override; quests that require
+    it block it), Restore the original, one pack per quest, the 21 patch-10 quests read-only.
+  * **Slice 4** (move Blizzard spawns): `GameLoop.Creator.Tabletop.Move.cs` - "Move on the board" on figure/NPC cards,
+    `GET /QuestAtlas/Spawns` for the guid, checks (waypoint walkers blocked; wanderers, quest NPCs, far moves confirmed),
+    board preview of every move, Put it back.
+  * **Slice 5** (what NPCs say): `GameLoop.Creator.Tabletop.Voices.cs` - greetings and start/end script lines of the open
+    quest; Blizzard rows as `text-override`, pack NPC greetings as `dbrow:quest_greeting` (now pack-writable), a line spoken
+    in several places needs a confirmation; the bundle's lines carry `textId` (additive).
+  * **Slice 6** (web): Quest Atlas card "Edit text" (`wwwroot/js/questatlas/textedit.js`: Story/Objectives/Progress/
+    Completion into the same pack docs, a pack picker for a first Blizzard override); new top section **Worldbuilding**
+    (Quests: Quest Atlas; World & Maps: World Map, 3D World Editor, Game Objects; World Packs: a new read-only "Packs &
+    overrides" page). Checked in the browser on WSL.
+  Not done here: adding NEW script lines/actions (owner: later); characters' quest state reset on publish (the guardrail
+  lists holders and asks; no reset path yet); publishing with a server restart (the check used restartServer: false).
+- **2026-11-15 (late) — "reset their quest state on publish" built (owner: "Yes, build it"); live reset NOT yet run.**
+  The holders finding now resolves three ways: accept their progress, **drop it from their quest logs at publish** (scope
+  `log`: rows not turned in), **reset it for everyone** (scope `all`: they can take it again). The choice is saved with the
+  quest as ONE `quest-reset` request (`{entry, scope, requestId}`), cleared after the save (the next save asks again).
+  Web `WorldPackQuestResets`: a pack may reset only a quest it changes (own quest or its override; else pre-flight C0
+  blocks publish); each requestId runs once, recorded in `wp_quest_reset_log`; it runs ONLY in a publish that restarts
+  the server, between `systemctl stop mangosd` and start (the running server would write in-memory progress back over
+  it); a publish without a restart leaves it pending and says so. Restore the original / Delete this quest withdraw the
+  quest's pending request. Quest items in bags are not touched. Probe `p5-9`: the three resolutions and the stored request
+  PASS (run stopped early, see below); web tests 30/30.
+  **Incident (same night):** after the agent's sixth no-sudo web deploy (`kill -9` + systemd restart), MariaDB reported
+  `characters.character_queststatus` "marked as crashed and should be repaired" (first error 23:47:37, ~30 s after the
+  23:47 deploy; each such deploy logged aborted connections, one on the characters DB at 23:23:41). The likely cause is
+  the kill cutting a bot-logic write to that MyISAM table. Nothing was repaired (DB writes are owner-only);
+  `tools/tabletop/deploy-webapp-wsl.sh` now refuses to run. The real reset publish waits for the repair.
+- **2026-11-15 (23:57) — `characters.character_queststatus` repaired (owner: "You repair it").** No character online.
+  Backup first: `mysqldump` to `~/deploy-backups/character_queststatus-before-repair-20261115T235701.sql` (stopped at row
+  7,219 - the damaged spot). `CHECK TABLE`: "Wrong bytesec 0-0-0 at linkstart 263964 / Corrupt"; `REPAIR TABLE`: that block
+  skipped, status OK; `CHECK TABLE ... EXTENDED`: OK. 8,728 rows after (= the table's row count before the repair), all
+  7,219 backed-up rows present. mangosd was not stopped (the repair locks the table; nothing was writing).
+- **2026-11-16 — quest-state reset verified LIVE on WSL (owner: "Yes, run it"); `tools/tabletop/publish-reset-check.py`
+  VERDICT PASS (`scratch/tabletop/logs/reset-check-2.log`).** Target quest 473 "Report to Captain Stoutfist", held only by
+  offline SuperUI bots on bot accounts, none of the raid roster and none on the NICO/CAM/GREG accounts (the script refuses
+  otherwise): two turned in, one mid-quest. Build #11 (no restart): the reset stayed pending, rows untouched. Build #12
+  (restart): "stopping mangosd: 1 quest reset(s) run while no one is online" -> mangosd stop -> quest 473 dropped from quest
+  logs, 1 row removed (Medozoraxom, guid 76) -> mangosd start -> World initialized; the two turned-in rows stayed;
+  `wp_quest_reset_log` holds the request once. Build #13 (restart): override and request removed, 473 back to its stock row.
+  `character_queststatus` CHECK TABLE OK afterwards, no aborted connections or crash marks.
+  The first run (builds #8-#10) found a bug - publish checked the reset against the reset docs only, refused it as an orphan
+  and marked the publish failed (nothing removed; clean-up restored 473) - fixed: publish checks against all enabled docs,
+  a reset problem at publish time leaves the reset pending instead of failing an installed publish, and resets run only
+  once mangosd is confirmed stopped. Deploys: a NOPASSWD rule allows `sudo -n systemctl start|stop|restart mangossuperui`,
+  so `tools/tabletop/deploy-webapp-wsl.sh` now stops/starts the web app gracefully (no aborted connections) - the kill -9
+  route that crashed the table is gone.

@@ -74,6 +74,8 @@ public sealed partial class GameLoop
         _qaBundleArea = areaId;
         _qaBundle = null;
         _qaBoard = null;
+        TtEditZoneChanged();
+        _ttMove = null;
         _qaSelQuest = null; _qaSelEntity = null; _qaSelFigure = null;
         _qaPins.Clear(); _qaArcs.Clear(); _qaDots.Clear(); _qaRings.Clear(); _qaLabels.Clear();
         _qaBundleTask = string.IsNullOrWhiteSpace(SuiWebAppUrl) ? null : _qaClient.ZoneAsync(SuiWebAppUrl, areaId);
@@ -125,9 +127,10 @@ public sealed partial class GameLoop
             else if (bt.Result is null) _qaStatus = "No quests for this zone on the web app.";
             else _qaBundle = bt.Result;
         }
+        TtMoveSync();   // slice 4: previewed spawn moves (a change rebuilds the board below)
         if (_qaBundle is not null && _qaBoard is null && _ttLoad is null && _tabletop?.Board is { } board && _ttAreaId == _qaBundleArea)
         {
-            _qaBoard = new QuestBoard(_qaBundle, (map, x, y) => map == board.MapId && board.Contains(x, y));
+            _qaBoard = new QuestBoard(TtMovedBundle(_qaBundle), (map, x, y) => map == board.MapId && board.Contains(x, y));
             var (lo, hi) = _qaBoard.LevelRange;
             _qaStatus = $"{_qaBoard.Quests.Count} quests · levels {lo}-{hi} · {_qaBundle.Npcs.Count} NPCs";
             Console.WriteLine($"[tabletop] quests {_ttZoneName}: {_qaStatus}; {_qaBoard.Chains.Count(c => c.Multi)} chains, {_qaBoard.Edges.Count} links");
@@ -135,6 +138,7 @@ public sealed partial class GameLoop
             if (_qaPendingSelect is { } pending && _qaBoard.Quests.ContainsKey(pending)) { _qaPendingSelect = null; QaSelectQuest(pending); }
         }
         if (_qaDirty && _qaBoard is not null) { QaRefresh(); _qaDirty = false; }
+        TtEditUpdate();
     }
 
     // ── filters, selection ──────────────────────────────────────────────────
@@ -860,13 +864,14 @@ public sealed partial class GameLoop
 
     // ── compact card (right) ────────────────────────────────────────────────
 
-    private bool QaCardOpen => _liveSel is { } liveSel && _live.ContainsKey(liveSel)
+    private bool QaCardOpen => _ttEditOpen || _liveSel is { } liveSel && _live.ContainsKey(liveSel)
         || _qaBoard is not null && (_qaSelQuest is not null || _qaSelEntity is not null || _qaSelFigure is not null);
     /// <summary>The web card's 420 px at 1080p, scaled with the display (never more than a quarter of the screen).</summary>
     private float QaCardWidth => MathF.Min(420f * MathF.Max(ImGui.GetIO().DisplaySize.Y / 1080f, 1f), ImGui.GetIO().DisplaySize.X * 0.25f);
 
     private void QaDrawCard()
     {
+        if (_ttEditOpen) { TtEditDrawWindow(); return; }
         if (!QaCardOpen) return;
         var m = _qaBoard;
         var liveBot = _liveSel is { } liveSel && _live.TryGetValue(liveSel, out var lb) ? lb : null;
@@ -1072,6 +1077,15 @@ public sealed partial class GameLoop
 
         ImGui.Spacing();
         ImGui.Separator();
+        // P5 slice 1 (QUEST_TABLETOP.md §13.3): pack quests open in the table's editor; stock quests wait for overrides.
+        bool packQuest = !_liveTableOpen;   // pack quests directly; Blizzard quests as a pack override (slice 3)
+        if (!packQuest) ImGui.BeginDisabled();
+        if (CreatorButton("Edit on the table")) TtEditQuest(q.Id);
+        if (!packQuest) ImGui.EndDisabled();
+        if (!packQuest && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(_liveTableOpen ? "Editing is on the Quest Tabletop in Creator Mode, not the live table."
+                : "");
+        ImGui.SameLine();
         if (CreatorButton("Open in web")) QaOpenInWeb(q.Id);
         ImGui.SameLine();
         ImGui.TextDisabled("story, progress, completion and voices");
@@ -1106,6 +1120,12 @@ public sealed partial class GameLoop
         }
         List("Gives", m.Gives.GetValueOrDefault(key));
         List("Takes in", m.Ends.GetValueOrDefault(key));
+        if (kind == "npc")
+        {
+            var places = m.SpawnsOnBoard(kind, entry);
+            if (places.Count == 1) TtMoveCardSection(entry, places[0]);
+            else if (places.Count > 1 && !_liveTableOpen) { QaSection("Place"); ImGui.TextDisabled("Stands in several places: click the figure you want to move."); }
+        }
     }
 
     private void QaFigureCard(QuestBoard m, uint entry, Vector3 at)
@@ -1125,6 +1145,7 @@ public sealed partial class GameLoop
             if (ImGui.Selectable($"{QaLv(q.Level),2}   {q.Title} - {why}##qa-fw-{q.Id}")) QaSelectQuest(q.Id);
         QaSection("Standing at");
         ImGui.TextDisabled(string.Create(CultureInfo.InvariantCulture, $"x {at.X:0.0} · y {at.Y:0.0} · z {at.Z:0.0}"));
+        TtMoveCardSection(entry, at);
     }
 
     /// <summary>§3.4: the full web card ({web}/QuestAtlas#zone=&lt;areaId&gt;&amp;quest=&lt;questId&gt;) in the system browser.</summary>

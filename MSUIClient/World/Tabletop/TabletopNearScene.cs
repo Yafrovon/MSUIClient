@@ -18,10 +18,21 @@ namespace MSUIClient.World.Tabletop;
 /// creature renderers and ADT cache, so the game's world, its streaming centre, collision and the controlled body are
 /// never touched. Loading is staged and non-blocking (<see cref="Step"/> once per frame); a new focus tile restarts
 /// the stages. Creatures are synthetic, view-only units supplied by the caller.
+///
+/// Nothing pops out while the camera moves (owner 2026-11-15: textures, spawns and buildings vanished on every drag
+/// and the buildings sometimes stayed gone for seconds): the ring on screen (<see cref="ReadyTiles"/>) keeps drawing
+/// while the next ring warms; terrain, buildings and water swap to the new ring in one step once its geometry is warm;
+/// props then stream in as their models warm (already-warm models at once) instead of the whole layer waiting on the
+/// last prop. A small hysteresis keeps a camera resting on a tile edge from restarting the load every frame.
 /// </summary>
 public sealed class TabletopNearScene : IDisposable
 {
-    private enum Phase { Idle, WarmGeometry, QueueDoodads, WarmDoodads, PlaceDoodads, Ready }
+    private enum Phase { Idle, WarmGeometry, StreamDoodads, Ready }
+
+    /// <summary>Yards past the centre tile's edge the focus may wander before the ring re-centres.</summary>
+    private const float RecentreSlackYards = 64f;
+    /// <summary>Frames between incremental prop placement passes while props are still warming.</summary>
+    private const int PropPlaceIntervalFrames = 12;
 
     private readonly GL _gl;
     private readonly ClientConfig _config;
@@ -37,22 +48,36 @@ public sealed class TabletopNearScene : IDisposable
     private WdtFile? _wdt;
     private string? _mapDir;
     private HashSet<(int col, int row)> _ring = [];
+    /// <summary>The ring whose terrain, buildings and water are on screen now (empty until the first ring lands).</summary>
+    private HashSet<(int col, int row)> _shown = [];
+    private (int col, int row) _shownCentre = (-1, -1);
     private (int col, int row) _centre;
+    private int _propFramesSincePlace;
+    private int _propPendingAtPlace = -1;
     private Vector2 _focus;
     private readonly Dictionary<int, float> _wmoLift = new();
     private float _time;
 
     public TabletopViewTransform View { get; } = new();
-    /// <summary>The ring of tiles this layer has fully loaded (the far layer hides these), empty while loading.</summary>
-    public IReadOnlySet<(int col, int row)> ReadyTiles => _phase == Phase.Ready ? _ring : EmptyRing;
+    /// <summary>The ring of tiles this layer draws right now (the far layer hides these). It stays the previous ring
+    /// while the next one warms, so moving the camera never blanks the near world; empty only before the first ring.</summary>
+    public IReadOnlySet<(int col, int row)> ReadyTiles => _phase == Phase.Idle ? EmptyRing : _shown;
     private static readonly HashSet<(int col, int row)> EmptyRing = [];
+    /// <summary>Everything around the current focus is on screen, props included.</summary>
     public bool Ready => _phase == Phase.Ready;
-    public string Status => _phase == Phase.Ready
-        ? $"near {_ring.Count} tiles around [{_centre.col},{_centre.row}]: {_wmo.InstanceCount} buildings, {_doodads?.InstanceCount ?? 0} props"
-        : _phase == Phase.Idle ? "near layer idle" : $"near layer loading ({_phase})";
+    public string Status => _phase switch
+    {
+        Phase.Ready => $"near {_ring.Count} tiles around [{_centre.col},{_centre.row}]: {_wmo.InstanceCount} buildings, {_doodads?.InstanceCount ?? 0} props",
+        Phase.Idle => "near layer idle",
+        Phase.StreamDoodads => $"near [{_centre.col},{_centre.row}]: {_wmo.InstanceCount} buildings, {_doodads?.InstanceCount ?? 0} props, {_doodads?.PendingPreloads ?? 0} prop models warming",
+        _ => _shown.Count > 0
+            ? $"near layer loading [{_centre.col},{_centre.row}] (showing [{_shownCentre.col},{_shownCentre.row}])"
+            : $"near layer loading ({_phase})",
+    };
     public int Buildings => _wmo.InstanceCount;
     public int Props => _doodads?.InstanceCount ?? 0;
     public int CreaturesDrawn => _creatures?.DrawnLastFrame ?? 0;
+    public int BuildingsDrawn => _wmo.DrawnLastFrame;
     /// <summary>Item entry -> template for view-only players (the living board's bots): the remote-player renderer
     /// dresses them from it without any server query.</summary>
     public Func<uint, (bool Settled, ItemTemplate? Item)>? PlayerItemResolver
@@ -77,6 +102,11 @@ public sealed class TabletopNearScene : IDisposable
             SuppressDistanceLodShells = true,
             OcclusionCulling = false,
             FrustumCulling = false,   // lifted placements: the unlifted boxes would cull wrongly
+            // The table is seen from 1-3 km up: the game's Building distance (300-1250 yd) and the 120 yd interior cut
+            // would hide every building until the camera is almost on the ground (owner 2026-11-16). Props already
+            // draw at 100000; buildings now match.
+            DrawDistance = 100000f,
+            InteriorCullDistance = 100000f,
         };
         _liquid = new LiquidRenderer(gl) { Tabletop = View };
         if (config.Render.Doodads)
@@ -122,6 +152,8 @@ public sealed class TabletopNearScene : IDisposable
         _liquid.UnloadAll();
         _phase = Phase.Idle;
         _centre = (-1, -1);
+        _shown = [];
+        _shownCentre = (-1, -1);
     }
 
     /// <summary>Follow the camera's ground target: a new centre tile restarts the staged load.</summary>
@@ -131,18 +163,21 @@ public sealed class TabletopNearScene : IDisposable
         _focus = groundTarget;
         var centre = TerrainRenderer.TileAt(groundTarget.X, groundTarget.Y);
         if (centre == _centre && _phase != Phase.Idle) return;
+        // Hysteresis: a focus just over the edge of the tile in hand keeps it (the ring reaches past that edge anyway),
+        // so a camera resting on a boundary does not restart the load every frame.
+        if (_phase != Phase.Idle && _centre.col >= 0 && WithinTile(_centre, groundTarget, RecentreSlackYards)) return;
         _centre = centre;
         _ring = TerrainRenderer.TileRing(centre.col, centre.row, _radius);
         _ring.RemoveWhere(t => !_wdt.HasTile(t.col, t.row));
-        _wmo.BeginOpaqueWorldEpoch();
-        _doodads?.BeginOpaqueWorldEpoch();
         _terrain.QueuePreload(_ring, _adts, _centre);
         _wmo.QueuePreloadForTiles(_ring, _adts, groundTarget);
         _phase = Phase.WarmGeometry;
         Failure = null;
     }
 
-    /// <summary>Advance the staged load by a small unit of work; never waits.</summary>
+    /// <summary>Advance the staged load by a small unit of work; never waits. The ring on screen keeps drawing
+    /// throughout: it is replaced in one step (terrain, buildings, water) once the new ring's geometry is warm, and its
+    /// props are re-placed from the warm model cache at once, the rest joining as they warm.</summary>
     public void Step()
     {
         try
@@ -153,28 +188,22 @@ public sealed class TabletopNearScene : IDisposable
                     _wmo.WarmNextPreload(waitForWorker: false);
                     _terrain.PumpPreloads();
                     if (!_terrain.PreloadReady(_ring) || _wmo.PendingPreloads != 0) return;
-                    _terrain.SetResidency(_centre.col, _centre.row, _radius, _adts!);
-                    _wmo.ResetPlacements();
-                    _wmo.LoadForTiles(_ring, _adts!, warmedOnly: true);
-                    _phase = Phase.QueueDoodads;
-                    return;
-                case Phase.QueueDoodads:
-                    _liquid.LoadForTiles(_ring, _adts!);
-                    _liquid.UpdateWmoLiquid(_wmo.LiquidVersion, _wmo.EnumerateLiquid());
-                    if (_doodads is null) { _phase = Phase.Ready; return; }
-                    _doodads.ResetPlacements();
+                    SwapGeometry();
+                    if (_doodads is null) { _phase = Phase.Ready; Console.WriteLine($"[tabletop] {Status}"); return; }
                     _doodads.QueuePreloadForTiles(_ring, _adts!, _focus, RingReach);
                     _doodads.QueuePreloadModels(_wmo.EnumerateDoodads().Select(d => d.ModelPath));
-                    _phase = _doodads.PendingPreloads == 0 ? Phase.PlaceDoodads : Phase.WarmDoodads;
+                    PlaceProps(reset: true);
+                    _phase = Phase.StreamDoodads;
                     return;
-                case Phase.WarmDoodads:
+                case Phase.StreamDoodads:
                     for (int i = 0; i < 8 && _doodads!.PendingPreloads > 0; i++) _doodads.WarmNextPreload(waitForWorker: false);
-                    if (_doodads!.PendingPreloads == 0) _phase = Phase.PlaceDoodads;
-                    return;
-                case Phase.PlaceDoodads:
-                    _doodads!.LoadForTiles(_ring, _adts!, _focus, RingReach, reportDiagnostics: false);
-                    foreach (var d in _wmo.EnumerateDoodads())
-                        _doodads.AddPlaced(d.ModelPath, d.Transform, d.Light, d.WmoInstanceId, d.OwnerGroups);
+                    int pending = _doodads!.PendingPreloads;
+                    _propFramesSincePlace++;
+                    // A placement pass walks every doodad in the ring, so it runs a few times a second while models are
+                    // landing, and once more when the last one lands.
+                    if (pending == 0 || (pending < _propPendingAtPlace && _propFramesSincePlace >= PropPlaceIntervalFrames))
+                        PlaceProps(reset: false);
+                    if (pending != 0) return;
                     _phase = Phase.Ready;
                     Console.WriteLine($"[tabletop] {Status}");
                     return;
@@ -186,6 +215,44 @@ public sealed class TabletopNearScene : IDisposable
             Console.WriteLine($"[tabletop] near layer failed: {e}");
             _phase = Phase.Idle;
         }
+    }
+
+    /// <summary>The new ring's terrain, buildings and water replace the shown ring in one frame. Models, textures and
+    /// GPU buffers are cached by path, so this only rebuilds the cheap placement lists; terrain tiles shared by both
+    /// rings stay resident untouched.</summary>
+    private void SwapGeometry()
+    {
+        _terrain.SetResidency(_centre.col, _centre.row, _radius, _adts!);
+        _wmo.ResetPlacements();
+        _wmo.LoadForTiles(_ring, _adts!, warmedOnly: true);
+        _liquid.LoadForTiles(_ring, _adts!);
+        _liquid.UpdateWmoLiquid(_wmo.LiquidVersion, _wmo.EnumerateLiquid());
+        _shown = new HashSet<(int col, int row)>(_ring);
+        _shownCentre = _centre;
+    }
+
+    /// <summary>Place every prop of the ring whose model is warm (demand streaming skips the rest and leaves them
+    /// eligible for the next pass). <paramref name="reset"/> drops the previous ring's props first (the swap pass,
+    /// which re-places the warm ones in the same frame).</summary>
+    private void PlaceProps(bool reset)
+    {
+        if (_doodads is null) return;
+        if (reset) _doodads.ResetPlacements();
+        _doodads.LoadForTiles(_ring, _adts!, _focus, RingReach, reportDiagnostics: false);
+        foreach (var d in _wmo.EnumerateDoodads())
+            _doodads.AddPlaced(d.ModelPath, d.Transform, d.Light, d.WmoInstanceId, d.OwnerGroups);
+        _propFramesSincePlace = 0;
+        _propPendingAtPlace = _doodads.PendingPreloads;
+    }
+
+    /// <summary>Is <paramref name="p"/> inside <paramref name="tile"/> grown by <paramref name="slack"/> yards?
+    /// (TerrainRenderer.TileAt: col from Y, row from X.)</summary>
+    private static bool WithinTile((int col, int row) tile, Vector2 p, float slack)
+    {
+        const float size = 533.33333f;
+        float xMax = (32f - tile.row) * size, xMin = xMax - size;
+        float yMax = (32f - tile.col) * size, yMin = yMax - size;
+        return p.X >= xMin - slack && p.X <= xMax + slack && p.Y >= yMin - slack && p.Y <= yMax + slack;
     }
 
     private float RingReach => (_radius + 1) * 533.33333f * 1.5f;
@@ -211,7 +278,7 @@ public sealed class TabletopNearScene : IDisposable
         try
         {
             _terrain.Render(camera, clip);
-            if (_phase == Phase.Ready)
+            if (_shown.Count > 0)
             {
                 _wmo.Render(camera, clip);
                 _doodads?.Render(camera, clip);

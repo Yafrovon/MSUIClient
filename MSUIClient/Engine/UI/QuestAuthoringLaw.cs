@@ -62,6 +62,8 @@ public static class QuestAuthoringLaw
         public int PrevQuest { get; set; }        // > 0: must be completed first; < 0: must be active
         public int NextInChain { get; set; }
         public int ExclusiveGroup { get; set; }
+        /// <summary>A stock quest override that takes the quest out of the world (never offered again).</summary>
+        public bool Retired { get; set; }
     }
 
     /// <summary>What the pack already has, so the law can extend instead of duplicate.</summary>
@@ -80,6 +82,13 @@ public static class QuestAuthoringLaw
         public List<JsonObject> GiverRelations { get; init; } = new();
         public List<JsonObject> EnderRelations { get; init; } = new();
         public List<JsonObject> LootRows { get; init; } = new();
+        /// <summary>Editing a STOCK quest (QUEST_TABLETOP.md §13 slice 3): saved as a pack "quest-override"; its stock
+        /// row is in <see cref="Quests"/>, its stock givers/enders here (stock relations can be kept, never removed).</summary>
+        public bool StockOverride { get; init; }
+        public HashSet<uint> StockGivers { get; init; } = new();
+        public HashSet<uint> StockEnders { get; init; } = new();
+        /// <summary>The stock quest is completed by a stock area trigger the form does not model (keep its flag).</summary>
+        public bool StockExploreTrigger { get; init; }
     }
 
     public const uint NpcQuestGiver = 0x2;
@@ -119,6 +128,18 @@ public static class QuestAuthoringLaw
                 p.Add($"objective {i}: count must be at least 1");
         }
         if (d.Goals.Count(g => g.Kind == ObjectiveKind.Explore) > 1) p.Add("one exploration objective per quest (vanilla has a single area-trigger slot)");
+        if (ctx.StockOverride)
+        {
+            // A stock relation between two stock ids is not pack-owned: a stock quest keeps its stock givers and may
+            // only GAIN one of the pack's own NPCs.
+            if (d.Giver != 0 && d.Giver < PackEntryBase && !ctx.StockGivers.Contains(d.Giver))
+                p.Add("a stock quest can only gain a giver from your pack's NPCs (keep its original giver or pick a pack NPC)");
+            uint ender = d.Ender != 0 ? d.Ender : d.Giver;
+            if (ender != 0 && ender < PackEntryBase && !ctx.StockEnders.Contains(ender))
+                p.Add("a stock quest can only be turned in to its original NPC or one of your pack's NPCs");
+            if (ctx.StockExploreTrigger && d.Goals.Any(g => g.Kind == ObjectiveKind.Explore))
+                p.Add("this quest already has a stock exploration area; add no second one");
+        }
         return p;
     }
 
@@ -314,6 +335,43 @@ public static class QuestAuthoringLaw
         }
         foreach (var tpl in touchedTemplates.Values) items.Add(Row("creature_template", tpl));
         return items;
+    }
+
+    public const uint PackEntryBase = 7_000_000;
+
+    /// <summary>
+    /// A STOCK quest's draft as pack content (QUEST_TABLETOP.md §13 slice 3): the same <see cref="Items"/> (the stock row
+    /// is ctx.Quests[entry], so every field the form does not expose is kept), with the quest row turned into ONE
+    /// "quest-override" doc (installed by the web app at the override patch, the stock row untouched) and every
+    /// relation between two stock ids left out (they already exist and cannot be removed by a pack).
+    /// </summary>
+    public static JsonArray OverrideItems(Draft d, Context ctx)
+    {
+        var all = Items(d, ctx);
+        var result = new JsonArray();
+        foreach (var node in all.ToList())
+        {
+            if (node is not JsonObject item) continue;
+            string kind = (string?)item["kind"] ?? "";
+            if (kind == "dbrow:quest_template" && item["body"] is JsonObject row)
+            {
+                var body = (JsonObject)row.DeepClone();
+                body.Remove("patch");
+                if (ctx.StockExploreTrigger) body["SpecialFlags"] = Num(body["SpecialFlags"]) | SpecialFlagExploration;
+                if (d.Retired) body["retired"] = true;
+                result.Add(new JsonObject { ["kind"] = "quest-override", ["key"] = d.Entry.ToString(CultureInfo.InvariantCulture), ["body"] = body });
+                continue;
+            }
+            if (kind is "dbrow:creature_questrelation" or "dbrow:creature_involvedrelation")
+            {
+                uint npc = item["body"] is JsonObject b ? (uint)Num(b["id"])
+                    : uint.TryParse(((string?)item["key"] ?? "").Split('|')[0], out uint k) ? k : 0;
+                if (npc < PackEntryBase) continue;   // stock-to-stock: exists already, not ours to add or remove
+            }
+            all.Remove(node);
+            result.Add(node);
+        }
+        return result;
     }
 
     /// <summary>Quest text as the player reads it: $N name, $C class, $R race, $B line break, $G male:female;.</summary>

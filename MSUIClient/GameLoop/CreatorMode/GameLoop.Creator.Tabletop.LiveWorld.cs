@@ -48,7 +48,7 @@ public sealed partial class GameLoop
     private sealed record LiveTableSaved(
         bool LockOnPrimary,
         bool TerrainChunkCulling,
-        bool WmoPortalCulling, bool WmoOcclusion, bool WmoFrustum, bool WmoSuppressLod,
+        bool WmoPortalCulling, bool WmoOcclusion, bool WmoFrustum, bool WmoSuppressLod, float WmoDrawDistance, float WmoInteriorCull,
         float DoodadDrawDistance,
         float CreatureAnimateDistance, float CreatureScale,
         bool LiquidUseAuthored, bool LiquidHasAuthored, Vector3 OceanClose, Vector3 OceanFar, Vector3 RiverClose,
@@ -91,7 +91,7 @@ public sealed partial class GameLoop
             Settings.Controls.CommandViewLockOnPrimary,
             _terrain?.ChunkCulling ?? true,
             _wmo?.UsePortalCulling ?? true, _wmo?.OcclusionCulling ?? false, _wmo?.FrustumCulling ?? true,
-            _wmo?.SuppressDistanceLodShells ?? false,
+            _wmo?.SuppressDistanceLodShells ?? false, _wmo?.DrawDistance ?? 777f, _wmo?.InteriorCullDistance ?? 120f,
             _doodads?.DrawDistance ?? 300f,
             _creatures?.AnimateDistance ?? 130f, _creatures?.ScaleMultiplier ?? 1f,
             _liquid?.UseAuthoredColors ?? false, _liquid?.HasAuthoredColors ?? false,
@@ -121,6 +121,7 @@ public sealed partial class GameLoop
             {
                 _wmo.UsePortalCulling = s.WmoPortalCulling; _wmo.OcclusionCulling = s.WmoOcclusion;
                 _wmo.FrustumCulling = s.WmoFrustum; _wmo.SuppressDistanceLodShells = s.WmoSuppressLod;
+                _wmo.DrawDistance = s.WmoDrawDistance; _wmo.InteriorCullDistance = s.WmoInteriorCull;
                 _wmo.ModelLift = null;
             }
             if (_doodads is not null) { _doodads.DrawDistance = s.DoodadDrawDistance; _doodads.ModelLift = null; }
@@ -407,6 +408,8 @@ public sealed partial class GameLoop
             wmo.Tabletop = _liveTableView;
             wmo.UsePortalCulling = false; wmo.OcclusionCulling = false; wmo.FrustumCulling = false;
             wmo.SuppressDistanceLodShells = true;
+            wmo.DrawDistance = 100000f;          // the table looks from 1-3 km up (restored at close)
+            wmo.InteriorCullDistance = 100000f;
             wmo.ModelLift ??= (origin, id) =>
             {
                 float lift = _liveTableView.Lift(_terrain?.SampleHeight(origin.X, origin.Y) ?? origin.Z);
