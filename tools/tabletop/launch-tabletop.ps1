@@ -9,7 +9,9 @@ param(
     [string]$Name = "tabletop",
     [string]$Exe = "",
     [string]$Patch7 = "",
-    [switch]$Visible
+    [switch]$Visible,
+    # -Edit: after the Militia stage on Westfall, run the P5 edit-on-the-board probe (writes only the QA pack on the web app).
+    [switch]$Edit
 )
 $ErrorActionPreference = "Stop"
 $repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
@@ -25,6 +27,7 @@ $env:MSUI_SETTINGS_PATH = $settings
 # (2026-10-14: a QA run swapped the owner's patch-7 build #59 for WSL's #4 and his next launch re-synced everything).
 $env:MSUI_WORLDPACK_SYNC = "off"
 $env:MSUI_TABLETOP_PROBE = $Zones
+$env:MSUI_TABLETOP_EDIT = $(if ($Edit) { "1" } else { "" })
 # -Patch7 <file>: the probe mounts that patch-7.MPQ in its own process (e.g. a published build saved to scratch).
 $env:MSUI_TABLETOP_PATCH7 = $(if ($Patch7) { (Resolve-Path $Patch7).Path } else { "" })
 $env:MSUI_WB_BACKGROUND = $(if ($Visible) { "0" } else { "1" })

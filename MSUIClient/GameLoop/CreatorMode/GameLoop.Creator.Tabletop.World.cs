@@ -174,11 +174,12 @@ public sealed partial class GameLoop
         foreach (var (unit, spawn, baseScale, critter) in _ttCreatures)
         {
             if (critter && !s.Critters) continue;
-            if (!tiles.Contains(TabletopLawTile(spawn))) continue;
-            if (LiveTableInBubble(spawn)) continue;   // the live world shows who is really there
-            float ground = TtGroundAt(spawn.X, spawn.Y) ?? spawn.Z;
+            var at = _ttMoves.Count > 0 ? TtMovedSpawn(unit.Entry, spawn) : spawn;   // slice 4: previewed spawn moves
+            if (!tiles.Contains(TabletopLawTile(at))) continue;
+            if (LiveTableInBubble(at)) continue;   // the live world shows who is really there
+            float ground = TtGroundAt(at.X, at.Y) ?? at.Z;
             // Feet stay on the shown ground (spawn height above it is true yards; a grown figure grows upward).
-            unit.Position = spawn with { Z = spawn.Z + TtLift(ground) };
+            unit.Position = at with { Z = at.Z + TtLift(ground) };
             unit.Fields.SetU32(ObjectFields.OBJECT_SCALE_X, BitConverter.SingleToUInt32Bits(baseScale * fieldFigure));
             _ttUnitsThisFrame.Add(unit);
             if (_ttUnitsThisFrame.Count >= 1500) break;

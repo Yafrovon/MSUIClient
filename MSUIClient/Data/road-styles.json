@@ -1,0 +1,5880 @@
+{
+  "generated": "2026-11-15",
+  "source": "tools/road-survey over GameData/Data (stock archives, patch-7 excluded)",
+  "maps": [
+    {
+      "id": 0,
+      "name": "Eastern Kingdoms",
+      "tiles": 687
+    },
+    {
+      "id": 1,
+      "name": "Kalimdor",
+      "tiles": 1018
+    },
+    {
+      "id": 30,
+      "name": "Alterac Valley",
+      "tiles": 35
+    },
+    {
+      "id": 33,
+      "name": "Shadowfang Keep",
+      "tiles": 25
+    },
+    {
+      "id": 36,
+      "name": "Deadmines",
+      "tiles": 36
+    },
+    {
+      "id": 37,
+      "name": "Azshara Crater",
+      "tiles": 30
+    },
+    {
+      "id": 47,
+      "name": "Razorfen Kraul",
+      "tiles": 6
+    },
+    {
+      "id": 129,
+      "name": "Razorfen Downs",
+      "tiles": 24
+    },
+    {
+      "id": 189,
+      "name": "Scarlet Monastery",
+      "tiles": 36
+    },
+    {
+      "id": 209,
+      "name": "Zul\u0027Farrak",
+      "tiles": 21
+    },
+    {
+      "id": 269,
+      "name": "Caverns of Time",
+      "tiles": 39
+    },
+    {
+      "id": 289,
+      "name": "Scholomance",
+      "tiles": 16
+    },
+    {
+      "id": 309,
+      "name": "Zul\u0027Gurub",
+      "tiles": 25
+    },
+    {
+      "id": 329,
+      "name": "Stratholme",
+      "tiles": 20
+    },
+    {
+      "id": 469,
+      "name": "Blackwing Lair",
+      "tiles": 16
+    },
+    {
+      "id": 489,
+      "name": "Warsong Gulch",
+      "tiles": 16
+    },
+    {
+      "id": 509,
+      "name": "Ruins of Ahn\u0027Qiraj",
+      "tiles": 40
+    },
+    {
+      "id": 529,
+      "name": "Arathi Basin",
+      "tiles": 16
+    },
+    {
+      "id": 531,
+      "name": "Ahn\u0027Qiraj Temple",
+      "tiles": 25
+    },
+    {
+      "id": 533,
+      "name": "Naxxramas",
+      "tiles": 24
+    }
+  ],
+  "styles": [
+    {
+      "id": "badlands-cobrapillartile02alpha",
+      "name": "Badlands: paving (Cobra Pillar Tile02 Alpha)",
+      "kind": "surface",
+      "map": -1,
+      "zone": "Badlands",
+      "texture": "Tileset\\The Badlands\\CobraPillarTile02Alpha.blp",
+      "width": 6,
+      "softEdge": 2,
+      "strength": 1,
+      "ragged": 1,
+      "patchy": 0.1,
+      "measuredLength": 0,
+      "pieces": 0
+    },
+    {
+      "id": "alterac-mountains-alteracrockroadbase",
+      "name": "Alterac Mountains: road (Alterac Rock Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Alterac Mountains",
+      "texture": "Tileset\\AlteracMtns\\AlteracRockRoadBase.blp",
+      "width": 2.65,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.55,
+      "patchy": 0.4,
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 3385,
+      "pieces": 32,
+      "example": [
+        679.9,
+        -958.6,
+        164.3
+      ]
+    },
+    {
+      "id": "alterac-mountains-alteracdirtbase02",
+      "name": "Alterac Mountains: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Alterac Mountains",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 4.5,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.7,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.45
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 128805,
+      "pieces": 429,
+      "example": [
+        227.9,
+        -205.5,
+        138.8
+      ]
+    },
+    {
+      "id": "alterac-mountains-silverpinedirt",
+      "name": "Alterac Mountains: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Alterac Mountains",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 4.1,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.7,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\SilverPine\\SilverPineRock.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 3727,
+      "pieces": 15,
+      "example": [
+        360.2,
+        479.9,
+        84.2
+      ]
+    },
+    {
+      "id": "alterac-mountains-alteracrubblebase",
+      "name": "Alterac Mountains: trail (Alterac Rubble Base)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Alterac Mountains",
+      "texture": "Tileset\\AlteracMtns\\AlteracRubbleBase.blp",
+      "width": 3.4,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.3,
+      "patchy": 0.4,
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 2235,
+      "pieces": 47,
+      "example": [
+        1222.7,
+        -312.8,
+        42.3
+      ]
+    },
+    {
+      "id": "arathi-highlands-arathihighlandscityfloor",
+      "name": "Arathi Highlands: road (Arathi Highlands City Floor)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsCityFloor.blp",
+      "width": 4.4,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.3,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+      "measuredLength": 5185,
+      "pieces": 33,
+      "example": [
+        -1719,
+        -1666.9,
+        59.5
+      ]
+    },
+    {
+      "id": "arathi-highlands-ashenvaleroad",
+      "name": "Arathi Highlands: road (Ashenvale Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\Ashenvale\\AshenvaleRoad.blp",
+      "width": 3,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.95
+      },
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 2545,
+      "pieces": 19,
+      "example": [
+        -2229.4,
+        -2461.7,
+        80.9
+      ]
+    },
+    {
+      "id": "arathi-highlands-wetlandsroad01",
+      "name": "Arathi Highlands: road (Wetlandsroad01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\Wetlands\\Wetlandsroad01.blp",
+      "width": 3.35,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.2,
+      "patchy": 0.35,
+      "ground": "Tileset\\Wetlands\\Wetlandsdirtmoss01.blp",
+      "measuredLength": 327,
+      "pieces": 2,
+      "example": [
+        -1837.8,
+        -4172.1,
+        9
+      ]
+    },
+    {
+      "id": "arathi-highlands-arathihighlandsdirt",
+      "name": "Arathi Highlands: trail (Arathi Highlands Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+      "width": 4.6,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.75,
+      "patchy": 0.45,
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 99575,
+      "pieces": 395,
+      "example": [
+        -2259.6,
+        -2982.6,
+        101.4
+      ]
+    },
+    {
+      "id": "arathi-highlands-arathihighlandsrubblebase",
+      "name": "Arathi Highlands: trail (Arathi Highlands Rubble Base)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+      "width": 2.8,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 2,
+      "patchy": 0.55,
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 15763,
+      "pieces": 155,
+      "example": [
+        -1691.9,
+        -1543,
+        68.1
+      ]
+    },
+    {
+      "id": "arathi-highlands-alteracdirtbase02",
+      "name": "Arathi Highlands: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 2.95,
+      "softEdge": 10,
+      "strength": 0.7,
+      "ragged": 2,
+      "patchy": 0.7,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 6530,
+      "pieces": 26,
+      "example": [
+        -1329.4,
+        -1347.1,
+        171.6
+      ]
+    },
+    {
+      "id": "arathi-highlands-wetlandsdirt01",
+      "name": "Arathi Highlands: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Arathi Highlands",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 3.9,
+      "softEdge": 4.15,
+      "strength": 0.8,
+      "ragged": 2.05,
+      "patchy": 0.4,
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 2586,
+      "pieces": 31,
+      "example": [
+        -1851.3,
+        -4246.1,
+        -3.2
+      ]
+    },
+    {
+      "id": "badlands-badlandsdirt",
+      "name": "Badlands: trail (Badlands Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Badlands",
+      "texture": "Tileset\\The Badlands\\BadlandsDirt.blp",
+      "width": 6,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 2.05,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\The Badlands\\BadlandsRock.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 1
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "measuredLength": 250667,
+      "pieces": 97,
+      "example": [
+        -6662.8,
+        -2413.8,
+        258.2
+      ]
+    },
+    {
+      "id": "blasted-lands-blastedlandsroad",
+      "name": "Blasted Lands: road (Blasted Lands Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Blasted Lands",
+      "texture": "Tileset\\The Blasted Lands\\BlastedLandsRoad.blp",
+      "width": 3.6,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 0.95,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\The Blasted Lands\\BlastedLandsRockHighlight01.blp",
+        "extra": 9.4,
+        "softEdge": 4.15,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\The Blasted Lands\\BlastedLandsDirt01.blp",
+      "measuredLength": 5024,
+      "pieces": 12,
+      "example": [
+        -11001.3,
+        -3386.7,
+        63.5
+      ]
+    },
+    {
+      "id": "blasted-lands-blastedlandsdirt01",
+      "name": "Blasted Lands: trail (Blasted Lands Dirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Blasted Lands",
+      "texture": "Tileset\\The Blasted Lands\\BlastedLandsDirt01.blp",
+      "width": 5.2,
+      "softEdge": 10,
+      "strength": 0.95,
+      "ragged": 1.9,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\The Blasted Lands\\BlastedLandsRock.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Swamp of Sorrows\\SwampSorrowsRock02.blp",
+      "measuredLength": 146128,
+      "pieces": 138,
+      "example": [
+        -11436.7,
+        -3501.3,
+        90.9
+      ]
+    },
+    {
+      "id": "blasted-lands-deadwindpassdirt",
+      "name": "Blasted Lands: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Blasted Lands",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 5.25,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.85,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\Deadwind Pass\\DeadwindPassRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 4.15,
+        "strength": 0.9
+      },
+      "ground": "Tileset\\The Blasted Lands\\BlastedLandsDirt01.blp",
+      "measuredLength": 61551,
+      "pieces": 70,
+      "example": [
+        -11989.8,
+        -2325.3,
+        105.8
+      ]
+    },
+    {
+      "id": "burning-steppes-burningsteppsspireroad01",
+      "name": "Burning Steppes: road (Burning Stepps Spire Road01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Burning Steppes",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsSpireRoad01.blp",
+      "width": 3.75,
+      "softEdge": 6.25,
+      "strength": 0.95,
+      "ragged": 0.9,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\BurningStepps\\BurningSteppsCharcoal01.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "measuredLength": 5306,
+      "pieces": 30,
+      "example": [
+        -7864.8,
+        -804.4,
+        163.1
+      ]
+    },
+    {
+      "id": "burning-steppes-burningsteppsash01",
+      "name": "Burning Steppes: trail (Burning Stepps Ash01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Burning Steppes",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "width": 6.5,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.9,
+      "patchy": 0.45,
+      "ground": "Tileset\\BurningStepps\\BurningSteppsRock01.blp",
+      "measuredLength": 222168,
+      "pieces": 401,
+      "example": [
+        -7714.8,
+        -2945.1,
+        132.9
+      ]
+    },
+    {
+      "id": "deadwind-pass-deadwindpassdirt",
+      "name": "Deadwind Pass: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Deadwind Pass",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 3.65,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.55,
+      "ground": "Tileset\\Deadwind Pass\\DeadwindPassRockBase.blp",
+      "measuredLength": 64985,
+      "pieces": 226,
+      "example": [
+        -10403.4,
+        -1975.3,
+        126.6
+      ]
+    },
+    {
+      "id": "dun-morogh-ironforgerock06road2",
+      "name": "Dun Morogh: road (Iron Forge Rock06road2)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Dun Morogh",
+      "texture": "Tileset\\IronForge\\IronForgeRock06road2.blp",
+      "width": 4.05,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\IronForge\\IronForgeSnow05ScrapeBrown.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\IronForge\\IronForgeSnow01solid.blp",
+      "measuredLength": 10765,
+      "pieces": 69,
+      "example": [
+        -5519,
+        -2421.1,
+        402.4
+      ]
+    },
+    {
+      "id": "dun-morogh-ironforgefootprintsalpha",
+      "name": "Dun Morogh: road (Ironforge Footprints Alpha)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Dun Morogh",
+      "texture": "Tileset\\IronForge\\IronforgeFootprintsAlpha.blp",
+      "width": 3.85,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 2.1,
+      "patchy": 0.25,
+      "ground": "Tileset\\IronForge\\IronForgeSnow01solid.blp",
+      "measuredLength": 202,
+      "pieces": 2,
+      "example": [
+        -6048.2,
+        -1047.1,
+        512.8
+      ]
+    },
+    {
+      "id": "dun-morogh-wetlandsroad01",
+      "name": "Dun Morogh: road (Wetlandsroad01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Dun Morogh",
+      "texture": "Tileset\\Wetlands\\Wetlandsroad01.blp",
+      "width": 2.8,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Wetlands\\WetlandsGrassDark02.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 127,
+      "pieces": 2,
+      "example": [
+        -4103.4,
+        -1397.1,
+        178.8
+      ]
+    },
+    {
+      "id": "duskwood-duskwoodcobblestone",
+      "name": "Duskwood: road (Duskwood Cobblestone)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Duskwood",
+      "texture": "Tileset\\Duskwood\\DuskwoodCobblestone.blp",
+      "width": 4.55,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 0.9,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Duskwood\\DuskwoodDirt.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Duskwood\\DuskwoodGrassBase.blp",
+      "measuredLength": 3144,
+      "pieces": 10,
+      "example": [
+        -10509.6,
+        -1158.6,
+        27.1
+      ]
+    },
+    {
+      "id": "duskwood-duskwoodcobblestone2",
+      "name": "Duskwood: road (Duskwood Cobblestone2)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Duskwood",
+      "texture": "Tileset\\Duskwood\\DuskwoodCobblestone2.blp",
+      "width": 3.1,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.55,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\Duskwood\\DuskwoodGrassBase02.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.45
+      },
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt.blp",
+      "measuredLength": 1743,
+      "pieces": 8,
+      "example": [
+        -10505.5,
+        293.5,
+        31.2
+      ]
+    },
+    {
+      "id": "duskwood-kalidardarnroad",
+      "name": "Duskwood: road (Kalidar Darn Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Duskwood",
+      "texture": "Tileset\\Kalidar\\KalidarDarnRoad.blp",
+      "width": 4.4,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 0.8,
+      "patchy": 0.15,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 446,
+      "pieces": 1,
+      "example": [
+        -10530.5,
+        -427.3,
+        51.3
+      ]
+    },
+    {
+      "id": "duskwood-duskwooddirt",
+      "name": "Duskwood: trail (Duskwood Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Duskwood",
+      "texture": "Tileset\\Duskwood\\DuskwoodDirt.blp",
+      "width": 4,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.7,
+      "patchy": 0.5,
+      "ground": "Tileset\\Duskwood\\DuskwoodGrassBase.blp",
+      "measuredLength": 165815,
+      "pieces": 459,
+      "example": [
+        -10984.6,
+        -829.4,
+        59.7
+      ]
+    },
+    {
+      "id": "duskwood-elwynndirtbase2",
+      "name": "Duskwood: trail (Elwynn Dirt Base2)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Duskwood",
+      "texture": "Tileset\\Elwynn\\ElwynnDirtBase2.blp",
+      "width": 7.85,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.7,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Elwynn\\ElwynnRockBaseTest2.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Elwynn\\ElwynnGrassBase.blp",
+      "measuredLength": 17626,
+      "pieces": 37,
+      "example": [
+        -9924.2,
+        -813.8,
+        22.3
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-eastplaguedroadbase",
+      "name": "Eastern Plaguelands: road (East Plagued Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedRoadBase.blp",
+      "width": 2.9,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.05,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 12162,
+      "pieces": 80,
+      "example": [
+        3093.5,
+        -3453.4,
+        137.4
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-tirisfallstoneroad01",
+      "name": "Eastern Plaguelands: road (Tiris Fall Stone Road01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\TirisFall\\TirisFallStoneRoad01.blp",
+      "width": 3.9,
+      "softEdge": 4.15,
+      "strength": 0.8,
+      "ragged": 0.9,
+      "patchy": 0.3,
+      "ground": "Tileset\\TirisFall\\TirisFallRockyMudGrass.blp",
+      "measuredLength": 1777,
+      "pieces": 14,
+      "example": [
+        1668.5,
+        -5395.1,
+        74.4
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-aeriepeaksrockroadbase",
+      "name": "Eastern Plaguelands: road (Aerie Peaks Rock Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\Aerie Peaks\\AeriePeaksRockRoadBase.blp",
+      "width": 4.65,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 0.55,
+      "patchy": 0,
+      "shoulder": {
+        "texture": "Tileset\\Aerie Peaks\\AeriePeaksRockyMudBase.blp",
+        "extra": 3.1,
+        "softEdge": 4.15,
+        "strength": 0.9
+      },
+      "ground": "Tileset\\Aerie Peaks\\AeriePeaksScrubBrushBase.blp",
+      "measuredLength": 142,
+      "pieces": 1,
+      "example": [
+        3503.9,
+        -4540.9,
+        180.5
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-eastplaguedbaseground",
+      "name": "Eastern Plaguelands: trail (East Plagued Base Ground)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "width": 5.4,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.15,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedCracks.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseRock.blp",
+      "measuredLength": 411450,
+      "pieces": 699,
+      "example": [
+        2363.3,
+        -2948.2,
+        190.3
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-eastplaguedbasedirt",
+      "name": "Eastern Plaguelands: trail (East Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+      "width": 5.1,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.25,
+      "patchy": 0.3,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 164593,
+      "pieces": 538,
+      "example": [
+        1827.9,
+        -3460.7,
+        116.3
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-westplaguedbasedirt",
+      "name": "Eastern Plaguelands: trail (West Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\PlagueLandsWest\\WestPlaguedBaseDirt.blp",
+      "width": 5.05,
+      "softEdge": 10,
+      "strength": 0.7,
+      "ragged": 1.05,
+      "patchy": 0.25,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 4447,
+      "pieces": 31,
+      "example": [
+        1766.4,
+        -4657.6,
+        67.8
+      ]
+    },
+    {
+      "id": "eastern-plaguelands-wetlandsdirt01",
+      "name": "Eastern Plaguelands: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Eastern Plaguelands",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 4,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 2.25,
+      "patchy": 0.4,
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 3746,
+      "pieces": 37,
+      "example": [
+        4174.7,
+        -5190.9,
+        -28.6
+      ]
+    },
+    {
+      "id": "elwynn-forest-elwynncobblestonebase",
+      "name": "Elwynn Forest: road (Elwynn Cobble Stone Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Elwynn Forest",
+      "texture": "Tileset\\Elwynn\\ElwynnCobbleStoneBase.blp",
+      "width": 4.2,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.75,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Elwynn\\ElwynnDirtBase2.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Elwynn\\ElwynnGrassBase.blp",
+      "measuredLength": 10079,
+      "pieces": 15,
+      "example": [
+        -9345.1,
+        177.9,
+        63.8
+      ]
+    },
+    {
+      "id": "elwynn-forest-elwynndirtbase2",
+      "name": "Elwynn Forest: trail (Elwynn Dirt Base2)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Elwynn Forest",
+      "texture": "Tileset\\Elwynn\\ElwynnDirtBase2.blp",
+      "width": 4.1,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.65,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\Elwynn\\ElwynnRockBaseTest2.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Elwynn\\ElwynnGrassBase.blp",
+      "measuredLength": 136589,
+      "pieces": 729,
+      "example": [
+        -9950.3,
+        -1285.7,
+        27.4
+      ]
+    },
+    {
+      "id": "elwynn-forest-burningsteppsash01",
+      "name": "Elwynn Forest: trail (Burning Stepps Ash01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Elwynn Forest",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "width": 8.5,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.3,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\BurningStepps\\BurningSteppsRock01.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\Elwynn\\ElwynnRockBaseTest2.blp",
+      "measuredLength": 4103,
+      "pieces": 10,
+      "example": [
+        -8146.1,
+        -484.6,
+        261.6
+      ]
+    },
+    {
+      "id": "hillsbrad-foothills-alteracrockroadbase",
+      "name": "Hillsbrad Foothills: road (Alterac Rock Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Hillsbrad Foothills",
+      "texture": "Tileset\\AlteracMtns\\AlteracRockRoadBase.blp",
+      "width": 2.65,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 4314,
+      "pieces": 21,
+      "example": [
+        -658.6,
+        -1334.6,
+        63.4
+      ]
+    },
+    {
+      "id": "hillsbrad-foothills-silverpineroad",
+      "name": "Hillsbrad Foothills: road (Silver Pine Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Hillsbrad Foothills",
+      "texture": "Tileset\\SilverPine\\SilverPineRoad.blp",
+      "width": 2.55,
+      "softEdge": 6.25,
+      "strength": 0.7,
+      "ragged": 1.3,
+      "patchy": 0.45,
+      "ground": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "measuredLength": 522,
+      "pieces": 1,
+      "example": [
+        -881.5,
+        1562.2,
+        32.1
+      ]
+    },
+    {
+      "id": "hillsbrad-foothills-alteracdirtbase02",
+      "name": "Hillsbrad Foothills: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Hillsbrad Foothills",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 4.9,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.7,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.45
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 133154,
+      "pieces": 868,
+      "example": [
+        -1283.6,
+        -855.5,
+        -6.2
+      ]
+    },
+    {
+      "id": "hillsbrad-foothills-wetlandsdirt01",
+      "name": "Hillsbrad Foothills: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Hillsbrad Foothills",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8.95,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.4,
+      "patchy": 0.25,
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 39633,
+      "pieces": 42,
+      "example": [
+        -1906.5,
+        -798.2,
+        -173.8
+      ]
+    },
+    {
+      "id": "hillsbrad-foothills-alteracrubblebase",
+      "name": "Hillsbrad Foothills: trail (Alterac Rubble Base)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Hillsbrad Foothills",
+      "texture": "Tileset\\AlteracMtns\\AlteracRubbleBase.blp",
+      "width": 2.95,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.45,
+      "patchy": 0.4,
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 6147,
+      "pieces": 53,
+      "example": [
+        -477.3,
+        -1354.4,
+        52.4
+      ]
+    },
+    {
+      "id": "hillsbrad-foothills-silverpinedirt",
+      "name": "Hillsbrad Foothills: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Hillsbrad Foothills",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 6.2,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1.75,
+      "patchy": 0.35,
+      "ground": "Tileset\\SilverPine\\SilverPineRock.blp",
+      "measuredLength": 5076,
+      "pieces": 17,
+      "example": [
+        -727.3,
+        826.8,
+        239.7
+      ]
+    },
+    {
+      "id": "loch-modan-lochmodanbrickroadbase",
+      "name": "Loch Modan: road (Loch Modan Brick Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Loch Modan",
+      "texture": "Tileset\\Loch Modan\\LochModanBrickRoadBase.blp",
+      "width": 2.35,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.5,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\Loch Modan\\LochModanDirt.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Loch Modan\\LochModanScrubBrushBase.blp",
+      "measuredLength": 780,
+      "pieces": 5,
+      "example": [
+        -5359.6,
+        -2947.1,
+        332.7
+      ]
+    },
+    {
+      "id": "loch-modan-lochmodandirt",
+      "name": "Loch Modan: trail (Loch Modan Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Loch Modan",
+      "texture": "Tileset\\Loch Modan\\LochModanDirt.blp",
+      "width": 5.05,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 1.4,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Loch Modan\\LochModanScrubBrushBase.blp",
+        "extra": 6.25,
+        "softEdge": 4.15,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Loch Modan\\LochModanRockBase.blp",
+      "measuredLength": 136959,
+      "pieces": 321,
+      "example": [
+        -5619,
+        -3965.9,
+        324.8
+      ]
+    },
+    {
+      "id": "loch-modan-lochmodangraveldirtalpha",
+      "name": "Loch Modan: trail (Loch Modan Gravel Dirt Alpha)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Loch Modan",
+      "texture": "Tileset\\Loch Modan\\LochModanGravelDirtAlpha.blp",
+      "width": 3.35,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 1.45,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\Loch Modan\\LochModanDirt.blp",
+        "extra": 6.25,
+        "softEdge": 4.15,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Loch Modan\\LochModanRockBase.blp",
+      "measuredLength": 11138,
+      "pieces": 133,
+      "example": [
+        -4993,
+        -4123.2,
+        327.9
+      ]
+    },
+    {
+      "id": "redridge-mountains-redridgerockroadbase",
+      "name": "Redridge Mountains: road (Redridge Rock Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Redridge Mountains",
+      "texture": "Tileset\\RedRidge\\RedridgeRockRoadBase.blp",
+      "width": 4.45,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 0.6,
+      "patchy": 0.15,
+      "ground": "Tileset\\RedRidge\\RedridgeGrassDirtBase.blp",
+      "measuredLength": 3627,
+      "pieces": 9,
+      "example": [
+        -9683.6,
+        -1791.9,
+        55.6
+      ]
+    },
+    {
+      "id": "redridge-mountains-redridgedirtbase",
+      "name": "Redridge Mountains: trail (Redridge Dirt Base)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Redridge Mountains",
+      "texture": "Tileset\\RedRidge\\RedridgeDirtBase.blp",
+      "width": 4.95,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1.85,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\RedRidge\\RedridgeRockBase.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\RedRidge\\RedridgeGrassDirtBase.blp",
+      "measuredLength": 108339,
+      "pieces": 405,
+      "example": [
+        -8754.4,
+        -2361.7,
+        155.9
+      ]
+    },
+    {
+      "id": "searing-gorge-burningsteppsash01",
+      "name": "Searing Gorge: trail (Burning Stepps Ash01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Searing Gorge",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "width": 6.5,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.9,
+      "patchy": 0.45,
+      "ground": "Tileset\\BurningStepps\\BurningSteppsRock01.blp",
+      "measuredLength": 136491,
+      "pieces": 253,
+      "example": [
+        -6644,
+        -1314.8,
+        261.3
+      ]
+    },
+    {
+      "id": "silverpine-forest-silverpineroad",
+      "name": "Silverpine Forest: road (Silver Pine Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Silverpine Forest",
+      "texture": "Tileset\\SilverPine\\SilverPineRoad.blp",
+      "width": 3.15,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.1,
+      "patchy": 0.4,
+      "ground": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "measuredLength": 8842,
+      "pieces": 34,
+      "example": [
+        -264.8,
+        1179.9,
+        63.8
+      ]
+    },
+    {
+      "id": "silverpine-forest-silverpinedirt",
+      "name": "Silverpine Forest: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Silverpine Forest",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 6.15,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.8,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\SilverPine\\SilverPineRock.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\SilverPine\\SilverPineGrass.blp",
+      "measuredLength": 260662,
+      "pieces": 552,
+      "example": [
+        -261.7,
+        835.2,
+        77.3
+      ]
+    },
+    {
+      "id": "silverpine-forest-alteracdirtbase02",
+      "name": "Silverpine Forest: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Silverpine Forest",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 4.55,
+      "softEdge": 10,
+      "strength": 0.95,
+      "ragged": 1.35,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\SilverPine\\SilverPineGrass.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "measuredLength": 33615,
+      "pieces": 42,
+      "example": [
+        825.8,
+        310.2,
+        17.6
+      ]
+    },
+    {
+      "id": "stormwind-city-elwynndirtbase2",
+      "name": "Stormwind City: trail (Elwynn Dirt Base2)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Stormwind City",
+      "texture": "Tileset\\Elwynn\\ElwynnDirtBase2.blp",
+      "width": 5.6,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 2.05,
+      "patchy": 0.45,
+      "ground": "Tileset\\Elwynn\\ElwynnRockBaseTest2.blp",
+      "measuredLength": 6501,
+      "pieces": 31,
+      "example": [
+        -8969,
+        475.8,
+        48.4
+      ]
+    },
+    {
+      "id": "stranglethorn-vale-stranglethorncobblestoneroad",
+      "name": "Stranglethorn Vale: road (Strangle Thorn Cobble Stone Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Stranglethorn Vale",
+      "texture": "Tileset\\Stranglethorn\\StrangleThornCobbleStoneRoad.blp",
+      "width": 2.65,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.35,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\Stranglethorn\\StrangleThornDirt03.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Stranglethorn\\StrangleThornplantsAlpha01.blp",
+      "measuredLength": 10897,
+      "pieces": 56,
+      "example": [
+        -13202.3,
+        276.8,
+        21.9
+      ]
+    },
+    {
+      "id": "stranglethorn-vale-zulgurubroad01",
+      "name": "Stranglethorn Vale: road (Zul Gurub Road01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Stranglethorn Vale",
+      "texture": "Tileset\\ZulGurub\\ZulGurubRoad01.blp",
+      "width": 3.2,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.25,
+      "patchy": 0.4,
+      "ground": "Tileset\\ZulGurub\\ZulGurubDirt01.blp",
+      "measuredLength": 7062,
+      "pieces": 41,
+      "example": [
+        -12155.5,
+        -1466.9,
+        130.6
+      ]
+    },
+    {
+      "id": "stranglethorn-vale-wetlandsdirt01",
+      "name": "Stranglethorn Vale: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Stranglethorn Vale",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 7.3,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Westwood\\WestfallSandBaseWet.blp",
+      "measuredLength": 315989,
+      "pieces": 135,
+      "example": [
+        -12523.2,
+        1340.4,
+        -80.4
+      ]
+    },
+    {
+      "id": "stranglethorn-vale-zulgurubdirt01",
+      "name": "Stranglethorn Vale: trail (Zul Gurub Dirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Stranglethorn Vale",
+      "texture": "Tileset\\ZulGurub\\ZulGurubDirt01.blp",
+      "width": 5.4,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 2.1,
+      "patchy": 0.45,
+      "ground": "Tileset\\ZulGurub\\ZulGurubRock01.blp",
+      "measuredLength": 52942,
+      "pieces": 292,
+      "example": [
+        -11940.9,
+        -1368,
+        71.6
+      ]
+    },
+    {
+      "id": "stranglethorn-vale-duskwooddirt",
+      "name": "Stranglethorn Vale: trail (Duskwood Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Stranglethorn Vale",
+      "texture": "Tileset\\Duskwood\\DuskwoodDirt.blp",
+      "width": 3.35,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 1.4,
+      "patchy": 0.4,
+      "ground": "Tileset\\Duskwood\\DuskwoodRock.blp",
+      "measuredLength": 1931,
+      "pieces": 11,
+      "example": [
+        -11329.4,
+        -1130.5,
+        145.1
+      ]
+    },
+    {
+      "id": "swamp-of-sorrows-swampsorrowsstoneroad07",
+      "name": "Swamp of Sorrows: road (Swamp Sorrows Stone Road07)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Swamp of Sorrows",
+      "texture": "Tileset\\Swamp of Sorrows\\SwampSorrowsStoneRoad07.blp",
+      "width": 3.55,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.15,
+      "patchy": 0.35,
+      "ground": "Tileset\\Swamp of Sorrows\\SwampSorrowsMuckdark01.blp",
+      "measuredLength": 10841,
+      "pieces": 53,
+      "example": [
+        -10482.6,
+        -3866.9,
+        -15.7
+      ]
+    },
+    {
+      "id": "swamp-of-sorrows-swampsorrowsdirt02",
+      "name": "Swamp of Sorrows: trail (Swamp Sorrowsdirt02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Swamp of Sorrows",
+      "texture": "Tileset\\Swamp of Sorrows\\SwampSorrowsdirt02.blp",
+      "width": 7.85,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 0.95,
+      "patchy": 0.25,
+      "ground": "Tileset\\Swamp of Sorrows\\SwampSorrowsMuckdark01.blp",
+      "measuredLength": 9501,
+      "pieces": 97,
+      "example": [
+        -9879.4,
+        -4453.4,
+        -5.4
+      ]
+    },
+    {
+      "id": "swamp-of-sorrows-wetlandsdirt01",
+      "name": "Swamp of Sorrows: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Swamp of Sorrows",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 6.75,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1.85,
+      "patchy": 0.3,
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 6601,
+      "pieces": 41,
+      "example": [
+        -12743,
+        -3064.8,
+        -294.8
+      ]
+    },
+    {
+      "id": "the-hinterlands-alteracrockroadbase",
+      "name": "The Hinterlands: road (Alterac Rock Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "The Hinterlands",
+      "texture": "Tileset\\AlteracMtns\\AlteracRockRoadBase.blp",
+      "width": 3.5,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.8,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Aerie Peaks\\AeriePeaksRockyMudBase.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Loch Modan\\LochModanGrassBase.blp",
+      "measuredLength": 2543,
+      "pieces": 14,
+      "example": [
+        -305.5,
+        -3814.8,
+        238.5
+      ]
+    },
+    {
+      "id": "the-hinterlands-aeriepeaksrockroadbase",
+      "name": "The Hinterlands: road (Aerie Peaks Rock Road Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "The Hinterlands",
+      "texture": "Tileset\\Aerie Peaks\\AeriePeaksRockRoadBase.blp",
+      "width": 3.05,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 0.95,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Aerie Peaks\\AeriePeaksRockyMudBase.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Aerie Peaks\\AeriePeaksScrubBrushBase.blp",
+      "measuredLength": 2376,
+      "pieces": 15,
+      "example": [
+        219.5,
+        -2068,
+        125.6
+      ]
+    },
+    {
+      "id": "the-hinterlands-aeriepeakstrolltile",
+      "name": "The Hinterlands: road (Aerie Peaks Troll Tile)",
+      "kind": "road",
+      "map": 0,
+      "zone": "The Hinterlands",
+      "texture": "Tileset\\Aerie Peaks\\AeriePeaksTrollTile.blp",
+      "width": 3.35,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.4,
+      "patchy": 0.6,
+      "shoulder": {
+        "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\Loch Modan\\LochModanGrassBase.blp",
+      "measuredLength": 842,
+      "pieces": 10,
+      "example": [
+        -512.8,
+        -3869,
+        227.5
+      ]
+    },
+    {
+      "id": "the-hinterlands-wetlandsdirt01",
+      "name": "The Hinterlands: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "The Hinterlands",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 7.1,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.7,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Generic\\UnderwaterRock01.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 99169,
+      "pieces": 68,
+      "example": [
+        267.4,
+        -5058.6,
+        -48.8
+      ]
+    },
+    {
+      "id": "tirisfal-glades-tirisfallstoneroad01",
+      "name": "Tirisfal Glades: road (Tiris Fall Stone Road01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Tirisfal Glades",
+      "texture": "Tileset\\TirisFall\\TirisFallStoneRoad01.blp",
+      "width": 3.75,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.75,
+      "patchy": 0.2,
+      "ground": "Tileset\\TirisFall\\TirisFallRockyMudGrass.blp",
+      "measuredLength": 8793,
+      "pieces": 34,
+      "example": [
+        1974.7,
+        231,
+        36
+      ]
+    },
+    {
+      "id": "tirisfal-glades-silverpineroad",
+      "name": "Tirisfal Glades: road (Silver Pine Road)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Tirisfal Glades",
+      "texture": "Tileset\\SilverPine\\SilverPineRoad.blp",
+      "width": 3.8,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 0.55,
+      "patchy": 0.2,
+      "ground": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "measuredLength": 434,
+      "pieces": 2,
+      "example": [
+        1542.4,
+        597.7,
+        43
+      ]
+    },
+    {
+      "id": "tirisfal-glades-wetlandsdirt01",
+      "name": "Tirisfal Glades: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Tirisfal Glades",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 5.7,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.9,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Westwood\\WestFallRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\TirisFall\\TirisfallShore.blp",
+      "measuredLength": 48334,
+      "pieces": 77,
+      "example": [
+        2991.4,
+        1851.8,
+        -36.5
+      ]
+    },
+    {
+      "id": "tirisfal-glades-silverpinedirt",
+      "name": "Tirisfal Glades: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Tirisfal Glades",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 5.4,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.95,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\SilverPine\\SilverPineGrass.blp",
+        "extra": 2.1,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\SilverPine\\SilverPineRock.blp",
+      "measuredLength": 45024,
+      "pieces": 22,
+      "example": [
+        1883.1,
+        2509.1,
+        131.3
+      ]
+    },
+    {
+      "id": "tirisfal-glades-alteracdirtbase02",
+      "name": "Tirisfal Glades: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Tirisfal Glades",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 12,
+      "softEdge": 10,
+      "strength": 1,
+      "ragged": 1.25,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\SilverPine\\SilverPineGrass.blp",
+        "extra": 12,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\SilverPine\\SilverPineShore.blp",
+      "measuredLength": 9523,
+      "pieces": 6,
+      "example": [
+        1413.3,
+        261.2,
+        61.6
+      ]
+    },
+    {
+      "id": "western-plaguelands-tirisfallstoneroad01",
+      "name": "Western Plaguelands: road (Tiris Fall Stone Road01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\TirisFall\\TirisFallStoneRoad01.blp",
+      "width": 3.5,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.25,
+      "patchy": 0.3,
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedMudGrass.blp",
+      "measuredLength": 12630,
+      "pieces": 27,
+      "example": [
+        1407,
+        -1456.5,
+        55.9
+      ]
+    },
+    {
+      "id": "western-plaguelands-duskwoodcobblestone",
+      "name": "Western Plaguelands: road (Duskwood Cobblestone)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\Duskwood\\DuskwoodCobblestone.blp",
+      "width": 3.05,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLands\\PlaguedEarthcreep01.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "measuredLength": 1529,
+      "pieces": 4,
+      "example": [
+        1160.2,
+        -2573.2,
+        62
+      ]
+    },
+    {
+      "id": "western-plaguelands-duskwooddirt2",
+      "name": "Western Plaguelands: trail (Duskwood Dirt2)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "width": 8.75,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.35,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\TirisFall\\TirisFallRockyMudGrassHighlight.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedDirtRock.blp",
+      "measuredLength": 40916,
+      "pieces": 41,
+      "example": [
+        1346.6,
+        -2333.6,
+        12.9
+      ]
+    },
+    {
+      "id": "western-plaguelands-silverpinedirt",
+      "name": "Western Plaguelands: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 3.75,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.85,
+      "patchy": 0.7,
+      "shoulder": {
+        "texture": "Tileset\\Duskwallow Marsh\\DuskwallowMuck.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedMudGrass.blp",
+      "measuredLength": 22490,
+      "pieces": 23,
+      "example": [
+        1462.2,
+        -1678.4,
+        69.1
+      ]
+    },
+    {
+      "id": "western-plaguelands-westplaguedbasedirt",
+      "name": "Western Plaguelands: trail (West Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\PlagueLandsWest\\WestPlaguedBaseDirt.blp",
+      "width": 5.35,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.1,
+      "patchy": 0.2,
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedMudGrass.blp",
+      "measuredLength": 10566,
+      "pieces": 61,
+      "example": [
+        2362.2,
+        -1869,
+        120.6
+      ]
+    },
+    {
+      "id": "western-plaguelands-alteracdirtbase02",
+      "name": "Western Plaguelands: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 3.4,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.75,
+      "patchy": 0.6,
+      "ground": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+      "measuredLength": 8890,
+      "pieces": 29,
+      "example": [
+        1319.5,
+        -650.3,
+        188.2
+      ]
+    },
+    {
+      "id": "western-plaguelands-eastplaguedbasedirt",
+      "name": "Western Plaguelands: trail (East Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+      "width": 9.25,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.2,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "measuredLength": 5185,
+      "pieces": 7,
+      "example": [
+        1324.7,
+        -3015.9,
+        44.8
+      ]
+    },
+    {
+      "id": "western-plaguelands-eastplaguedbaseground",
+      "name": "Western Plaguelands: trail (East Plagued Base Ground)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "width": 3.6,
+      "softEdge": 6.25,
+      "strength": 0.7,
+      "ragged": 1,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseRock.blp",
+      "measuredLength": 3794,
+      "pieces": 24,
+      "example": [
+        1142.4,
+        -3080.5,
+        63.2
+      ]
+    },
+    {
+      "id": "western-plaguelands-alteracrubblebase",
+      "name": "Western Plaguelands: trail (Alterac Rubble Base)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Western Plaguelands",
+      "texture": "Tileset\\AlteracMtns\\AlteracRubbleBase.blp",
+      "width": 2.75,
+      "softEdge": 8.35,
+      "strength": 0.75,
+      "ragged": 1.35,
+      "patchy": 0.55,
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "measuredLength": 1752,
+      "pieces": 28,
+      "example": [
+        1153.9,
+        -2585.7,
+        62
+      ]
+    },
+    {
+      "id": "westfall-westfallcobblestonebase",
+      "name": "Westfall: road (West Fall Cobble Stone Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Westfall",
+      "texture": "Tileset\\Westwood\\WestFallCobbleStoneBase.blp",
+      "width": 2.3,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 2.05,
+      "patchy": 0.55,
+      "ground": "Tileset\\Westwood\\WestFallDirtBase.blp",
+      "measuredLength": 2248,
+      "pieces": 15,
+      "example": [
+        -10586.7,
+        988.3,
+        42.1
+      ]
+    },
+    {
+      "id": "westfall-elwynncobblestonebase",
+      "name": "Westfall: road (Elwynn Cobble Stone Base)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Westfall",
+      "texture": "Tileset\\Elwynn\\ElwynnCobbleStoneBase.blp",
+      "width": 2.3,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 0.75,
+      "patchy": 0.5,
+      "ground": "Tileset\\Westwood\\WestFallGrassBase.blp",
+      "measuredLength": 309,
+      "pieces": 1,
+      "example": [
+        -9850.3,
+        907,
+        30.3
+      ]
+    },
+    {
+      "id": "westfall-westfalldirtbase",
+      "name": "Westfall: trail (West Fall Dirt Base)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Westfall",
+      "texture": "Tileset\\Westwood\\WestFallDirtBase.blp",
+      "width": 3.05,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 2,
+      "patchy": 0.65,
+      "ground": "Tileset\\Westwood\\WestFallGrassBase.blp",
+      "measuredLength": 248691,
+      "pieces": 170,
+      "example": [
+        -10965.9,
+        1353.9,
+        41.3
+      ]
+    },
+    {
+      "id": "westfall-wetlandsdirt01",
+      "name": "Westfall: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Westfall",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 7.1,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.35,
+      "ground": "Tileset\\Westwood\\WestFallRockBase.blp",
+      "measuredLength": 186433,
+      "pieces": 127,
+      "example": [
+        -11484.6,
+        2415.4,
+        -132.3
+      ]
+    },
+    {
+      "id": "wetlands-wetlandsroad01",
+      "name": "Wetlands: road (Wetlandsroad01)",
+      "kind": "road",
+      "map": 0,
+      "zone": "Wetlands",
+      "texture": "Tileset\\Wetlands\\Wetlandsroad01.blp",
+      "width": 2.45,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 1.25,
+      "patchy": 0.4,
+      "ground": "Tileset\\Wetlands\\Wetlandsdirtmoss01.blp",
+      "measuredLength": 4806,
+      "pieces": 49,
+      "example": [
+        -2919,
+        -2429.4,
+        32.4
+      ]
+    },
+    {
+      "id": "wetlands-wetlandsdirt01",
+      "name": "Wetlands: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Wetlands",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 6.95,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.55,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.35
+      },
+      "ground": "Tileset\\Wetlands\\Wetlandsdirtmoss01.blp",
+      "measuredLength": 241590,
+      "pieces": 237,
+      "example": [
+        -3438.8,
+        -774.2,
+        -10.8
+      ]
+    },
+    {
+      "id": "wetlands-lochmodandirt",
+      "name": "Wetlands: trail (Loch Modan Dirt)",
+      "kind": "trail",
+      "map": 0,
+      "zone": "Wetlands",
+      "texture": "Tileset\\Loch Modan\\LochModanDirt.blp",
+      "width": 7.4,
+      "softEdge": 4.15,
+      "strength": 1,
+      "ragged": 1.55,
+      "patchy": 0.2,
+      "ground": "Tileset\\Loch Modan\\LochModanRockBase.blp",
+      "measuredLength": 1555,
+      "pieces": 12,
+      "example": [
+        -5909.6,
+        -4340.9,
+        497
+      ]
+    },
+    {
+      "id": "desolacedirtfootprints",
+      "name": ": road (Desolace Dirt Foot Prints)",
+      "kind": "road",
+      "map": 1,
+      "zone": "",
+      "texture": "Tileset\\Desolace\\DesolaceDirtFootPrints.blp",
+      "width": 9.9,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.65,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Desolace\\DesolaceRock01.blp",
+        "extra": 12,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\Desolace\\DesolaceSand01.blp",
+      "measuredLength": 9921,
+      "pieces": 16,
+      "example": [
+        -2527.3,
+        1165.4,
+        116.3
+      ]
+    },
+    {
+      "id": "burningsteppsbrick01",
+      "name": ": road (Burning Stepps Brick01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsBrick01.blp",
+      "width": 8.4,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Silithis\\SilithisSand01.blp",
+        "extra": 9.4,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandHighlight.blp",
+      "measuredLength": 9753,
+      "pieces": 31,
+      "example": [
+        -8626.3,
+        1462.2,
+        31.9
+      ]
+    },
+    {
+      "id": "ashenvale-kalidarroad",
+      "name": "Ashenvale: road (Kalidar Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Ashenvale",
+      "texture": "Tileset\\Kalidar\\KalidarRoad.blp",
+      "width": 3,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.9,
+      "patchy": 0.35,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 17057,
+      "pieces": 68,
+      "example": [
+        2990.4,
+        -1831.5,
+        166.8
+      ]
+    },
+    {
+      "id": "ashenvale-darkshoreroad",
+      "name": "Ashenvale: road (Darkshore Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Ashenvale",
+      "texture": "Tileset\\Darkshore\\DarkshoreRoad.blp",
+      "width": 2.1,
+      "softEdge": 6.25,
+      "strength": 0.7,
+      "ragged": 1.3,
+      "patchy": 0.3,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 181,
+      "pieces": 2,
+      "example": [
+        3483.1,
+        475.8,
+        0.4
+      ]
+    },
+    {
+      "id": "ashenvale-wetlandsdirt01",
+      "name": "Ashenvale: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Ashenvale",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 7.9,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.8,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Generic\\UnderwaterGrass02.blp",
+        "extra": 1.05,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 65816,
+      "pieces": 49,
+      "example": [
+        3474.7,
+        1857,
+        -115.6
+      ]
+    },
+    {
+      "id": "ashenvale-deadwindpassdirt",
+      "name": "Ashenvale: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Ashenvale",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 4.3,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.4,
+      "patchy": 0.65,
+      "shoulder": {
+        "texture": "Tileset\\Deadwind Pass\\DeadwindPassRockBase.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Kalidar\\KalidarRock.blp",
+      "measuredLength": 19054,
+      "pieces": 89,
+      "example": [
+        1557,
+        -2944,
+        181.7
+      ]
+    },
+    {
+      "id": "ashenvale-felwooddirt",
+      "name": "Ashenvale: trail (Felwood Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Ashenvale",
+      "texture": "Tileset\\Felwood\\FelwoodDirt.blp",
+      "width": 3.45,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.85,
+      "patchy": 0.65,
+      "shoulder": {
+        "texture": "Tileset\\Duskwood\\DuskwoodRockBase.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 14229,
+      "pieces": 68,
+      "example": [
+        2332,
+        277.9,
+        214.7
+      ]
+    },
+    {
+      "id": "ashenvale-ashzaradirt",
+      "name": "Ashenvale: trail (Ashzara Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Ashenvale",
+      "texture": "Tileset\\Ashzara\\AshzaraDirt.blp",
+      "width": 3.9,
+      "softEdge": 4.15,
+      "strength": 0.75,
+      "ragged": 1.25,
+      "patchy": 0.45,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 1556,
+      "pieces": 20,
+      "example": [
+        2300.8,
+        -3622.1,
+        40.3
+      ]
+    },
+    {
+      "id": "azshara-ashzararoad",
+      "name": "Azshara: road (Ashzara Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Azshara",
+      "texture": "Tileset\\Ashzara\\AshzaraRoad.blp",
+      "width": 2.8,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.05,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Ashzara\\AshzaraDirt.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Ashzara\\AshzaraGrass.blp",
+      "measuredLength": 3353,
+      "pieces": 16,
+      "example": [
+        3523.7,
+        -5162.8,
+        82.4
+      ]
+    },
+    {
+      "id": "azshara-wetlandsdirt01",
+      "name": "Azshara: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Azshara",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.7,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Westwood\\WestFallRockBase.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\Darkshore\\DarkshoreSand.blp",
+      "measuredLength": 400765,
+      "pieces": 259,
+      "example": [
+        3462.2,
+        -7202.3,
+        -19.4
+      ]
+    },
+    {
+      "id": "azshara-ashzaradirt",
+      "name": "Azshara: trail (Ashzara Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Azshara",
+      "texture": "Tileset\\Ashzara\\AshzaraDirt.blp",
+      "width": 3.95,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.95,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Ashzara\\AshzaraGrass.blp",
+      "measuredLength": 185178,
+      "pieces": 1006,
+      "example": [
+        2375.8,
+        -4046.1,
+        270.5
+      ]
+    },
+    {
+      "id": "azshara-arathihighlandsrubblebase",
+      "name": "Azshara: trail (Arathi Highlands Rubble Base)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Azshara",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+      "width": 3.4,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.4,
+      "patchy": 0.4,
+      "ground": "Tileset\\Ashzara\\AshzaraGrass.blp",
+      "measuredLength": 2131,
+      "pieces": 36,
+      "example": [
+        3079.9,
+        -4160.7,
+        102
+      ]
+    },
+    {
+      "id": "darkshore-kalidarroad",
+      "name": "Darkshore: road (Kalidar Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Darkshore",
+      "texture": "Tileset\\Kalidar\\KalidarRoad.blp",
+      "width": 3.05,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 0.4,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Kalidar\\KalidarFerns.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Kalidar\\KalidarLeaf.blp",
+      "measuredLength": 519,
+      "pieces": 2,
+      "example": [
+        4163.3,
+        62.2,
+        27.6
+      ]
+    },
+    {
+      "id": "darkshore-darkshoreroad",
+      "name": "Darkshore: road (Darkshore Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Darkshore",
+      "texture": "Tileset\\Darkshore\\DarkshoreRoad.blp",
+      "width": 2.4,
+      "softEdge": 8.35,
+      "strength": 0.7,
+      "ragged": 1.6,
+      "patchy": 0.5,
+      "ground": "Tileset\\Darkshore\\DarkshoreDirt.blp",
+      "measuredLength": 248,
+      "pieces": 4,
+      "example": [
+        6437.2,
+        486.2,
+        -7.4
+      ]
+    },
+    {
+      "id": "darkshore-wetlandsdirt01",
+      "name": "Darkshore: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Darkshore",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 6.1,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.85,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\Darkshore\\DarkshoreRockLighter.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\Darkshore\\DarkshoreSand.blp",
+      "measuredLength": 322112,
+      "pieces": 277,
+      "example": [
+        6670.6,
+        835.2,
+        -20.1
+      ]
+    },
+    {
+      "id": "darnassus-kalidardarnroad",
+      "name": "Darnassus: road (Kalidar Darn Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Darnassus",
+      "texture": "Tileset\\Kalidar\\KalidarDarnRoad.blp",
+      "width": 3.9,
+      "softEdge": 4.15,
+      "strength": 1,
+      "ragged": 0.95,
+      "patchy": 0.2,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 3387,
+      "pieces": 13,
+      "example": [
+        9764.3,
+        2295.6,
+        1327.5
+      ]
+    },
+    {
+      "id": "darnassus-kalidarwoodgold",
+      "name": "Darnassus: trail (Kalidar Wood Gold)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Darnassus",
+      "texture": "Tileset\\Kalidar\\KalidarWoodGold.blp",
+      "width": 2.9,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.5,
+      "patchy": 0.5,
+      "ground": "Tileset\\Kalidar\\KalidarWoodDarker.blp",
+      "measuredLength": 3758,
+      "pieces": 38,
+      "example": [
+        10425.8,
+        2438.3,
+        1412.4
+      ]
+    },
+    {
+      "id": "desolace-desolacedirtfootprints",
+      "name": "Desolace: road (Desolace Dirt Foot Prints)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Desolace",
+      "texture": "Tileset\\Desolace\\DesolaceDirtFootPrints.blp",
+      "width": 5.9,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.25,
+      "patchy": 0.2,
+      "ground": "Tileset\\Desolace\\DesolaceSand01.blp",
+      "measuredLength": 40037,
+      "pieces": 418,
+      "example": [
+        -50.3,
+        665.4,
+        91.4
+      ]
+    },
+    {
+      "id": "desolace-wetlandsdirt01",
+      "name": "Desolace: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Desolace",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 5.95,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.95,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\Swamp of Sorrows\\SwampSorrowsMuckdark05.blp",
+        "extra": 2.1,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Desolace\\DesolaceRock01.blp",
+      "measuredLength": 269425,
+      "pieces": 293,
+      "example": [
+        -1857.6,
+        2970.6,
+        16.4
+      ]
+    },
+    {
+      "id": "durotar-durotarroad",
+      "name": "Durotar: road (Durotar Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Durotar",
+      "texture": "Tileset\\Durotar\\DurotarRoad.blp",
+      "width": 5.2,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.3,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Durotar\\DurotarRock.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Durotar\\DurotarDirt.blp",
+      "measuredLength": 29709,
+      "pieces": 126,
+      "example": [
+        285.2,
+        -4626.3,
+        34.9
+      ]
+    },
+    {
+      "id": "durotar-durotardirt",
+      "name": "Durotar: trail (Durotar Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Durotar",
+      "texture": "Tileset\\Durotar\\DurotarDirt.blp",
+      "width": 2.75,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 2.15,
+      "patchy": 0.75,
+      "shoulder": {
+        "texture": "Tileset\\Durotar\\DurotarRock.blp",
+        "extra": 6.25,
+        "softEdge": 4.15,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\Durotar\\DurotarDirtSmooth.blp",
+      "measuredLength": 290792,
+      "pieces": 635,
+      "example": [
+        -260.7,
+        -4097.1,
+        135.3
+      ]
+    },
+    {
+      "id": "durotar-durotardirtsmooth",
+      "name": "Durotar: trail (Durotar Dirt Smooth)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Durotar",
+      "texture": "Tileset\\Durotar\\DurotarDirtSmooth.blp",
+      "width": 2.2,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 2.6,
+      "patchy": 0.8,
+      "ground": "Tileset\\Durotar\\DurotarDirt.blp",
+      "measuredLength": 264547,
+      "pieces": 414,
+      "example": [
+        311.2,
+        -3855.5,
+        26
+      ]
+    },
+    {
+      "id": "durotar-barrensbasedirt",
+      "name": "Durotar: trail (Barrens Base Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Durotar",
+      "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "width": 6.95,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.8,
+      "patchy": 0.35,
+      "ground": "Tileset\\Westwood\\WestFallRockBase.blp",
+      "measuredLength": 232165,
+      "pieces": 185,
+      "example": [
+        -1341.9,
+        -5064.8,
+        -9.6
+      ]
+    },
+    {
+      "id": "durotar-ashzaradirt",
+      "name": "Durotar: trail (Ashzara Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Durotar",
+      "texture": "Tileset\\Ashzara\\AshzaraDirt.blp",
+      "width": 11.3,
+      "softEdge": 8.35,
+      "strength": 0.9,
+      "ragged": 1.85,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Ashzara\\AshzaraGrass.blp",
+      "measuredLength": 20227,
+      "pieces": 26,
+      "example": [
+        2373.7,
+        -4497.1,
+        309.3
+      ]
+    },
+    {
+      "id": "durotar-wetlandsdirt01",
+      "name": "Durotar: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Durotar",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 10.25,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.4,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Westwood\\WestFallRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "measuredLength": 3700,
+      "pieces": 10,
+      "example": [
+        1568.5,
+        -5688.8,
+        -244.8
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-duskwallowstoneroad",
+      "name": "Dustwallow Marsh: road (Duskwallow Stone Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\Duskwallow Marsh\\DuskwallowStoneRoad.blp",
+      "width": 4.4,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 0.7,
+      "patchy": 0.15,
+      "shoulder": {
+        "texture": "Tileset\\Duskwallow Marsh\\DuskwallowVines.blp",
+        "extra": 6.25,
+        "softEdge": 4.15,
+        "strength": 1
+      },
+      "ground": "Tileset\\Duskwallow Marsh\\DuskwallowMuck.blp",
+      "measuredLength": 5959,
+      "pieces": 24,
+      "example": [
+        -3958.6,
+        -2770.1,
+        34.7
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-duskwoodcobblestone",
+      "name": "Dustwallow Marsh: road (Duskwood Cobblestone)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\Duskwood\\DuskwoodCobblestone.blp",
+      "width": 5.25,
+      "softEdge": 4.15,
+      "strength": 1,
+      "ragged": 0.9,
+      "patchy": 0.15,
+      "shoulder": {
+        "texture": "Tileset\\Elwynn\\ElwynnGrassBase.blp",
+        "extra": 10.4,
+        "softEdge": 4.15,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase.blp",
+      "measuredLength": 1527,
+      "pieces": 3,
+      "example": [
+        -3802.3,
+        -4454.4,
+        14.3
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-wetlandsdirt01",
+      "name": "Dustwallow Marsh: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8.6,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.8,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Westwood\\WestFallRockBase.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Stranglethorn\\StrangleThornDirt03.blp",
+      "measuredLength": 97001,
+      "pieces": 71,
+      "example": [
+        -3461.7,
+        -5089.8,
+        -44.4
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-duskwallowdirt",
+      "name": "Dustwallow Marsh: trail (Duskwallow Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\Duskwallow Marsh\\DuskwallowDirt.blp",
+      "width": 5.5,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.45,
+      "patchy": 0.4,
+      "ground": "Tileset\\Duskwallow Marsh\\DuskwallowVines.blp",
+      "measuredLength": 26748,
+      "pieces": 70,
+      "example": [
+        -4902.3,
+        -3473.2,
+        37.9
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-feralasdirt",
+      "name": "Dustwallow Marsh: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 6.3,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.5,
+      "patchy": 0.3,
+      "ground": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "measuredLength": 10343,
+      "pieces": 38,
+      "example": [
+        -2838.8,
+        -5031.5,
+        65
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-alteracdirtbase",
+      "name": "Dustwallow Marsh: trail (Alterac Dirt Base)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase.blp",
+      "width": 6.55,
+      "softEdge": 6.25,
+      "strength": 0.95,
+      "ragged": 2.05,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Elwynn\\ElwynnGrassBase.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+      "measuredLength": 5499,
+      "pieces": 18,
+      "example": [
+        -3831.5,
+        -4487.8,
+        13.9
+      ]
+    },
+    {
+      "id": "dustwallow-marsh-barrensbasedirt",
+      "name": "Dustwallow Marsh: trail (Barrens Base Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Dustwallow Marsh",
+      "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "width": 6.2,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.45,
+      "patchy": 0.25,
+      "ground": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "measuredLength": 3955,
+      "pieces": 28,
+      "example": [
+        -3123.2,
+        -2870.1,
+        34.6
+      ]
+    },
+    {
+      "id": "felwood-felwoodroad",
+      "name": "Felwood: road (Felwood Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Felwood",
+      "texture": "Tileset\\Felwood\\FelwoodRoad.blp",
+      "width": 3.35,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.7,
+      "patchy": 0.25,
+      "ground": "Tileset\\Felwood\\FelwoodDirt.blp",
+      "measuredLength": 8844,
+      "pieces": 23,
+      "example": [
+        6220.6,
+        -845.1,
+        417.6
+      ]
+    },
+    {
+      "id": "felwood-felwooddirt",
+      "name": "Felwood: trail (Felwood Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Felwood",
+      "texture": "Tileset\\Felwood\\FelwoodDirt.blp",
+      "width": 4.55,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 1.7,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\Duskwood\\DuskwoodRockBase.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\Felwood\\FelwoodRootsCorrupt.blp",
+      "measuredLength": 342626,
+      "pieces": 1138,
+      "example": [
+        3928.9,
+        -745.1,
+        309.5
+      ]
+    },
+    {
+      "id": "feralas-feralasroad",
+      "name": "Feralas: road (Feralas Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Feralas",
+      "texture": "Tileset\\Feralas\\FeralasRoad.blp",
+      "width": 2.85,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 0.95,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasBrush.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\Feralas\\FeralasDirt.blp",
+      "measuredLength": 7715,
+      "pieces": 40,
+      "example": [
+        -2983.6,
+        2243.5,
+        36.2
+      ]
+    },
+    {
+      "id": "feralas-feralasdirt",
+      "name": "Feralas: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Feralas",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 4,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.95,
+      "patchy": 0.55,
+      "ground": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+      "measuredLength": 573493,
+      "pieces": 1888,
+      "example": [
+        -5598.2,
+        1336.2,
+        28
+      ]
+    },
+    {
+      "id": "feralas-alteracdirtbase02",
+      "name": "Feralas: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Feralas",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 7.3,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.65,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "measuredLength": 254708,
+      "pieces": 276,
+      "example": [
+        -4018,
+        3444.5,
+        -65.9
+      ]
+    },
+    {
+      "id": "feralas-wetlandsdirt01",
+      "name": "Feralas: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Feralas",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8.4,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.5,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 187452,
+      "pieces": 322,
+      "example": [
+        -3469,
+        3569.5,
+        -398.9
+      ]
+    },
+    {
+      "id": "feralas-alteracrubblebase",
+      "name": "Feralas: trail (Alterac Rubble Base)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Feralas",
+      "texture": "Tileset\\AlteracMtns\\AlteracRubbleBase.blp",
+      "width": 3.55,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.4,
+      "patchy": 0.5,
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 14036,
+      "pieces": 49,
+      "example": [
+        -4930.5,
+        3443.5,
+        14.8
+      ]
+    },
+    {
+      "id": "gates-of-ahn-qiraj-burningsteppsbrick01",
+      "name": "Gates of Ahn\u0027Qiraj: road (Burning Stepps Brick01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Gates of Ahn\u0027Qiraj",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsBrick01.blp",
+      "width": 7,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Silithis\\SilithisSand01.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.75
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandHighlight.blp",
+      "measuredLength": 2693,
+      "pieces": 11,
+      "example": [
+        -8263.8,
+        1513.3,
+        -0.4
+      ]
+    },
+    {
+      "id": "hyjal-alphahyjalroad",
+      "name": "Hyjal: road (Alpha Hyjal Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Hyjal",
+      "texture": "Tileset\\Hyjal\\AlphaHyjalRoad.blp",
+      "width": 3.6,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.7,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Hyjal\\HyjalGrassBase.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Hyjal\\HyjalDirtRock.blp",
+      "measuredLength": 7129,
+      "pieces": 30,
+      "example": [
+        4506,
+        -3471.1,
+        996.6
+      ]
+    },
+    {
+      "id": "hyjal-burningsteppsspireroad01",
+      "name": "Hyjal: road (Burning Stepps Spire Road01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Hyjal",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsSpireRoad01.blp",
+      "width": 2.85,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.05,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+        "extra": 9.4,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsRock02.blp",
+      "measuredLength": 752,
+      "pieces": 7,
+      "example": [
+        5296.6,
+        -3111.7,
+        1585.6
+      ]
+    },
+    {
+      "id": "hyjal-burningsteppsash01",
+      "name": "Hyjal: trail (Burning Stepps Ash01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Hyjal",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "width": 3.1,
+      "softEdge": 10,
+      "strength": 0.7,
+      "ragged": 1.65,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\BurningStepps\\BurningSteppsRock02.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsRock01.blp",
+      "measuredLength": 15155,
+      "pieces": 146,
+      "example": [
+        5393.5,
+        -3114.8,
+        1582.5
+      ]
+    },
+    {
+      "id": "moonglade-kalidardarnroad",
+      "name": "Moonglade: road (Kalidar Darn Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Moonglade",
+      "texture": "Tileset\\Kalidar\\KalidarDarnRoad.blp",
+      "width": 5,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 0.95,
+      "patchy": 0.1,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 2649,
+      "pieces": 10,
+      "example": [
+        7692.4,
+        -2266.9,
+        456
+      ]
+    },
+    {
+      "id": "mulgore-mullgoreroad01",
+      "name": "Mulgore: road (Mullgore Road01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Mulgore",
+      "texture": "Tileset\\Mullgore\\MullgoreRoad01.blp",
+      "width": 2.65,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 0.9,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Mullgore\\MullgoreBaseDirt.blp",
+        "extra": 2.1,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Mullgore\\MullgoreBaseGrass.blp",
+      "measuredLength": 4653,
+      "pieces": 20,
+      "example": [
+        -2362.8,
+        -829.4,
+        -8.6
+      ]
+    },
+    {
+      "id": "mulgore-barrensroad01",
+      "name": "Mulgore: road (Barrens Road01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Mulgore",
+      "texture": "Tileset\\Barrens\\BarrensRoad01.blp",
+      "width": 2.9,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.1,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Mullgore\\MullgoreBaseGrass.blp",
+      "measuredLength": 265,
+      "pieces": 1,
+      "example": [
+        -2344,
+        -1531.5,
+        43.4
+      ]
+    },
+    {
+      "id": "mulgore-mullgorebasedirt",
+      "name": "Mulgore: trail (Mullgore Base Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Mulgore",
+      "texture": "Tileset\\Mullgore\\MullgoreBaseDirt.blp",
+      "width": 6.25,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\Mullgore\\MullgoreRockSolid.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Mullgore\\MullgoreBaseGrass.blp",
+      "measuredLength": 191163,
+      "pieces": 404,
+      "example": [
+        -2957.6,
+        -1277.3,
+        72.2
+      ]
+    },
+    {
+      "id": "mulgore-barrensbasedirt",
+      "name": "Mulgore: trail (Barrens Base Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Mulgore",
+      "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "width": 4.15,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.45,
+      "patchy": 0.35,
+      "ground": "Tileset\\Mullgore\\MullgoreBaseDirt.blp",
+      "measuredLength": 10590,
+      "pieces": 31,
+      "example": [
+        -1866.9,
+        -1338.8,
+        243.8
+      ]
+    },
+    {
+      "id": "orgrimmar-durotardirt",
+      "name": "Orgrimmar: trail (Durotar Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Orgrimmar",
+      "texture": "Tileset\\Durotar\\DurotarDirt.blp",
+      "width": 6.75,
+      "softEdge": 2.1,
+      "strength": 0.95,
+      "ragged": 1.85,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\Durotar\\DurotarRock.blp",
+        "extra": 6.25,
+        "softEdge": 2.1,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Durotar\\DurotarDirtSmooth.blp",
+      "measuredLength": 13377,
+      "pieces": 15,
+      "example": [
+        1477.9,
+        -4133.6,
+        11.9
+      ]
+    },
+    {
+      "id": "orgrimmar-durotardirtsmooth",
+      "name": "Orgrimmar: trail (Durotar Dirt Smooth)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Orgrimmar",
+      "texture": "Tileset\\Durotar\\DurotarDirtSmooth.blp",
+      "width": 2.35,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 3,
+      "patchy": 0.8,
+      "ground": "Tileset\\Durotar\\DurotarDirt.blp",
+      "measuredLength": 8010,
+      "pieces": 2,
+      "example": [
+        1493.5,
+        -4397.1,
+        8.8
+      ]
+    },
+    {
+      "id": "silithus-burningsteppsbrick01",
+      "name": "Silithus: road (Burning Stepps Brick01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Silithus",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsBrick01.blp",
+      "width": 6.4,
+      "softEdge": 10,
+      "strength": 0.95,
+      "ragged": 1.15,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Silithis\\SilithisSandDetail.blp",
+        "extra": 2.1,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandHighlight.blp",
+      "measuredLength": 1545,
+      "pieces": 11,
+      "example": [
+        -8055.5,
+        1519.5,
+        2.6
+      ]
+    },
+    {
+      "id": "silithus-tanarispurplebug03",
+      "name": "Silithus: trail (Tanaris Purple Bug03)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Silithus",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+      "width": 3.2,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 2.7,
+      "patchy": 0.75,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandDetail.blp",
+      "measuredLength": 53077,
+      "pieces": 103,
+      "example": [
+        -7288.8,
+        1732,
+        -32.8
+      ]
+    },
+    {
+      "id": "silithus-feralasdirt",
+      "name": "Silithus: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Silithus",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 9.1,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1.95,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasRockBrown.blp",
+        "extra": 5.2,
+        "softEdge": 4.15,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Silithis\\SilithisSand01.blp",
+      "measuredLength": 19399,
+      "pieces": 15,
+      "example": [
+        -7761.7,
+        -291.9,
+        -134.3
+      ]
+    },
+    {
+      "id": "silithus-tanarispurplebug01",
+      "name": "Silithus: trail (Tanaris Purple Bug01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Silithus",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+      "width": 2.85,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.7,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandDetail.blp",
+      "measuredLength": 10189,
+      "pieces": 43,
+      "example": [
+        -7786.7,
+        448.7,
+        -40.7
+      ]
+    },
+    {
+      "id": "silithus-deadwindpassdirt",
+      "name": "Silithus: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Silithus",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 3.55,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 2.05,
+      "patchy": 0.7,
+      "shoulder": {
+        "texture": "Tileset\\Deadwind Pass\\DeadwindPassShale.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Silithis\\SilithisSand01.blp",
+      "measuredLength": 9599,
+      "pieces": 19,
+      "example": [
+        -6258.6,
+        1737.2,
+        11.7
+      ]
+    },
+    {
+      "id": "silithus-wetlandsdirt01",
+      "name": "Silithus: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Silithus",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 6.05,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 2,
+      "patchy": 0.3,
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 8579,
+      "pieces": 66,
+      "example": [
+        -10573.2,
+        2622.7,
+        -507.7
+      ]
+    },
+    {
+      "id": "tanaris-cobrapillartile01",
+      "name": "Tanaris: road (Cobra Pillar Tile01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\The Badlands\\CobraPillarTile01.blp",
+      "width": 6.35,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.05,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisCrackedGround.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Tanaris\\TanarisSandBase01.blp",
+      "measuredLength": 554,
+      "pieces": 4,
+      "example": [
+        -9564.8,
+        -2775.3,
+        8.6
+      ]
+    },
+    {
+      "id": "tanaris-tanarisdirtfootprint",
+      "name": "Tanaris: road (Tanaris Dirt Footprint)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\Tanaris\\TanarisDirtFootprint.blp",
+      "width": 2.6,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1,
+      "patchy": 0.1,
+      "ground": "Tileset\\Tanaris\\TanarisSandStones.blp",
+      "measuredLength": 352,
+      "pieces": 2,
+      "example": [
+        -7277.3,
+        -3602.3,
+        12.4
+      ]
+    },
+    {
+      "id": "tanaris-wetlandsdirt01",
+      "name": "Tanaris: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8.5,
+      "softEdge": 8.35,
+      "strength": 0.9,
+      "ragged": 1.7,
+      "patchy": 0.3,
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 284809,
+      "pieces": 333,
+      "example": [
+        -7712.8,
+        -5638.8,
+        -172
+      ]
+    },
+    {
+      "id": "tanaris-tanarispurplebug01",
+      "name": "Tanaris: trail (Tanaris Purple Bug01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+      "width": 3.35,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.45,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandDetail.blp",
+      "measuredLength": 30477,
+      "pieces": 141,
+      "example": [
+        -8219,
+        -2489.8,
+        8.9
+      ]
+    },
+    {
+      "id": "tanaris-tanarispurplebug03",
+      "name": "Tanaris: trail (Tanaris Purple Bug03)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+      "width": 3.35,
+      "softEdge": 8.35,
+      "strength": 0.9,
+      "ragged": 2.35,
+      "patchy": 0.75,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.45
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandDetail.blp",
+      "measuredLength": 23146,
+      "pieces": 52,
+      "example": [
+        -8784.6,
+        -4008.6,
+        10.1
+      ]
+    },
+    {
+      "id": "tanaris-tanarispurplebug02",
+      "name": "Tanaris: trail (Tanaris Purple Bug02)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug02.blp",
+      "width": 2.6,
+      "softEdge": 4.15,
+      "strength": 0.8,
+      "ragged": 2,
+      "patchy": 0.6,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisRockBase01.blp",
+        "extra": 4.15,
+        "softEdge": 4.15,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Tanaris\\TanarisSandBase01.blp",
+      "measuredLength": 5104,
+      "pieces": 42,
+      "example": [
+        -8052.3,
+        -2450.3,
+        10.1
+      ]
+    },
+    {
+      "id": "tanaris-feralasdirt",
+      "name": "Tanaris: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Tanaris",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 5.45,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.45,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasRockBrown.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Tanaris\\TanarisSandBase01.blp",
+      "measuredLength": 4400,
+      "pieces": 4,
+      "example": [
+        -8166.9,
+        -2190.9,
+        -60.4
+      ]
+    },
+    {
+      "id": "teldrassil-kalidarroad",
+      "name": "Teldrassil: road (Kalidar Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Teldrassil",
+      "texture": "Tileset\\Kalidar\\KalidarRoad.blp",
+      "width": 2.4,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.75,
+      "patchy": 0.3,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 3632,
+      "pieces": 29,
+      "example": [
+        9868.5,
+        886.2,
+        1308.7
+      ]
+    },
+    {
+      "id": "teldrassil-kalidarwooddarker",
+      "name": "Teldrassil: trail (Kalidar Wood Darker)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Teldrassil",
+      "texture": "Tileset\\Kalidar\\KalidarWoodDarker.blp",
+      "width": 2.7,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 3,
+      "patchy": 0.8,
+      "shoulder": {
+        "texture": "Tileset\\Kalidar\\KalidarWood.blp",
+        "extra": 2.1,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 802311,
+      "pieces": 80,
+      "example": [
+        9323.7,
+        290.4,
+        307.7
+      ]
+    },
+    {
+      "id": "teldrassil-wetlandsdirt01",
+      "name": "Teldrassil: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Teldrassil",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 9.4,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.5,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Darkshore\\DarkshoreRockLighter.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 317499,
+      "pieces": 708,
+      "example": [
+        8236.2,
+        798.7,
+        -297.8
+      ]
+    },
+    {
+      "id": "teldrassil-kalidarwood",
+      "name": "Teldrassil: trail (Kalidar Wood)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Teldrassil",
+      "texture": "Tileset\\Kalidar\\KalidarWood.blp",
+      "width": 2.3,
+      "softEdge": 2.1,
+      "strength": 0.7,
+      "ragged": 2.1,
+      "patchy": 0.45,
+      "ground": "Tileset\\Kalidar\\KalidarWoodDarker.blp",
+      "measuredLength": 10151,
+      "pieces": 245,
+      "example": [
+        9317.4,
+        460.2,
+        1095.8
+      ]
+    },
+    {
+      "id": "teldrassil-kalidarwoodgold",
+      "name": "Teldrassil: trail (Kalidar Wood Gold)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Teldrassil",
+      "texture": "Tileset\\Kalidar\\KalidarWoodGold.blp",
+      "width": 3,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.5,
+      "patchy": 0.45,
+      "ground": "Tileset\\Kalidar\\KalidarWoodDarker.blp",
+      "measuredLength": 8091,
+      "pieces": 88,
+      "example": [
+        9079.9,
+        1746.6,
+        1327.1
+      ]
+    },
+    {
+      "id": "the-barrens-barrensroad01",
+      "name": "The Barrens: road (Barrens Road01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "The Barrens",
+      "texture": "Tileset\\Barrens\\BarrensRoad01.blp",
+      "width": 3,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 0.95,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Barrens\\BarrensBaseGrassGrey.blp",
+      "measuredLength": 27406,
+      "pieces": 90,
+      "example": [
+        -976.3,
+        -3522.1,
+        53.6
+      ]
+    },
+    {
+      "id": "the-barrens-duskwallowstoneroad",
+      "name": "The Barrens: road (Duskwallow Stone Road)",
+      "kind": "road",
+      "map": 1,
+      "zone": "The Barrens",
+      "texture": "Tileset\\Duskwallow Marsh\\DuskwallowStoneRoad.blp",
+      "width": 3.2,
+      "softEdge": 4.15,
+      "strength": 0.8,
+      "ragged": 0.85,
+      "patchy": 0.15,
+      "shoulder": {
+        "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+        "extra": 2.1,
+        "softEdge": 4.15,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Barrens\\BarrensBaseGrassGrey.blp",
+      "measuredLength": 111,
+      "pieces": 1,
+      "example": [
+        -1977.3,
+        -3682.6,
+        17.8
+      ]
+    },
+    {
+      "id": "the-barrens-barrensbasedirt",
+      "name": "The Barrens: trail (Barrens Base Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "The Barrens",
+      "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "width": 4.15,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.65,
+      "patchy": 0.45,
+      "ground": "Tileset\\Barrens\\BarrensBaseGrassGrey.blp",
+      "measuredLength": 646554,
+      "pieces": 3057,
+      "example": [
+        -1920.1,
+        -5604.4,
+        -64.1
+      ]
+    },
+    {
+      "id": "the-barrens-feralasdirt",
+      "name": "The Barrens: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "The Barrens",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 3.45,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.55,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasBrush.blp",
+        "extra": 12,
+        "softEdge": 6,
+        "strength": 0.45
+      },
+      "ground": "Tileset\\Feralas\\FeralasBrushCol.blp",
+      "measuredLength": 16171,
+      "pieces": 75,
+      "example": [
+        -1333.6,
+        -2850.3,
+        93.5
+      ]
+    },
+    {
+      "id": "thousand-needles-desolacedirtfootprints",
+      "name": "Thousand Needles: road (Desolace Dirt Foot Prints)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Thousand Needles",
+      "texture": "Tileset\\Desolace\\DesolaceDirtFootPrints.blp",
+      "width": 2.55,
+      "softEdge": 6.25,
+      "strength": 0.7,
+      "ragged": 2.7,
+      "patchy": 0.6,
+      "ground": "Tileset\\ThousandNeedles\\ThousandNeedlesSaltFlats.blp",
+      "measuredLength": 2247,
+      "pieces": 17,
+      "example": [
+        -5632.6,
+        -3554.4,
+        -58.4
+      ]
+    },
+    {
+      "id": "thunder-bluff-mullgoreroad01",
+      "name": "Thunder Bluff: road (Mullgore Road01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Thunder Bluff",
+      "texture": "Tileset\\Mullgore\\MullgoreRoad01.blp",
+      "width": 3.35,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Mullgore\\MullgoreBaseGrass.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Mullgore\\MullgoreBaseDirt.blp",
+      "measuredLength": 3235,
+      "pieces": 17,
+      "example": [
+        -1193,
+        -59.6,
+        164.5
+      ]
+    },
+    {
+      "id": "thunder-bluff-mullgorebasedirt",
+      "name": "Thunder Bluff: trail (Mullgore Base Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Thunder Bluff",
+      "texture": "Tileset\\Mullgore\\MullgoreBaseDirt.blp",
+      "width": 3.4,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 1.9,
+      "patchy": 0.75,
+      "shoulder": {
+        "texture": "Tileset\\Mullgore\\MullgoreRockSolid.blp",
+        "extra": 4.15,
+        "softEdge": 4.15,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\Mullgore\\MullgoreBaseGrass.blp",
+      "measuredLength": 28530,
+      "pieces": 79,
+      "example": [
+        -1311.7,
+        -108.6,
+        161
+      ]
+    },
+    {
+      "id": "un-goro-crater-feralasdirt",
+      "name": "Un\u0027Goro Crater: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Un\u0027Goro Crater",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 5.2,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 1.95,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasRockBrown.blp",
+        "extra": 5.2,
+        "softEdge": 4.15,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Feralas\\FeralasBrush.blp",
+      "measuredLength": 444850,
+      "pieces": 403,
+      "example": [
+        -7197.1,
+        -2396.1,
+        -196.5
+      ]
+    },
+    {
+      "id": "un-goro-crater-felwooddirt",
+      "name": "Un\u0027Goro Crater: trail (Felwood Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Un\u0027Goro Crater",
+      "texture": "Tileset\\Felwood\\FelwoodDirt.blp",
+      "width": 8.4,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.5,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasRockBrown.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\Feralas\\FeralasBrush.blp",
+      "measuredLength": 11810,
+      "pieces": 33,
+      "example": [
+        -7194,
+        -1328.4,
+        -184.4
+      ]
+    },
+    {
+      "id": "winterspring-burningsteppsspireroad01",
+      "name": "Winterspring: road (Burning Stepps Spire Road01)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Winterspring",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsSpireRoad01.blp",
+      "width": 4.3,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 0.5,
+      "patchy": 0.1,
+      "ground": "Tileset\\BurningStepps\\BurningSteppsCharcoal01.blp",
+      "measuredLength": 2322,
+      "pieces": 7,
+      "example": [
+        4438.3,
+        -4382.6,
+        907.3
+      ]
+    },
+    {
+      "id": "winterspring-winterspringfootprints",
+      "name": "Winterspring: road (Winterspring Footprints)",
+      "kind": "road",
+      "map": 1,
+      "zone": "Winterspring",
+      "texture": "Tileset\\Winterspring Grove\\WinterspringFootprints.blp",
+      "width": 3.35,
+      "softEdge": 10,
+      "strength": 0.7,
+      "ragged": 1.35,
+      "patchy": 0.35,
+      "ground": "Tileset\\IronForge\\IronForgeSnow01solid.blp",
+      "measuredLength": 144,
+      "pieces": 2,
+      "example": [
+        6537.2,
+        -4104.4,
+        658.3
+      ]
+    },
+    {
+      "id": "winterspring-burningsteppsash01",
+      "name": "Winterspring: trail (Burning Stepps Ash01)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Winterspring",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "width": 6,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.5,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\BurningStepps\\BurningSteppsCharcoal01.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 1
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsRock01.blp",
+      "measuredLength": 25963,
+      "pieces": 263,
+      "example": [
+        4402.9,
+        -4419,
+        901.2
+      ]
+    },
+    {
+      "id": "winterspring-winterspringdirt",
+      "name": "Winterspring: trail (Winterspring Dirt)",
+      "kind": "trail",
+      "map": 1,
+      "zone": "Winterspring",
+      "texture": "Tileset\\Winterspring Grove\\WinterspringDirt.blp",
+      "width": 8,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 0.7,
+      "patchy": 0.1,
+      "ground": "Tileset\\IronForge\\IronForgeSnow01solid.blp",
+      "measuredLength": 12985,
+      "pieces": 45,
+      "example": [
+        6723.7,
+        -4555.5,
+        723.5
+      ]
+    },
+    {
+      "id": "alterac-valley-winterspringdirt",
+      "name": "Alterac Valley: trail (Winterspring Dirt)",
+      "kind": "trail",
+      "map": 30,
+      "zone": "Alterac Valley",
+      "texture": "Tileset\\Winterspring Grove\\WinterspringDirt.blp",
+      "width": 4.9,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 1.4,
+      "patchy": 0.25,
+      "ground": "Tileset\\IronForge\\IronForgeSnow01solid.blp",
+      "measuredLength": 17490,
+      "pieces": 81,
+      "example": [
+        -788.8,
+        -384.6,
+        68
+      ]
+    },
+    {
+      "id": "alterac-valley-blastedlandsdirt01",
+      "name": "Alterac Valley: trail (Blasted Lands Dirt01)",
+      "kind": "trail",
+      "map": 30,
+      "zone": "Alterac Valley",
+      "texture": "Tileset\\The Blasted Lands\\BlastedLandsDirt01.blp",
+      "width": 13.3,
+      "softEdge": 10,
+      "strength": 0.95,
+      "ragged": 1.55,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\The Badlands\\BadlandsRock.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.9
+      },
+      "ground": "Tileset\\Winterspring Grove\\WinterspringSnowRipple.blp",
+      "measuredLength": 4040,
+      "pieces": 3,
+      "example": [
+        200.8,
+        -1243,
+        0
+      ]
+    },
+    {
+      "id": "alterac-valley-deadwindpassdirt",
+      "name": "Alterac Valley: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 30,
+      "zone": "Alterac Valley",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 3.35,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.4,
+      "patchy": 0.55,
+      "ground": "Tileset\\Deadwind Pass\\DeadwindPassRockBase.blp",
+      "measuredLength": 3076,
+      "pieces": 27,
+      "example": [
+        644.5,
+        717.4,
+        146.9
+      ]
+    },
+    {
+      "id": "shadowfang-keep-silverpineroad",
+      "name": "Shadowfang Keep: road (Silver Pine Road)",
+      "kind": "road",
+      "map": 33,
+      "zone": "Shadowfang Keep",
+      "texture": "Tileset\\SilverPine\\SilverPineRoad.blp",
+      "width": 3.2,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.1,
+      "patchy": 0.4,
+      "ground": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "measuredLength": 7309,
+      "pieces": 25,
+      "example": [
+        -264.8,
+        1713.3,
+        63.8
+      ]
+    },
+    {
+      "id": "shadowfang-keep-alteracrockroadbase",
+      "name": "Shadowfang Keep: road (Alterac Rock Road Base)",
+      "kind": "road",
+      "map": 33,
+      "zone": "Shadowfang Keep",
+      "texture": "Tileset\\AlteracMtns\\AlteracRockRoadBase.blp",
+      "width": 9.4,
+      "softEdge": 2.1,
+      "strength": 1,
+      "ragged": 0.45,
+      "patchy": 0,
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 186,
+      "pieces": 1,
+      "example": [
+        -643,
+        1115.4,
+        77.5
+      ]
+    },
+    {
+      "id": "shadowfang-keep-silverpinedirt",
+      "name": "Shadowfang Keep: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 33,
+      "zone": "Shadowfang Keep",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 5.8,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.8,
+      "patchy": 0.45,
+      "ground": "Tileset\\SilverPine\\SilverPineRock.blp",
+      "measuredLength": 172673,
+      "pieces": 384,
+      "example": [
+        -262.8,
+        1368.5,
+        77.3
+      ]
+    },
+    {
+      "id": "the-deadmines-deadwindpassdirt",
+      "name": "The Deadmines: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 36,
+      "zone": "The Deadmines",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 3.85,
+      "softEdge": 2.1,
+      "strength": 0.85,
+      "ragged": 2.15,
+      "patchy": 0.55,
+      "ground": "Tileset\\Deadwind Pass\\DeadwindPassWeeds.blp",
+      "measuredLength": 272882,
+      "pieces": 92,
+      "example": [
+        -804.4,
+        -266.9,
+        357.8
+      ]
+    },
+    {
+      "id": "azshara-crater-ashzararoad",
+      "name": "Azshara Crater: road (Ashzara Road)",
+      "kind": "road",
+      "map": 37,
+      "zone": "Azshara Crater",
+      "texture": "Tileset\\Ashzara\\AshzaraRoad.blp",
+      "width": 2.3,
+      "softEdge": 6.25,
+      "strength": 0.7,
+      "ragged": 1.75,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Ashzara\\AshzaraDirt.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Ashzara\\AshzaraGrass.blp",
+      "measuredLength": 877,
+      "pieces": 9,
+      "example": [
+        968.5,
+        267.4,
+        327.6
+      ]
+    },
+    {
+      "id": "azshara-crater-ashzaradirt",
+      "name": "Azshara Crater: trail (Ashzara Dirt)",
+      "kind": "trail",
+      "map": 37,
+      "zone": "Azshara Crater",
+      "texture": "Tileset\\Ashzara\\AshzaraDirt.blp",
+      "width": 6.8,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.8,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Ashzara\\AshzaraGrass.blp",
+      "measuredLength": 214945,
+      "pieces": 196,
+      "example": [
+        275.8,
+        810.2,
+        252.1
+      ]
+    },
+    {
+      "id": "razorfen-kraul-barrensroad01",
+      "name": "Razorfen Kraul: road (Barrens Road01)",
+      "kind": "road",
+      "map": 47,
+      "zone": "Razorfen Kraul",
+      "texture": "Tileset\\Barrens\\BarrensRoad01.blp",
+      "width": 2.85,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.05,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Barrens\\BarrensBaseGrassGrey.blp",
+      "measuredLength": 2192,
+      "pieces": 6,
+      "example": [
+        2445.6,
+        1158.1,
+        97
+      ]
+    },
+    {
+      "id": "razorfen-kraul-feralasroad",
+      "name": "Razorfen Kraul: road (Feralas Road)",
+      "kind": "road",
+      "map": 47,
+      "zone": "Razorfen Kraul",
+      "texture": "Tileset\\Feralas\\FeralasRoad.blp",
+      "width": 2.4,
+      "softEdge": 8.35,
+      "strength": 0.7,
+      "ragged": 1.15,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasBrush.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\Feralas\\FeralasDirt.blp",
+      "measuredLength": 237,
+      "pieces": 2,
+      "example": [
+        2053.9,
+        2622.7,
+        -15.6
+      ]
+    },
+    {
+      "id": "razorfen-kraul-barrensbasedirt",
+      "name": "Razorfen Kraul: trail (Barrens Base Dirt)",
+      "kind": "trail",
+      "map": 47,
+      "zone": "Razorfen Kraul",
+      "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "width": 3.85,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.65,
+      "patchy": 0.45,
+      "ground": "Tileset\\Barrens\\BarrensBaseGrassGrey.blp",
+      "measuredLength": 16671,
+      "pieces": 76,
+      "example": [
+        2548.7,
+        1378.9,
+        91.9
+      ]
+    },
+    {
+      "id": "razorfen-kraul-feralasdirt",
+      "name": "Razorfen Kraul: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 47,
+      "zone": "Razorfen Kraul",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 3.4,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.7,
+      "patchy": 0.65,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasBrush.blp",
+        "extra": 10.4,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\ThousandNeedles\\ThousandNeedlesDirt.blp",
+      "measuredLength": 15706,
+      "pieces": 47,
+      "example": [
+        2248.7,
+        2469.5,
+        -24.8
+      ]
+    },
+    {
+      "id": "zul-farrak-tanarisdirtfootprint",
+      "name": "Zul\u0027Farrak: road (Tanaris Dirt Footprint)",
+      "kind": "road",
+      "map": 209,
+      "zone": "Zul\u0027Farrak",
+      "texture": "Tileset\\Tanaris\\TanarisDirtFootprint.blp",
+      "width": 2.6,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1,
+      "patchy": 0.1,
+      "ground": "Tileset\\Tanaris\\TanarisSandStones.blp",
+      "measuredLength": 352,
+      "pieces": 2,
+      "example": [
+        722.7,
+        131,
+        12.4
+      ]
+    },
+    {
+      "id": "zul-farrak-desolacedirtfootprints",
+      "name": "Zul\u0027Farrak: road (Desolace Dirt Foot Prints)",
+      "kind": "road",
+      "map": 209,
+      "zone": "Zul\u0027Farrak",
+      "texture": "Tileset\\Desolace\\DesolaceDirtFootPrints.blp",
+      "width": 2.35,
+      "softEdge": 8.35,
+      "strength": 0.65,
+      "ragged": 2.6,
+      "patchy": 0.6,
+      "ground": "Tileset\\ThousandNeedles\\ThousandNeedlesSaltFlats.blp",
+      "measuredLength": 148,
+      "pieces": 2,
+      "example": [
+        1862.2,
+        142.4,
+        -58.7
+      ]
+    },
+    {
+      "id": "zul-farrak-cobrapillartile01",
+      "name": "Zul\u0027Farrak: road (Cobra Pillar Tile01)",
+      "kind": "road",
+      "map": 209,
+      "zone": "Zul\u0027Farrak",
+      "texture": "Tileset\\The Badlands\\CobraPillarTile01.blp",
+      "width": 4.9,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1.5,
+      "patchy": 0.1,
+      "ground": "Tileset\\Tanaris\\TanarisSandBase01.blp",
+      "measuredLength": 97,
+      "pieces": 2,
+      "example": [
+        1665.4,
+        1186.2,
+        -2.3
+      ]
+    },
+    {
+      "id": "zul-farrak-feralasdirt",
+      "name": "Zul\u0027Farrak: trail (Feralas Dirt)",
+      "kind": "trail",
+      "map": 209,
+      "zone": "Zul\u0027Farrak",
+      "texture": "Tileset\\Feralas\\FeralasDirt.blp",
+      "width": 5.7,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.85,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\Feralas\\FeralasRockBrown.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\Tanaris\\TanarisSandBase01.blp",
+      "measuredLength": 62055,
+      "pieces": 33,
+      "example": [
+        802.9,
+        1337.2,
+        -196.5
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-alteracrockroadbase",
+      "name": "Old Hillsbrad Foothills: road (Alterac Rock Road Base)",
+      "kind": "road",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\AlteracMtns\\AlteracRockRoadBase.blp",
+      "width": 2.65,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 1.25,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 7767,
+      "pieces": 54,
+      "example": [
+        2008.1,
+        265.4,
+        63.4
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-arathihighlandscityfloor",
+      "name": "Old Hillsbrad Foothills: road (Arathi Highlands City Floor)",
+      "kind": "road",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsCityFloor.blp",
+      "width": 4.25,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.45,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.8
+      },
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+      "measuredLength": 1939,
+      "pieces": 13,
+      "example": [
+        1118.5,
+        -170.1,
+        68.2
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-silverpineroad",
+      "name": "Old Hillsbrad Foothills: road (Silver Pine Road)",
+      "kind": "road",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\SilverPine\\SilverPineRoad.blp",
+      "width": 4.35,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.15,
+      "patchy": 0.3,
+      "ground": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "measuredLength": 1320,
+      "pieces": 7,
+      "example": [
+        2158.1,
+        2582,
+        93.2
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-aeriepeaksrockroadbase",
+      "name": "Old Hillsbrad Foothills: road (Aerie Peaks Rock Road Base)",
+      "kind": "road",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\Aerie Peaks\\AeriePeaksRockRoadBase.blp",
+      "width": 3.45,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 0.6,
+      "patchy": 0.2,
+      "ground": "Tileset\\Aerie Peaks\\AeriePeaksScrubBrushBase.blp",
+      "measuredLength": 1224,
+      "pieces": 6,
+      "example": [
+        2886.2,
+        -468,
+        125.6
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-ashenvaleroad",
+      "name": "Old Hillsbrad Foothills: road (Ashenvale Road)",
+      "kind": "road",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\Ashenvale\\AshenvaleRoad.blp",
+      "width": 2.7,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.35,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.85
+      },
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 466,
+      "pieces": 7,
+      "example": [
+        1283.1,
+        -472.1,
+        58.7
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-tirisfallstoneroad01",
+      "name": "Old Hillsbrad Foothills: road (Tiris Fall Stone Road01)",
+      "kind": "road",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\TirisFall\\TirisFallStoneRoad01.blp",
+      "width": 4.35,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 0.95,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsWest\\WestPlaguedBaseDirt.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedMudGrass.blp",
+      "measuredLength": 273,
+      "pieces": 2,
+      "example": [
+        3721.6,
+        188.3,
+        64
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-alteracdirtbase02",
+      "name": "Old Hillsbrad Foothills: trail (Alterac Dirt Base02)",
+      "kind": "trail",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "width": 4.7,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.7,
+      "patchy": 0.5,
+      "shoulder": {
+        "texture": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.45
+      },
+      "ground": "Tileset\\AlteracMtns\\AlteracGrassBase2.blp",
+      "measuredLength": 257720,
+      "pieces": 1168,
+      "example": [
+        3492.4,
+        1910.2,
+        17.6
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-silverpinedirt",
+      "name": "Old Hillsbrad Foothills: trail (Silver Pine Dirt)",
+      "kind": "trail",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\SilverPine\\SilverPineDirt.blp",
+      "width": 5.2,
+      "softEdge": 6.25,
+      "strength": 0.9,
+      "ragged": 1.8,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\SilverPine\\SilverPineRock.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.6
+      },
+      "ground": "Tileset\\SilverPine\\SilverPineGrass.blp",
+      "measuredLength": 79800,
+      "pieces": 196,
+      "example": [
+        2404.9,
+        2435.2,
+        77.3
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-wetlandsdirt01",
+      "name": "Old Hillsbrad Foothills: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8.55,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.4,
+      "patchy": 0.25,
+      "ground": "Tileset\\AlteracMtns\\AlteracRockBase.blp",
+      "measuredLength": 23786,
+      "pieces": 28,
+      "example": [
+        1215.4,
+        1335.2,
+        -276.8
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-arathihighlandsdirt",
+      "name": "Old Hillsbrad Foothills: trail (Arathi Highlands Dirt)",
+      "kind": "trail",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+      "width": 4.9,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.6,
+      "patchy": 0.4,
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 16955,
+      "pieces": 81,
+      "example": [
+        1927.9,
+        -313.8,
+        47.5
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-alteracrubblebase",
+      "name": "Old Hillsbrad Foothills: trail (Alterac Rubble Base)",
+      "kind": "trail",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\AlteracMtns\\AlteracRubbleBase.blp",
+      "width": 3.05,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 1.4,
+      "patchy": 0.4,
+      "ground": "Tileset\\AlteracMtns\\AlteracDirtBase02.blp",
+      "measuredLength": 8104,
+      "pieces": 98,
+      "example": [
+        2189.3,
+        245.6,
+        52.4
+      ]
+    },
+    {
+      "id": "old-hillsbrad-foothills-arathihighlandsrubblebase",
+      "name": "Old Hillsbrad Foothills: trail (Arathi Highlands Rubble Base)",
+      "kind": "trail",
+      "map": 269,
+      "zone": "Old Hillsbrad Foothills",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+      "width": 2.45,
+      "softEdge": 4.15,
+      "strength": 0.85,
+      "ragged": 2.35,
+      "patchy": 0.7,
+      "shoulder": {
+        "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsCityFloor.blp",
+        "extra": 7.3,
+        "softEdge": 4.15,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 2757,
+      "pieces": 32,
+      "example": [
+        1088.3,
+        -44,
+        69
+      ]
+    },
+    {
+      "id": "the-black-morass-swampsorrowsstoneroad07",
+      "name": "The Black Morass: road (Swamp Sorrows Stone Road07)",
+      "kind": "road",
+      "map": 269,
+      "zone": "The Black Morass",
+      "texture": "Tileset\\Swamp of Sorrows\\SwampSorrowsStoneRoad07.blp",
+      "width": 4.05,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.4,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\Swamp of Sorrows\\SwampSorrowsMuckdark01.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Swamp of Sorrows\\SwampSorrowsMuckdark02.blp",
+      "measuredLength": 205,
+      "pieces": 2,
+      "example": [
+        -2038.8,
+        7122.7,
+        23.5
+      ]
+    },
+    {
+      "id": "tirisfallstoneroad01",
+      "name": ": road (Tiris Fall Stone Road01)",
+      "kind": "road",
+      "map": 289,
+      "zone": "",
+      "texture": "Tileset\\TirisFall\\TirisFallStoneRoad01.blp",
+      "width": 3.7,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.75,
+      "patchy": 0.25,
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedMudGrass.blp",
+      "measuredLength": 2841,
+      "pieces": 5,
+      "example": [
+        793.5,
+        306,
+        59.9
+      ]
+    },
+    {
+      "id": "eastplaguedroadbase",
+      "name": ": road (East Plagued Road Base)",
+      "kind": "road",
+      "map": 289,
+      "zone": "",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedRoadBase.blp",
+      "width": 2.55,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.15,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 2093,
+      "pieces": 15,
+      "example": [
+        756,
+        -368,
+        76.3
+      ]
+    },
+    {
+      "id": "scholomance-duskwoodcobblestone",
+      "name": "Scholomance: road (Duskwood Cobblestone)",
+      "kind": "road",
+      "map": 289,
+      "zone": "Scholomance",
+      "texture": "Tileset\\Duskwood\\DuskwoodCobblestone.blp",
+      "width": 3.05,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 0.95,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLands\\PlaguedEarthcreep01.blp",
+        "extra": 11.45,
+        "softEdge": 6,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "measuredLength": 1528,
+      "pieces": 4,
+      "example": [
+        93.5,
+        93.5,
+        143.7
+      ]
+    },
+    {
+      "id": "scholomance-eastplaguedroadbase",
+      "name": "Scholomance: road (East Plagued Road Base)",
+      "kind": "road",
+      "map": 289,
+      "zone": "Scholomance",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedRoadBase.blp",
+      "width": 2,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 3,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 102,
+      "pieces": 2,
+      "example": [
+        367.4,
+        -1026.3,
+        79.3
+      ]
+    },
+    {
+      "id": "scholomance-duskwooddirt2",
+      "name": "Scholomance: trail (Duskwood Dirt2)",
+      "kind": "trail",
+      "map": 289,
+      "zone": "Scholomance",
+      "texture": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "width": 8.45,
+      "softEdge": 10,
+      "strength": 0.85,
+      "ragged": 1.35,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\TirisFall\\TirisFallRockyMudGrassHighlight.blp",
+        "extra": 3.1,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsWest\\WestPlaguedDirtRock.blp",
+      "measuredLength": 33737,
+      "pieces": 26,
+      "example": [
+        279.9,
+        333.1,
+        12.9
+      ]
+    },
+    {
+      "id": "scholomance-eastplaguedbaseground",
+      "name": "Scholomance: trail (East Plagued Base Ground)",
+      "kind": "trail",
+      "map": 289,
+      "zone": "Scholomance",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "width": 3.9,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.2,
+      "patchy": 0.45,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseRock.blp",
+      "measuredLength": 25955,
+      "pieces": 74,
+      "example": [
+        385.2,
+        -668,
+        152.6
+      ]
+    },
+    {
+      "id": "scholomance-eastplaguedbasedirt",
+      "name": "Scholomance: trail (East Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 289,
+      "zone": "Scholomance",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+      "width": 6.9,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.4,
+      "patchy": 0.3,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseRock.blp",
+      "measuredLength": 14546,
+      "pieces": 44,
+      "example": [
+        97.7,
+        -799.2,
+        129.5
+      ]
+    },
+    {
+      "id": "scholomance-alteracrubblebase",
+      "name": "Scholomance: trail (Alterac Rubble Base)",
+      "kind": "trail",
+      "map": 289,
+      "zone": "Scholomance",
+      "texture": "Tileset\\AlteracMtns\\AlteracRubbleBase.blp",
+      "width": 2.75,
+      "softEdge": 8.35,
+      "strength": 0.75,
+      "ragged": 1.35,
+      "patchy": 0.55,
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt2.blp",
+      "measuredLength": 1752,
+      "pieces": 28,
+      "example": [
+        87.2,
+        81,
+        143.7
+      ]
+    },
+    {
+      "id": "zul-gurub-zulgurubroad01",
+      "name": "Zul\u0027Gurub: road (Zul Gurub Road01)",
+      "kind": "road",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\ZulGurub\\ZulGurubRoad01.blp",
+      "width": 3.2,
+      "softEdge": 10,
+      "strength": 0.75,
+      "ragged": 1.25,
+      "patchy": 0.35,
+      "ground": "Tileset\\ZulGurub\\ZulGurubDirt01.blp",
+      "measuredLength": 6912,
+      "pieces": 42,
+      "example": [
+        -12155.5,
+        -1466.9,
+        130.6
+      ]
+    },
+    {
+      "id": "zul-gurub-blastedlandsroad",
+      "name": "Zul\u0027Gurub: road (Blasted Lands Road)",
+      "kind": "road",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\The Blasted Lands\\BlastedLandsRoad.blp",
+      "width": 3.9,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 0.7,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\The Blasted Lands\\BlastedLandsRockHighlight01.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\The Blasted Lands\\BlastedLandsDirt01.blp",
+      "measuredLength": 2937,
+      "pieces": 10,
+      "example": [
+        -11512.8,
+        -3044,
+        0.9
+      ]
+    },
+    {
+      "id": "zul-gurub-stranglethorncobblestoneroad",
+      "name": "Zul\u0027Gurub: road (Strangle Thorn Cobble Stone Road)",
+      "kind": "road",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\Stranglethorn\\StrangleThornCobbleStoneRoad.blp",
+      "width": 2.55,
+      "softEdge": 8.35,
+      "strength": 0.7,
+      "ragged": 1.3,
+      "patchy": 0.45,
+      "ground": "Tileset\\Stranglethorn\\StrangleThornDirt03.blp",
+      "measuredLength": 879,
+      "pieces": 8,
+      "example": [
+        -11914.8,
+        -1134.6,
+        77.7
+      ]
+    },
+    {
+      "id": "zul-gurub-duskwoodcobblestone",
+      "name": "Zul\u0027Gurub: road (Duskwood Cobblestone)",
+      "kind": "road",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\Duskwood\\DuskwoodCobblestone.blp",
+      "width": 4.75,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 0.95,
+      "patchy": 0.2,
+      "ground": "Tileset\\Duskwood\\DuskwoodDirt.blp",
+      "measuredLength": 572,
+      "pieces": 4,
+      "example": [
+        -10713.8,
+        -1170.1,
+        24
+      ]
+    },
+    {
+      "id": "zul-gurub-deadwindpassdirt",
+      "name": "Zul\u0027Gurub: trail (Deadwind Pass Dirt)",
+      "kind": "trail",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\Deadwind Pass\\DeadwindPassDirt.blp",
+      "width": 4.4,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.75,
+      "patchy": 0.6,
+      "ground": "Tileset\\Deadwind Pass\\DeadwindPassRockBase.blp",
+      "measuredLength": 105472,
+      "pieces": 416,
+      "example": [
+        -11989.8,
+        -2325.3,
+        89.7
+      ]
+    },
+    {
+      "id": "zul-gurub-blastedlandsdirt01",
+      "name": "Zul\u0027Gurub: trail (Blasted Lands Dirt01)",
+      "kind": "trail",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\The Blasted Lands\\BlastedLandsDirt01.blp",
+      "width": 4.6,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.95,
+      "patchy": 0.6,
+      "shoulder": {
+        "texture": "Tileset\\The Blasted Lands\\BlastedLandsRock.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.55
+      },
+      "ground": "Tileset\\Deadwind Pass\\DeadwindPassRockBase.blp",
+      "measuredLength": 96120,
+      "pieces": 71,
+      "example": [
+        -10944,
+        -2811.7,
+        21.9
+      ]
+    },
+    {
+      "id": "zul-gurub-zulgurubdirt01",
+      "name": "Zul\u0027Gurub: trail (Zul Gurub Dirt01)",
+      "kind": "trail",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\ZulGurub\\ZulGurubDirt01.blp",
+      "width": 4.7,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 2.1,
+      "patchy": 0.5,
+      "ground": "Tileset\\ZulGurub\\ZulGurubRock01.blp",
+      "measuredLength": 54149,
+      "pieces": 322,
+      "example": [
+        -11997.1,
+        -1323.2,
+        74
+      ]
+    },
+    {
+      "id": "zul-gurub-duskwooddirt",
+      "name": "Zul\u0027Gurub: trail (Duskwood Dirt)",
+      "kind": "trail",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\Duskwood\\DuskwoodDirt.blp",
+      "width": 4.7,
+      "softEdge": 8.35,
+      "strength": 0.9,
+      "ragged": 1.7,
+      "patchy": 0.45,
+      "ground": "Tileset\\Duskwood\\DuskwoodRock.blp",
+      "measuredLength": 43420,
+      "pieces": 105,
+      "example": [
+        -10984.6,
+        -829.4,
+        59.7
+      ]
+    },
+    {
+      "id": "zul-gurub-wetlandsdirt01",
+      "name": "Zul\u0027Gurub: trail (Wetlandsdirt01)",
+      "kind": "trail",
+      "map": 309,
+      "zone": "Zul\u0027Gurub",
+      "texture": "Tileset\\Wetlands\\Wetlandsdirt01.blp",
+      "width": 8.7,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 1.9,
+      "patchy": 0.25,
+      "ground": "Tileset\\Wetlands\\WetlandsBaseRock.blp",
+      "measuredLength": 3862,
+      "pieces": 26,
+      "example": [
+        -12743,
+        -3064.8,
+        -294.8
+      ]
+    },
+    {
+      "id": "stratholme-eastplaguedroadbase",
+      "name": "Stratholme: road (East Plagued Road Base)",
+      "kind": "road",
+      "map": 329,
+      "zone": "Stratholme",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedRoadBase.blp",
+      "width": 3.7,
+      "softEdge": 4.15,
+      "strength": 0.8,
+      "ragged": 0.75,
+      "patchy": 0.25,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedCreep03.blp",
+      "measuredLength": 3749,
+      "pieces": 8,
+      "example": [
+        3093.5,
+        -3452.3,
+        137.4
+      ]
+    },
+    {
+      "id": "stratholme-eastplaguedbaseground",
+      "name": "Stratholme: trail (East Plagued Base Ground)",
+      "kind": "trail",
+      "map": 329,
+      "zone": "Stratholme",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "width": 5.2,
+      "softEdge": 6.25,
+      "strength": 0.85,
+      "ragged": 1.15,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedCracks.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseRock.blp",
+      "measuredLength": 64443,
+      "pieces": 156,
+      "example": [
+        2909.1,
+        -2883.6,
+        98.6
+      ]
+    },
+    {
+      "id": "stratholme-eastplaguedbasedirt",
+      "name": "Stratholme: trail (East Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 329,
+      "zone": "Stratholme",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+      "width": 4.5,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.3,
+      "patchy": 0.35,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 26949,
+      "pieces": 80,
+      "example": [
+        2833.1,
+        -4055.5,
+        100.7
+      ]
+    },
+    {
+      "id": "blackwing-lair-burningsteppsspireroad01",
+      "name": "Blackwing Lair: road (Burning Stepps Spire Road01)",
+      "kind": "road",
+      "map": 469,
+      "zone": "Blackwing Lair",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsSpireRoad01.blp",
+      "width": 3.9,
+      "softEdge": 6.25,
+      "strength": 0.95,
+      "ragged": 0.75,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\BurningStepps\\BurningSteppsCharcoal01.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.9
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "measuredLength": 3746,
+      "pieces": 17,
+      "example": [
+        -7864.8,
+        -804.4,
+        163.1
+      ]
+    },
+    {
+      "id": "blackwing-lair-burningsteppsash01",
+      "name": "Blackwing Lair: trail (Burning Stepps Ash01)",
+      "kind": "trail",
+      "map": 469,
+      "zone": "Blackwing Lair",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "width": 6.2,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.9,
+      "patchy": 0.45,
+      "ground": "Tileset\\BurningStepps\\BurningSteppsRock01.blp",
+      "measuredLength": 254062,
+      "pieces": 472,
+      "example": [
+        -7665.9,
+        -1872.1,
+        163.6
+      ]
+    },
+    {
+      "id": "blackwing-lair-elwynndirtbase2",
+      "name": "Blackwing Lair: trail (Elwynn Dirt Base2)",
+      "kind": "trail",
+      "map": 469,
+      "zone": "Blackwing Lair",
+      "texture": "Tileset\\Elwynn\\ElwynnDirtBase2.blp",
+      "width": 5.6,
+      "softEdge": 6.25,
+      "strength": 0.95,
+      "ragged": 1.7,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Elwynn\\ElwynnGrassBase.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\Elwynn\\ElwynnRockBaseTest2.blp",
+      "measuredLength": 11862,
+      "pieces": 75,
+      "example": [
+        -8353.4,
+        -256.5,
+        147.7
+      ]
+    },
+    {
+      "id": "blackwing-lair-badlandsdirt",
+      "name": "Blackwing Lair: trail (Badlands Dirt)",
+      "kind": "trail",
+      "map": 469,
+      "zone": "Blackwing Lair",
+      "texture": "Tileset\\The Badlands\\BadlandsDirt.blp",
+      "width": 8.25,
+      "softEdge": 6.25,
+      "strength": 0.95,
+      "ragged": 1.6,
+      "patchy": 0.45,
+      "shoulder": {
+        "texture": "Tileset\\The Badlands\\BadlandsRock.blp",
+        "extra": 6.25,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\BurningStepps\\BurningSteppsAsh01.blp",
+      "measuredLength": 6462,
+      "pieces": 4,
+      "example": [
+        -6688.8,
+        -2081.5,
+        314.1
+      ]
+    },
+    {
+      "id": "warsong-gulch-ashenvaleroad",
+      "name": "Warsong Gulch: road (Ashenvale Road)",
+      "kind": "road",
+      "map": 489,
+      "zone": "Warsong Gulch",
+      "texture": "Tileset\\Ashenvale\\AshenvaleRoad.blp",
+      "width": 2.15,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.9,
+      "patchy": 0.45,
+      "ground": "Tileset\\Kalidar\\KalidarFerns.blp",
+      "measuredLength": 837,
+      "pieces": 8,
+      "example": [
+        1435.2,
+        1466.4,
+        362.2
+      ]
+    },
+    {
+      "id": "warsong-gulch-barrensroad01",
+      "name": "Warsong Gulch: road (Barrens Road01)",
+      "kind": "road",
+      "map": 489,
+      "zone": "Warsong Gulch",
+      "texture": "Tileset\\Barrens\\BarrensRoad01.blp",
+      "width": 2.7,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.1,
+      "patchy": 0.3,
+      "ground": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "measuredLength": 352,
+      "pieces": 3,
+      "example": [
+        952.9,
+        1504.9,
+        350.8
+      ]
+    },
+    {
+      "id": "warsong-gulch-barrensbasedirt",
+      "name": "Warsong Gulch: trail (Barrens Base Dirt)",
+      "kind": "trail",
+      "map": 489,
+      "zone": "Warsong Gulch",
+      "texture": "Tileset\\Barrens\\BarrensBaseDirt.blp",
+      "width": 5.35,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.75,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\Barrens\\BarrensBaseGrassGrey.blp",
+        "extra": 7.3,
+        "softEdge": 6,
+        "strength": 0.35
+      },
+      "ground": "Tileset\\Barrens\\BarrensRockLighter.blp",
+      "measuredLength": 11940,
+      "pieces": 37,
+      "example": [
+        1163.3,
+        1417.4,
+        308.3
+      ]
+    },
+    {
+      "id": "burningsteppsbrick01-2",
+      "name": ": road (Burning Stepps Brick01)",
+      "kind": "road",
+      "map": 509,
+      "zone": "",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsBrick01.blp",
+      "width": 6.5,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.05,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Silithis\\SilithisSand01.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandHighlight.blp",
+      "measuredLength": 3848,
+      "pieces": 21,
+      "example": [
+        -8055.5,
+        1519.5,
+        2.6
+      ]
+    },
+    {
+      "id": "ruins-of-ahn-qiraj-burningsteppsbrick01",
+      "name": "Ruins of Ahn\u0027Qiraj: road (Burning Stepps Brick01)",
+      "kind": "road",
+      "map": 509,
+      "zone": "Ruins of Ahn\u0027Qiraj",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsBrick01.blp",
+      "width": 7.3,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1,
+      "patchy": 0.2,
+      "shoulder": {
+        "texture": "Tileset\\Silithis\\SilithisSand01.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.65
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandHighlight.blp",
+      "measuredLength": 22938,
+      "pieces": 77,
+      "example": [
+        -9337.8,
+        1896.6,
+        86.3
+      ]
+    },
+    {
+      "id": "ruins-of-ahn-qiraj-tanarispurplebug03",
+      "name": "Ruins of Ahn\u0027Qiraj: trail (Tanaris Purple Bug03)",
+      "kind": "trail",
+      "map": 509,
+      "zone": "Ruins of Ahn\u0027Qiraj",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+      "width": 6.45,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.7,
+      "patchy": 0.4,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\Silithis\\SilithisSand01.blp",
+      "measuredLength": 19183,
+      "pieces": 53,
+      "example": [
+        -10398.2,
+        700.8,
+        -60
+      ]
+    },
+    {
+      "id": "ruins-of-ahn-qiraj-tanarispurplebug02",
+      "name": "Ruins of Ahn\u0027Qiraj: trail (Tanaris Purple Bug02)",
+      "kind": "trail",
+      "map": 509,
+      "zone": "Ruins of Ahn\u0027Qiraj",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug02.blp",
+      "width": 5.4,
+      "softEdge": 10,
+      "strength": 0.95,
+      "ragged": 1.2,
+      "patchy": 0.25,
+      "ground": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+      "measuredLength": 5011,
+      "pieces": 38,
+      "example": [
+        -9508.6,
+        1465.4,
+        21.6
+      ]
+    },
+    {
+      "id": "ruins-of-ahn-qiraj-tanarispurplebug01",
+      "name": "Ruins of Ahn\u0027Qiraj: trail (Tanaris Purple Bug01)",
+      "kind": "trail",
+      "map": 509,
+      "zone": "Ruins of Ahn\u0027Qiraj",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+      "width": 3.65,
+      "softEdge": 4.15,
+      "strength": 0.9,
+      "ragged": 1.15,
+      "patchy": 0.3,
+      "ground": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+      "measuredLength": 2148,
+      "pieces": 43,
+      "example": [
+        -10380.5,
+        1274.7,
+        26.4
+      ]
+    },
+    {
+      "id": "silithus-tanarispurplebug03-2",
+      "name": "Silithus: trail (Tanaris Purple Bug03)",
+      "kind": "trail",
+      "map": 509,
+      "zone": "Silithus",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+      "width": 3.05,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 2.4,
+      "patchy": 0.8,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.4
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandDetail.blp",
+      "measuredLength": 11272,
+      "pieces": 28,
+      "example": [
+        -7644,
+        601.8,
+        -50
+      ]
+    },
+    {
+      "id": "silithus-tanarispurplebug01-2",
+      "name": "Silithus: trail (Tanaris Purple Bug01)",
+      "kind": "trail",
+      "map": 509,
+      "zone": "Silithus",
+      "texture": "Tileset\\Tanaris\\TanarisPurpleBug01.blp",
+      "width": 2.75,
+      "softEdge": 8.35,
+      "strength": 0.8,
+      "ragged": 1.65,
+      "patchy": 0.55,
+      "shoulder": {
+        "texture": "Tileset\\Tanaris\\TanarisPurpleBug03.blp",
+        "extra": 5.2,
+        "softEdge": 6,
+        "strength": 1
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandDetail.blp",
+      "measuredLength": 4619,
+      "pieces": 13,
+      "example": [
+        -7586.7,
+        631,
+        -44.9
+      ]
+    },
+    {
+      "id": "arathi-basin-arathihighlandsdirt",
+      "name": "Arathi Basin: trail (Arathi Highlands Dirt)",
+      "kind": "trail",
+      "map": 529,
+      "zone": "Arathi Basin",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+      "width": 4.55,
+      "softEdge": 4.15,
+      "strength": 0.95,
+      "ragged": 2.25,
+      "patchy": 0.5,
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsGrassBase.blp",
+      "measuredLength": 40051,
+      "pieces": 99,
+      "example": [
+        885.2,
+        833.1,
+        -66.7
+      ]
+    },
+    {
+      "id": "arathi-basin-arathihighlandsrubblebase",
+      "name": "Arathi Basin: trail (Arathi Highlands Rubble Base)",
+      "kind": "trail",
+      "map": 529,
+      "zone": "Arathi Basin",
+      "texture": "Tileset\\AraithiHighlands\\ArathiHighlandsRubbleBase.blp",
+      "width": 2.2,
+      "softEdge": 6.25,
+      "strength": 0.75,
+      "ragged": 1.5,
+      "patchy": 0.4,
+      "ground": "Tileset\\AraithiHighlands\\ArathiHighlandsDirt.blp",
+      "measuredLength": 1901,
+      "pieces": 18,
+      "example": [
+        1001.8,
+        1023.7,
+        -47.2
+      ]
+    },
+    {
+      "id": "ahn-qiraj-burningsteppsbrick01",
+      "name": "Ahn\u0027Qiraj: road (Burning Stepps Brick01)",
+      "kind": "road",
+      "map": 531,
+      "zone": "Ahn\u0027Qiraj",
+      "texture": "Tileset\\BurningStepps\\BurningSteppsBrick01.blp",
+      "width": 6.5,
+      "softEdge": 10,
+      "strength": 0.9,
+      "ragged": 1.3,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\Silithis\\SilithisSand01.blp",
+        "extra": 8.35,
+        "softEdge": 6,
+        "strength": 0.7
+      },
+      "ground": "Tileset\\Silithis\\SilithisSandHighlight.blp",
+      "measuredLength": 2711,
+      "pieces": 19,
+      "example": [
+        -8401.3,
+        1871.6,
+        77.4
+      ]
+    },
+    {
+      "id": "naxxramas-eastplaguedroadbase",
+      "name": "Naxxramas: road (East Plagued Road Base)",
+      "kind": "road",
+      "map": 533,
+      "zone": "Naxxramas",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedRoadBase.blp",
+      "width": 3.55,
+      "softEdge": 6.25,
+      "strength": 0.8,
+      "ragged": 0.8,
+      "patchy": 0.25,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedCreep03.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.5
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 4810,
+      "pieces": 17,
+      "example": [
+        3093.5,
+        -3452.3,
+        137.4
+      ]
+    },
+    {
+      "id": "naxxramas-eastplaguedbaseground",
+      "name": "Naxxramas: trail (East Plagued Base Ground)",
+      "kind": "trail",
+      "map": 533,
+      "zone": "Naxxramas",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "width": 5.55,
+      "softEdge": 8.35,
+      "strength": 0.85,
+      "ragged": 1.1,
+      "patchy": 0.35,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedCracks.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseRock.blp",
+      "measuredLength": 164081,
+      "pieces": 233,
+      "example": [
+        2363.3,
+        -2948.2,
+        190.3
+      ]
+    },
+    {
+      "id": "naxxramas-eastplaguedbasedirt",
+      "name": "Naxxramas: trail (East Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 533,
+      "zone": "Naxxramas",
+      "texture": "Tileset\\PlagueLandsEast\\EastPlaguedBaseDirt.blp",
+      "width": 4.65,
+      "softEdge": 10,
+      "strength": 0.8,
+      "ragged": 1.3,
+      "patchy": 0.3,
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 56800,
+      "pieces": 232,
+      "example": [
+        2799.7,
+        -3441.9,
+        97.8
+      ]
+    },
+    {
+      "id": "naxxramas-westplaguedbasedirt",
+      "name": "Naxxramas: trail (West Plagued Base Dirt)",
+      "kind": "trail",
+      "map": 533,
+      "zone": "Naxxramas",
+      "texture": "Tileset\\PlagueLandsWest\\WestPlaguedBaseDirt.blp",
+      "width": 4.1,
+      "softEdge": 10,
+      "strength": 0.65,
+      "ragged": 1.2,
+      "patchy": 0.3,
+      "shoulder": {
+        "texture": "Tileset\\PlagueLandsEast\\EastPlaguedCracks.blp",
+        "extra": 4.15,
+        "softEdge": 6,
+        "strength": 0.3
+      },
+      "ground": "Tileset\\PlagueLandsEast\\EastPlaguedBaseGround.blp",
+      "measuredLength": 2377,
+      "pieces": 20,
+      "example": [
+        2939.3,
+        -4924.2,
+        101.7
+      ]
+    }
+  ]
+}

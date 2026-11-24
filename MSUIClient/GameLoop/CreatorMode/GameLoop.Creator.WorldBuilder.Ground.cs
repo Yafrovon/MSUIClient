@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using ImGuiNET;
+using MSUIClient.Engine;
 using MSUIClient.Engine.UI;
 using MSUIClient.Formats;
 
@@ -12,21 +14,73 @@ namespace MSUIClient;
 // Fly camera = the existing Free view (Ctrl+F); while a World Builder tool owns the left button its box-selection is
 // suppressed, and tools reach ground far below the camera. The ground grid draws the terrain's real vertex cells
 // (about 4.2 yd) and chunk borders (33.3 yd) around the pointer, highlights the picked cell and can snap points to
-// it. Road surfaces paint a vanilla Tileset texture along the path in the editor with TerrainPaintLaw - the same rule
-// the build must use - straight into the loaded tile's texture layers, then rebuild that tile. The original layers
-// are kept per tile and put back whenever the road changes, the page closes or a tile re-streams.
+// it. Road surfaces paint a vanilla Tileset texture along the path in the editor - and along the pack's saved paths,
+// on every World Builder page - with TerrainPaintLaw (the same rule the build must use) straight into the loaded
+// tile's texture layers, then rebuild that tile. The original layers are kept per tile and put back whenever a road
+// changes, the World Builder closes or a tile re-streams.
 // ─────────────────────────────────────────────────────────────────────────────
 public sealed partial class GameLoop
 {
     private bool _wbShowGrid = true, _wbSnapGrid;
     private const float WbPickReach = 900f;
-    private bool _wbFlyOwned;                 // the World Builder opened the fly camera (its own view angle applies)
-    private float _wbFlyPitch = 60f;
+    private const float WbFlyStartPitchDegrees = 60f;   // the fly camera opens looking down at the ground
 
-    /// <summary>While the World Builder's fly camera is up, its editing view angle replaces the Command View angle
-    /// (players tune that one shallow for commanding units; editing wants to look down at the ground).</summary>
-    private float? WbFlyPitchOverride =>
-        _freeView && _wbFlyOwned && _creatorWorldRequested && _creatorPanel == CreatorPanel.World ? _wbFlyPitch : null;
+    /// <summary>
+    /// The World Builder's editing camera: the free view (however it was entered - the page's Fly camera button, the
+    /// top bar's Free view, Ctrl+F) while the World page is open. Its tilt is free - the mouse and the View angle slider
+    /// own it, the Command View's angle knob does not (players tune that one for commanding units).
+    /// </summary>
+    private bool WbFreeCameraActive => _freeView && _creatorWorldRequested && _creatorPanel == CreatorPanel.World;
+
+    // ── fly camera free look: right-drag turns AND tilts the camera where it is ──────────────────────────────────
+    // The Command View camera sits on a boom behind its rig, so a plain right-drag swings the camera around the rig,
+    // and the knob schemes never tilt it at all. In the World Builder a right-drag is a free look instead: the camera
+    // stays exactly where it is and the view turns (yaw) and tilts (pitch, straight down to straight up) about the
+    // camera itself. Each frame the rig is placed back along the boom so the camera point does not move. WASD, the
+    // wheel and edge pan still fly while the button is held, and carry the camera point with them.
+    private bool _wbLooking;
+    private Vector3 _wbLookEye;
+    private Vector3 _wbLookRigLast;
+
+    /// <summary>The World Builder camera owns this right-drag as an in-place free look.</summary>
+    private bool WbOrbitClaimsRightDrag =>
+        WbFreeCameraActive && !CommandViewLocked && !_commanderMapOpen && _window.MouseRightDown;
+
+    /// <summary>
+    /// One free-look frame, called where the Command View picks its camera target - after the window applied this
+    /// frame's mouse yaw/pitch and after every rig move. Returns the rig when the look owns it, otherwise null (and ends
+    /// any look). Camera = eye target + OrbitDirection * EffectiveDistance, so keeping the camera at the held point
+    /// means rig = point - OrbitDirection * EffectiveDistance - eye height.
+    /// </summary>
+    private Vector3? WbUpdateFlyOrbit()
+    {
+        if (!WbOrbitClaimsRightDrag || !_window.MouseCaptured || _controller is null)
+        {
+            _wbLooking = false;
+            return null;
+        }
+        var cam = _window.Camera;
+        if (!_wbLooking)
+        {
+            _wbLookEye = cam.Position;
+            _wbLookRigLast = _controller.Position;
+            _wbLooking = true;
+        }
+
+        // Flying while holding the button moves the camera point with the rig.
+        _wbLookEye += _controller.Position - _wbLookRigLast;
+
+        Vector3 rig = _wbLookEye - cam.OrbitDirection * cam.EffectiveDistance - new Vector3(0f, 0f, cam.EyeHeight);
+        // The free view's floor clamp (FlyFloorClearance, 2 yd) would lift a rig placed near the ground on its next
+        // update, and the carry above would read that lift as flying - the camera would creep upward frame by frame.
+        // Lift it here instead: looking steeply down from low over the ground shifts the view a little, nothing builds.
+        if (!_controller.UnderTerrainShell && _terrain?.SampleHeight(rig.X, rig.Y) is float floorZ &&
+            rig.Z < floorZ + 2.01f)
+            rig.Z = floorZ + 2.01f;
+        _controller.Position = rig;
+        _wbLookRigLast = rig;
+        return rig;
+    }
 
     // vanilla ground textures
     private List<string>? _wbGroundTextures;
@@ -57,30 +111,39 @@ public sealed partial class GameLoop
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(_freeView
                 ? "Return the camera to your character (Ctrl+F)."
-                : "Detach the camera and fly: W A S D move, Space up, Caps Lock down, Shift faster, right mouse turns,\n" +
-                  "mouse wheel flies forward or back. The pointer stays free for the World Builder tools. (Ctrl+F)");
-        ImGui.SameLine();
+                : "Detach the camera and fly: W A S D move, Space up, Caps Lock down, Shift faster, right-drag looks\n" +
+                  "around where you are (turn and tilt), mouse wheel flies forward or back.\n" +
+                  "The pointer stays free for the World Builder tools. (Ctrl+F)");
+        CreatorSameLineIfFits(CreatorCheckboxWidth("Grid"));   // wrap rather than run off a narrow sidebar
         ImGui.Checkbox("Grid", ref _wbShowGrid);
         ObserveWorldBuilderUiItem("Ground grid");
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Show the terrain's cells and chunk borders around the pointer while a tool is active.");
-        ImGui.SameLine();
+        CreatorSameLineIfFits(CreatorCheckboxWidth("Snap"));
         ImGui.Checkbox("Snap", ref _wbSnapGrid);
         ObserveWorldBuilderUiItem("Snap to grid");
         if (ImGui.IsItemHovered()) ImGui.SetTooltip("Path points, buildings and objects land exactly on terrain grid corners.");
-        if (_freeView && _wbFlyOwned)
+        if (WbFreeCameraActive)
         {
-            ImGui.SetNextItemWidth(CreatorControlWidth * 0.5f);
-            ImGui.SliderFloat("View angle", ref _wbFlyPitch, 20f, 85f, "%.0f deg");
+            // The camera's own tilt, live: it follows a right-drag, and dragging it tilts the camera.
+            // Positive looks down, negative looks up.
+            float limit = Camera.PitchLimit * 180f / MathF.PI;
+            float degrees = _window.Camera.Pitch * 180f / MathF.PI;
+            ImGui.SetNextItemWidth(CreatorControlWidth);
+            if (ImGui.SliderFloat("View angle", ref degrees, -limit, limit, "%.0f deg"))
+                _window.Camera.Pitch = Math.Clamp(degrees, -limit, limit) * MathF.PI / 180f;
+            ObserveWorldBuilderUiItem("View angle");
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Camera tilt: positive looks down at the ground, negative looks up. Right-drag in the world does the same.");
         }
     }
 
     /// <summary>Enter or leave the fly camera. Entering lifts the camera well above trees and roofs and looks down.</summary>
     private void WbToggleFlyCamera()
     {
-        if (_freeView) { ToggleFreeView(); _wbFlyOwned = false; return; }
+        if (_freeView) { ToggleFreeView(); return; }
         ToggleFreeView();
         if (!_freeView || _controller is null) return;
-        _wbFlyOwned = true;
+        _window.Camera.Pitch = WbFlyStartPitchDegrees * MathF.PI / 180f;
         var at = _controller.Position;
         float ground = _terrain?.SampleHeight(at.X, at.Y) ?? at.Z;
         _controller.Teleport(at.X, at.Y, MathF.Max(at.Z, ground + 40f));
@@ -231,8 +294,69 @@ public sealed partial class GameLoop
 
     // ── road paint preview ───────────────────────────────────────────────────
 
-    /// <summary>Paint the editor path's road surface into the loaded tiles (throttled while dragging); restore the
-    /// original layers when it changes or the page closes. Called every World Builder frame.</summary>
+    /// <summary>One road to preview: its name (paint order), its route, and the texture passes laid along it - the shoulder
+    /// first when it has one, then the road (web GradedPath.PaintSurface paints the same passes in the same order).</summary>
+    private sealed record WbRoadSpec(string Key, List<Vector3> Points, List<(string Texture, TerrainPaintLaw.RoadLook Look)> Passes)
+    {
+        public float Reach => Passes.Max(p => p.Look.Reach);
+    }
+
+    /// <summary>The paint passes of one road surface: the shoulder (road width plus <paramref name="extra"/> each side, the
+    /// road's wobble, its own pattern) under the road. The same construction as web PathSurface.Look/ShoulderLook.</summary>
+    private static List<(string Texture, TerrainPaintLaw.RoadLook Look)> WbRoadPasses(string texture, float width, float soft, float strength,
+        float ragged, float patchy, int seed, string? shoulderTexture, float extra, float shoulderSoft, float shoulderStrength, float shoulderPatchy)
+    {
+        var passes = new List<(string, TerrainPaintLaw.RoadLook)>();
+        if (shoulderTexture is not null && extra > 0f)
+            passes.Add((shoulderTexture, new TerrainPaintLaw.RoadLook(width + 2f * extra, MathF.Max(0f, shoulderSoft), Math.Clamp(shoulderStrength, 0f, 1f),
+                MathF.Max(0f, ragged), Math.Clamp(shoulderPatchy, 0f, 1f), unchecked(seed + 101))));
+        passes.Add((texture, new TerrainPaintLaw.RoadLook(width, MathF.Max(0f, soft), Math.Clamp(strength, 0f, 1f), MathF.Max(0f, ragged),
+            Math.Clamp(patchy, 0f, 1f), seed)));
+        return passes;
+    }
+
+    /// <summary>
+    /// The road surfaces painted into the loaded tiles while the World Builder is open. The pack's saved paths on this
+    /// map stay painted on EVERY World Builder page while "Show saved paths in the world" is ticked - a saved road
+    /// must not vanish because another page was opened. The path in the editor is painted live while the Paths page is
+    /// open; off that page the saved version of it shows instead. Roads paint in name order (ordinal), as the build does,
+    /// so where two roads cross the preview shows the same one on top as the published pack will.
+    /// </summary>
+    private List<WbRoadSpec> WbRoadSpecsToPreview(int map)
+    {
+        var specs = new List<WbRoadSpec>();
+        if (_creatorPanel != CreatorPanel.World) return specs;
+        bool editorLive = WbPathPageOpen && _wbRoadTexture is not null && _wbCarvePoints.Count >= 2 && _wbCarveMap == map &&
+                          float.IsFinite(_wbRoadWidth) && _wbRoadWidth > 0;
+        if (_wbPathShowSaved)
+            foreach (var doc in WbPathDocs(_wbPackId))
+            {
+                string key = (string?)doc["docKey"] ?? "";
+                if (editorLive && key == _wbPathEditKey) continue;   // the live version replaces it
+                if (doc["body"] is not JsonObject body || (int?)body["map"] != map) continue;
+                if (body["surface"] is not JsonObject s || s["texture"]?.ToString() is not { Length: > 0 } texture) continue;
+                var pts = WbPathPoints(body);
+                float width = WbNpcFloat(s["width"], WbNpcFloat(body["width"], 6f));
+                if (pts.Count < 2 || !float.IsFinite(width) || width <= 0f) continue;
+                var sh = s["shoulder"] as JsonObject;
+                specs.Add(new WbRoadSpec(key, pts, WbRoadPasses(texture, width, WbNpcFloat(s["softEdge"], 1.5f), WbNpcFloat(s["strength"], 1f),
+                    WbNpcFloat(s["ragged"], 0f), WbNpcFloat(s["patchy"], 0f), (int?)s["seed"] ?? 0,
+                    sh?["texture"]?.ToString() is { Length: > 0 } verge ? verge : null, WbNpcFloat(sh?["extra"], 0f),
+                    WbNpcFloat(sh?["softEdge"], 2f), WbNpcFloat(sh?["strength"], 1f), WbNpcFloat(sh?["patchy"], 0f))));
+            }
+        if (editorLive)
+        {
+            string name = WbText(_wbCarveName).Trim();
+            specs.Add(new WbRoadSpec(name.Length > 0 ? name : _wbPathEditKey ?? "", _wbCarvePoints.ToList(),
+                WbRoadPasses(_wbRoadTexture!, _wbRoadWidth, _wbRoadSoft, _wbRoadStrength, _wbRoadRagged, _wbRoadPatchy, _wbRoadSeed,
+                    _wbShoulderTexture, _wbShoulderExtra, _wbShoulderSoft, _wbShoulderStrength, 0f)));
+        }
+        return specs.OrderBy(s => s.Key, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>Paint the previewed road surfaces (<see cref="WbRoadSpecsToPreview"/>) into the loaded tiles
+    /// (throttled while dragging); restore the original layers whenever the set changes or nothing is shown.
+    /// Called every World Builder frame.</summary>
     private void WbUpdateRoadPaintPreview()
     {
         int map = _config.Start.Map;
@@ -241,10 +365,11 @@ public sealed partial class GameLoop
             if (!_adts!.TryPeek(key.col, key.row, out var now) || !ReferenceEquals(now, snap.Adt))
             { _wbPaintSnapshots.Remove(key); _wbPaintSig = "\u0001"; }
 
-        bool active = WbPathPageOpen && _wbRoadTexture is not null && _wbCarvePoints.Count >= 2 && _wbCarveMap == map &&
-                      _adts is not null && float.IsFinite(_wbRoadWidth) && _wbRoadWidth > 0;
+        var specs = _adts is null ? new List<WbRoadSpec>() : WbRoadSpecsToPreview(map);
+        bool active = specs.Count > 0;
         string sig = active
-            ? Inv($"{map}|{_wbRoadTexture}|{_wbRoadWidth}|{_wbRoadSoft}|{_wbRoadStrength}|") + string.Join(";", _wbCarvePoints.Select(p => Inv($"{p.X},{p.Y}")))
+            ? Inv($"{map}|") + string.Join("||", specs.Select(s =>
+                string.Join("+", s.Passes.Select(p => Inv($"{p.Texture}|{p.Look}"))) + "|" + string.Join(";", s.Points.Select(p => Inv($"{p.X},{p.Y}")))))
             : "";
         if (sig == _wbPaintSig) return;
         double t = ImGui.GetTime();
@@ -263,33 +388,37 @@ public sealed partial class GameLoop
         }
         _wbPaintSnapshots.Clear();
 
-        if (active)
+        int painted = 0;
+        foreach (var spec in specs)
         {
-            var pts = _wbCarvePoints;
-            string texture = _wbRoadTexture!;
-            float reach = _wbRoadWidth / 2f + _wbRoadSoft;
+            var pts = spec.Points;
+            float reach = spec.Reach;
             float minX = pts.Min(p => p.X) - reach, maxX = pts.Max(p => p.X) + reach;
             float minY = pts.Min(p => p.Y) - reach, maxY = pts.Max(p => p.Y) + reach;
             var (c0, r0) = WorldBuilderLaw.TileOf(maxX, maxY);
             var (c1, r1) = WorldBuilderLaw.TileOf(minX, minY);
-            int painted = 0;
             for (int col = c0; col <= c1; col++)
                 for (int row = r0; row <= r1; row++)
                 {
                     if (!_adts!.TryPeek(col, row, out var adt) || adt?.Chunks is not { } chunks) continue;
-                    var snap = new WbPaintSnapshot
+                    // The snapshot is the tile as it was before ANY road touched it this round.
+                    var snap = _wbPaintSnapshots.TryGetValue((col, row), out var taken) ? taken : new WbPaintSnapshot
                     {
                         Adt = adt, Textures = new List<string>(adt.Textures),
                         Layers = chunks.Select(c => c?.Layers ?? Array.Empty<AdtTerrainReader.MclyLayer>()).ToArray(),
                     };
-                    int n = WbPaintRoadTile(adt, col, row, texture, pts, reach);
+                    // Each pass keeps the one before it: the road never evicts the shoulder it was just laid on.
+                    int n = 0;
+                    string? keep = null;
+                    foreach (var (texture, look) in spec.Passes) { n += WbPaintRoadTile(adt, col, row, texture, look, pts, keep); keep = texture; }
                     if (n == 0) continue;
                     painted += n;
                     _wbPaintSnapshots[(col, row)] = snap;
                     rebuild.Add((col, row));
                 }
-            if (WbScriptPath is not null) Console.WriteLine($"[wb] road paint preview: {painted} chunk(s) on {_wbPaintSnapshots.Count} tile(s), {texture}");
         }
+        if (WbScriptPath is not null && active)
+            Console.WriteLine($"[wb] road paint preview: {specs.Count} road(s), {painted} chunk(s) on {_wbPaintSnapshots.Count} tile(s)");
         foreach (var key in rebuild)
             if (_terrain?.IsResident(key) == true && _adts!.TryPeek(key.col, key.row, out var a) && a is not null)
                 _terrain.RebuildTile(key, a);
@@ -297,9 +426,12 @@ public sealed partial class GameLoop
 
     /// <summary>Paint one tile's chunks that the road reaches; returns how many chunks changed. New layer objects
     /// replace the old ones (never mutated), so the snapshot can put the originals back.</summary>
-    private int WbPaintRoadTile(AdtTerrainReader.AdtResult adt, int col, int row, string texture, List<Vector3> pts, float reach)
+    private int WbPaintRoadTile(AdtTerrainReader.AdtResult adt, int col, int row, string texture, TerrainPaintLaw.RoadLook look, List<Vector3> pts,
+        string? keep = null)
     {
+        float reach = look.Reach;
         int texIndex = adt.Textures.FindIndex(t => string.Equals(t, texture, StringComparison.OrdinalIgnoreCase));
+        int keepIndex = keep is null ? -1 : adt.Textures.FindIndex(t => string.Equals(t, keep, StringComparison.OrdinalIgnoreCase));
         bool added = false;
         int changed = 0;
         foreach (var chunk in adt.Chunks!)
@@ -312,8 +444,10 @@ public sealed partial class GameLoop
             var alphas = chunk.Layers.Select((l, i) => i == 0 ? null : l.AlphaMap).ToList();
             int cx = chunk.IndexX, cy = chunk.IndexY;
             bool paintedChunk = TerrainPaintLaw.PaintChunk(textures, alphas, texIndex, (r, c) =>
-                TerrainPaintLaw.RoadAmount(WorldBuilderLaw.PathDistance(pts, TerrainPaintLaw.PixelWorld(col, row, cx, cy, r, c)).Distance,
-                    _wbRoadWidth, _wbRoadSoft, _wbRoadStrength));
+            {
+                var p = TerrainPaintLaw.PixelWorld(col, row, cx, cy, r, c);
+                return TerrainPaintLaw.RoadAmountAt(p, WorldBuilderLaw.PathDistance(pts, p).Distance, look);
+            }, keepIndex);
             if (!paintedChunk) continue;
             var old = chunk.Layers;
             chunk.Layers = textures.Select((tex, i) =>

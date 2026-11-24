@@ -98,6 +98,8 @@ public sealed partial class GameLoop
 
     private void CloseTabletop()
     {
+        TtEditClose();
+        _ttMove = null;
         _ttOpen = false;
         _ttFlight = null;
         _ttDragButton = -1;
@@ -474,6 +476,7 @@ public sealed partial class GameLoop
 
     private void TabletopClick()
     {
+        if (TtPickClick(ImGui.GetIO().MousePos)) return;
         if (QaPick(ImGui.GetIO().MousePos)) return;
         if (_ttHover is { } p) Console.WriteLine($"[tabletop] click ground ({p.X:0.0}, {p.Y:0.0}) z {_tabletop!.HeightAt(p.X, p.Y):0.0}");
     }
@@ -482,6 +485,7 @@ public sealed partial class GameLoop
     private bool ConsumeTabletopEscape()
     {
         if (!TabletopActive) return false;
+        if (TtPickEscape()) return true;
         QaClearSelection();
         TabletopOverview();
         return true;
@@ -500,6 +504,8 @@ public sealed partial class GameLoop
         QaUpdate();
         LiveUpdate();
         QaDrawOverlays();
+        TtEditDrawOverlay();
+        TtMoveDrawOverlay();
         LiveDrawOverlays();
         LiveTableDrawUnitBars();
 
@@ -511,6 +517,12 @@ public sealed partial class GameLoop
             if (CreatorButton("Overview")) { QaClearSelection(); TabletopOverview(); }
             ImGui.SameLine();
             if (CreatorButton("Opening shot")) TabletopIntro();
+            if (!_liveTableOpen)
+            {
+                ImGui.SameLine();
+                if (CreatorButton("New quest")) TtEditNew();
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip("Write a new quest for one of your packs, picking its people and places on the board.");
+            }
             ImGui.Spacing();
             QaDrawFiltersAndList();
             if (_ttNear is not null) ImGui.TextDisabled(_ttNear.Failure is { } f ? "Near layer failed: " + f : _ttNear.Status);

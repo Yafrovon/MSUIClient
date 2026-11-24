@@ -32,6 +32,17 @@ public sealed partial class GameLoop
     private string? _wbRoadTexture, _wbRoadLastTexture;   // Tileset texture painted along the route; null = none
     private float _wbRoadWidth = 6f, _wbRoadSoft = 1.5f, _wbRoadStrength = 1f;
     private bool _wbRoadPickerOpen;
+    // Road looks (2026-11-15; TerrainPaintLaw.RoadLook): the wandering edge, the patches, the pattern seed, the dirt
+    // shoulder under the road, and the measured style they came from (shared_docs/ROAD_STYLES.md).
+    private float _wbRoadRagged, _wbRoadPatchy;
+    private int _wbRoadSeed;
+    private string? _wbRoadStyleId;
+    private bool _wbRoadStyleTuned;
+    private string? _wbShoulderTexture, _wbShoulderLastTexture;
+    private float _wbShoulderExtra = 3f, _wbShoulderSoft = 2f, _wbShoulderStrength = 1f;
+    private bool _wbShoulderPickerOpen;
+    private readonly byte[] _wbRoadStyleFilter = new byte[64];
+    private List<(string Texture, float Weight)>? _wbRoadSample;   // the textures under the last "copy from the ground" click
 
     private bool WbPathPageOpen => _creatorPanel == CreatorPanel.World && _wbPage == "paths";
 
@@ -89,6 +100,7 @@ public sealed partial class GameLoop
         ObserveWorldBuilderUiItem("Paint a road surface");
         if (painted || _wbRoadPickerOpen)
         {
+            DrawWbRoadStylePicker(w);
             if (_wbRoadTexture is { } chosen)
             {
                 uint handle = _gameplayArt?.Handle(chosen) ?? 0;
@@ -100,11 +112,61 @@ public sealed partial class GameLoop
             if (_wbRoadPickerOpen)
             {
                 string? pick = _wbRoadTexture;
-                if (DrawWbTexturePicker(ref pick) && pick is not null) { _wbRoadTexture = _wbRoadLastTexture = pick; _wbRoadPickerOpen = false; }   // chosen: fold the grid away
+                if (DrawWbTexturePicker(ref pick) && pick is not null) { _wbRoadTexture = _wbRoadLastTexture = pick; _wbRoadPickerOpen = false; _wbRoadStyleId = null; }
             }
-            ImGui.SetNextItemWidth(w); ImGui.SliderFloat("Surface width (yd)", ref _wbRoadWidth, 1f, 40f, "%.1f");
-            ImGui.SetNextItemWidth(w); ImGui.SliderFloat("Soft edge (yd)", ref _wbRoadSoft, 0f, 10f, "%.1f");
-            ImGui.SetNextItemWidth(w); ImGui.SliderFloat("Strength", ref _wbRoadStrength, 0.1f, 1f, "%.2f");
+            bool tuned = false;
+            ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Surface width (yd)", ref _wbRoadWidth, 1f, 40f, "%.1f");
+            ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Soft edge (yd)", ref _wbRoadSoft, 0f, 10f, "%.1f");
+            ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Strength", ref _wbRoadStrength, 0.1f, 1f, "%.2f");
+            ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Ragged edge (yd)", ref _wbRoadRagged, 0f, 4f, "%.1f");
+            ObserveWorldBuilderUiItem("Ragged edge");
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("How far the road's edge wanders in and out, like a hand-painted vanilla road. 0 = a clean band.");
+            ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Patchy", ref _wbRoadPatchy, 0f, 0.8f, "%.2f");
+            ObserveWorldBuilderUiItem("Patchy");
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("How much of the ground underneath shows through the road in patches (worn stones, dirt between them).");
+            if ((_wbRoadRagged > 0f || _wbRoadPatchy > 0f) && _wbRoadSeed == 0) _wbRoadSeed = WbNewRoadSeed();
+            if (_wbRoadRagged > 0f || _wbRoadPatchy > 0f)
+            {
+                if (CreatorButton("New pattern")) _wbRoadSeed = WbNewRoadSeed(_wbRoadSeed);
+                ObserveWorldBuilderUiItem("New pattern");
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip("Same look, a different wander of the edge and different patches.");
+            }
+
+            // The verge: a second texture (usually the zone's dirt) laid first, wider than the road.
+            bool shoulder = _wbShoulderTexture is not null;
+            if (ImGui.Checkbox("Shoulder under the road", ref shoulder))
+            {
+                if (!shoulder) _wbShoulderTexture = null;
+                else { _wbShoulderTexture ??= _wbShoulderLastTexture; _wbShoulderPickerOpen = _wbShoulderTexture is null; }
+                tuned = true;
+            }
+            ObserveWorldBuilderUiItem("Shoulder under the road");
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Most vanilla roads run on a band of dirt that is wider than the stones. This paints it first.");
+            if (shoulder || _wbShoulderPickerOpen)
+            {
+                ImGui.Indent(10f * CreatorUiScale);
+                if (_wbShoulderTexture is { } verge)
+                {
+                    uint handle = _gameplayArt?.Handle(verge) ?? 0;
+                    if (handle != 0) { ImGui.Image((nint)handle, new Vector2(32f, 32f) * CreatorUiScale); ImGui.SameLine(); }
+                    ImGui.TextWrapped(Path.GetFileNameWithoutExtension(verge));
+                }
+                if (CreatorButton(_wbShoulderPickerOpen ? "Hide textures##verge" : "Choose shoulder texture")) _wbShoulderPickerOpen = !_wbShoulderPickerOpen;
+                ObserveWorldBuilderUiItem("Choose shoulder texture");
+                if (_wbShoulderPickerOpen)
+                {
+                    ImGui.PushID("verge");
+                    string? pick = _wbShoulderTexture;
+                    if (DrawWbTexturePicker(ref pick) && pick is not null) { _wbShoulderTexture = _wbShoulderLastTexture = pick; _wbShoulderPickerOpen = false; tuned = true; }
+                    ImGui.PopID();
+                }
+                ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Shoulder extra (yd)", ref _wbShoulderExtra, 0.5f, 12f, "%.1f");
+                if (ImGui.IsItemHovered()) ImGui.SetTooltip("How much wider than the road the shoulder is, on each side.");
+                ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Shoulder soft edge (yd)", ref _wbShoulderSoft, 0f, 10f, "%.1f");
+                ImGui.SetNextItemWidth(w); tuned |= ImGui.SliderFloat("Shoulder strength", ref _wbShoulderStrength, 0.1f, 1f, "%.2f");
+                ImGui.Unindent(10f * CreatorUiScale);
+            }
+            if (tuned && _wbRoadStyleId is not null) _wbRoadStyleTuned = true;   // still "based on" the style, now adjusted
             ImGui.TextDisabled("The road is painted on the ground right away, before saving.");
         }
 
@@ -158,6 +220,10 @@ public sealed partial class GameLoop
         if (problem is null && (_wbRoadTexture is not null || !_wbPathGrade) && _wbState?.RoadSurfaceSupported != true)
             problem = "Painted roads preview here, but the web app cannot save them yet (it needs the road-surface update). " +
                       "To save today, untick Paint a road surface and tick Level the ground.";
+        if (problem is null && _wbRoadTexture is not null && (_wbRoadRagged > 0f || _wbRoadPatchy > 0f || _wbShoulderTexture is not null) &&
+            _wbState?.RoadLookSupported != true)
+            problem = "This road's ragged edge, patches or shoulder preview here, but the web app would build it as a plain band " +
+                      "(it needs the road-looks update). Set Ragged and Patchy to 0 and untick the shoulder to save it today.";
         if (problem is not null && _wbCarvePoints.Count > 0) ImGui.TextWrapped(problem);
         ImGui.BeginDisabled(problem is not null || otherMap || _wbOps.Count > 0);
         if (CreatorButton(_wbPathEditKey is null ? "Save path" : "Save path changes")) WbPathSave(name);
@@ -168,6 +234,10 @@ public sealed partial class GameLoop
         ImGui.Separator();
         var saved = WbPathDocs(_wbPackId).ToList();
         ImGui.Checkbox("Show saved paths in the world", ref _wbPathShowSaved);
+        ObserveWorldBuilderUiItem("Show saved paths");
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Saved road surfaces stay painted on the ground on every World Builder page; their route lines show on this page.\n" +
+                             "This is a preview in your client. Publish the pack to put the roads into the game.");
         if (saved.Count == 0) ImGui.TextDisabled("This pack has no saved paths yet.");
         else
         {
@@ -225,6 +295,8 @@ public sealed partial class GameLoop
         _wbPathEditBody = null;
         _wbPathClear = true;
         _wbPathGrade = false;
+        _wbRoadSeed = 0;          // a new road gets its own pattern (the look itself carries over as the last one used)
+        _wbRoadSample = null;
         WbSetBuf(_wbCarveName, "");
     }
 
@@ -240,12 +312,27 @@ public sealed partial class GameLoop
         _wbPathClear = (bool?)body["clear"] ?? true;
         _wbPathGrade = (bool?)body["grade"] ?? true;        // paths saved before road surfaces always graded
         _wbRoadTexture = body["surface"]?["texture"]?.ToString();
+        _wbShoulderTexture = null;
+        _wbRoadSample = null;
         if (_wbRoadTexture is not null)
         {
+            var surface = body["surface"]!;
             _wbRoadLastTexture = _wbRoadTexture;
-            _wbRoadWidth = WbNpcFloat(body["surface"]?["width"], _wbRoadWidth);
-            _wbRoadSoft = WbNpcFloat(body["surface"]?["softEdge"], _wbRoadSoft);
-            _wbRoadStrength = WbNpcFloat(body["surface"]?["strength"], 1f);
+            _wbRoadWidth = WbNpcFloat(surface["width"], _wbRoadWidth);
+            _wbRoadSoft = WbNpcFloat(surface["softEdge"], _wbRoadSoft);
+            _wbRoadStrength = WbNpcFloat(surface["strength"], 1f);
+            _wbRoadRagged = WbNpcFloat(surface["ragged"], 0f);
+            _wbRoadPatchy = WbNpcFloat(surface["patchy"], 0f);
+            _wbRoadSeed = (int?)surface["seed"] ?? 0;
+            _wbRoadStyleId = surface["style"]?.ToString();
+            _wbRoadStyleTuned = (bool?)surface["styleAdjusted"] ?? false;
+            if (surface["shoulder"] is JsonObject sh && sh["texture"]?.ToString() is { Length: > 0 } verge)
+            {
+                _wbShoulderTexture = _wbShoulderLastTexture = verge;
+                _wbShoulderExtra = WbNpcFloat(sh["extra"], 3f);
+                _wbShoulderSoft = WbNpcFloat(sh["softEdge"], 2f);
+                _wbShoulderStrength = WbNpcFloat(sh["strength"], 1f);
+            }
         }
         _wbPathSelected = -1;
         WbSetBuf(_wbCarveName, key);
@@ -264,16 +351,40 @@ public sealed partial class GameLoop
         body["clear"] = _wbPathClear;
         body["grade"] = _wbPathGrade;
         if (_wbRoadTexture is { } texture)
-            body["surface"] = new JsonObject
+        {
+            var surface = new JsonObject
             {
                 ["texture"] = texture, ["width"] = Math.Round(_wbRoadWidth, 2),
                 ["softEdge"] = Math.Round(_wbRoadSoft, 2), ["strength"] = Math.Round(_wbRoadStrength, 2),
             };
+            // Road looks: only written when used, so a plain road's doc stays exactly what older builds read.
+            if (_wbRoadRagged > 0f || _wbRoadPatchy > 0f)
+            {
+                if (_wbRoadSeed == 0) _wbRoadSeed = WbNewRoadSeed();
+                surface["ragged"] = Math.Round(_wbRoadRagged, 2);
+                surface["patchy"] = Math.Round(_wbRoadPatchy, 2);
+            }
+            if (_wbRoadSeed != 0) surface["seed"] = _wbRoadSeed;
+            if (_wbShoulderTexture is { } verge)
+                surface["shoulder"] = new JsonObject
+                {
+                    ["texture"] = verge, ["extra"] = Math.Round(_wbShoulderExtra, 2),
+                    ["softEdge"] = Math.Round(_wbShoulderSoft, 2), ["strength"] = Math.Round(_wbShoulderStrength, 2),
+                };
+            if (_wbRoadStyleId is { } style)
+            {
+                surface["style"] = style;                    // informational: which measured look it started from
+                if (_wbRoadStyleTuned) surface["styleAdjusted"] = true;
+            }
+            body["surface"] = surface;
+        }
         else body.Remove("surface");
         var items = new JsonArray { new JsonObject { ["kind"] = "path", ["key"] = name, ["body"] = body } };
         string? renamed = _wbPathEditKey is { } old && old != name ? old : null;
         if (renamed is not null) items.Add(new JsonObject { ["kind"] = "path", ["key"] = renamed, ["body"] = null });
-        string label = Inv($"path {name}: {_wbCarvePoints.Count} point(s), {_wbCarveWidth:F0} yd wide") + (renamed is null ? "" : $" (renamed from {renamed})");
+        // The width the road actually has: the levelled lane when graded, otherwise the painted surface.
+        string label = Inv($"path {name}: {_wbCarvePoints.Count} point(s), {(_wbPathGrade ? _wbCarveWidth : _wbRoadWidth):0.#} yd wide") +
+                       (renamed is null ? "" : $" (renamed from {renamed})");
         var saveBody = (JsonObject)body.DeepClone();
         WbOp(label, _wbClient.ContentAsync(SuiWebAppUrl, _wbPackId, label, items.ToJsonString()), _ =>
         {
@@ -462,6 +573,12 @@ public sealed partial class GameLoop
         WbDrawPathLine(draw, _wbCarvePoints, 0f, 0xE040D0FFu, 3f, true);
         WbDrawPathLine(draw, _wbCarvePoints, half, 0xF030A8FFu, 2.5f, false);
         WbDrawPathLine(draw, _wbCarvePoints, -half, 0xF030A8FFu, 2.5f, false);
+        if (!_wbPathGrade && _wbRoadTexture is not null && _wbShoulderTexture is not null && _wbShoulderExtra > 0f)
+        {
+            // The shoulder's outer edge: where the verge texture under the road ends.
+            WbDrawPathLine(draw, _wbCarvePoints, half + _wbShoulderExtra, 0x9050C8E8u, 1.5f, false);
+            WbDrawPathLine(draw, _wbCarvePoints, -half - _wbShoulderExtra, 0x9050C8E8u, 1.5f, false);
+        }
         if (_wbPathGrade && _wbCarveFalloff > 0.5f)
         {
             WbDrawPathLine(draw, _wbCarvePoints, half + _wbCarveFalloff, 0x9030A8FFu, 1.5f, false);

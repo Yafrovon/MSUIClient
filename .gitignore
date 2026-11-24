@@ -247,3 +247,5 @@ live-runs/N2-0-2-1-unit-frames-20260801-155000/
 
 # Core source copies once kept for the QA harness; the Core git is the source of truth (patch log moved to the Core tree).
 /core-patches/
+# In-game screenshots are local only (not tracked).
+/Screenshots/

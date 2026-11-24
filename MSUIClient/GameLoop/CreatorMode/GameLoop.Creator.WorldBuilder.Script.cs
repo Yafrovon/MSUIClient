@@ -72,6 +72,7 @@ public sealed partial class GameLoop
                 "idle" => _wbOps.Count == 0 && _wbStateTask is null,
                 "world" => !_worldLoading && !_travelInProgress,
                 "docs" => _wbDocsTask is null && _wbDocs is not null,
+                "questsave" => _wbOps.Count == 0 && WbScriptQuestSaveStep(),
                 "verify" => _wbVerifyTask is null,
                 _ => true,
             };
@@ -487,7 +488,7 @@ public sealed partial class GameLoop
                 string file = a[1];
                 if (!Path.IsPathRooted(file)) file = Path.Combine(Path.GetDirectoryName(WbScriptPath!)!, file);
                 WbScriptQuestUi(file);
-                _wbScriptWaitFor = "idle";
+                _wbScriptWaitFor = "questsave";
                 break;
             }
             case "preflight":

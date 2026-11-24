@@ -1841,6 +1841,7 @@ public sealed partial class GameLoop
             _commanderMapOpen = false;      // the commander map is a free-view surface only
             _freecamPanAt = 0;
             _rtsWheelRetreatYards = 0;
+            _wbLooking = false;             // a World Builder free look never survives into the next free view
             if (_controller is not null)
             {
                 _controller.FlyFloorClearance = null;
@@ -1870,11 +1871,11 @@ public sealed partial class GameLoop
                 _controller.Position = new Vector3(_controller.Position.X, _controller.Position.Y,
                     activeCut.RigFloor(_window.Camera.Distance, _window.Camera.Pitch));
             CommandViewScheme scheme = Settings.Controls.CommandViewScheme;
-            bool pitchLocked = CommandViewLaw.PitchLocked(scheme);
+            // The World Builder camera (World page open) tilts freely: the mouse and its View angle slider own it.
+            bool pitchLocked = CommandViewLaw.PitchLocked(scheme) && !WbFreeCameraActive;
             _window.LookPitchLocked = pitchLocked;
             if (pitchLocked)
-                _window.Camera.Pitch = CommandViewLaw.PitchRadians(
-                    WbFlyPitchOverride ?? Settings.Controls.CommandViewPitchDegrees);
+                _window.Camera.Pitch = CommandViewLaw.PitchRadians(Settings.Controls.CommandViewPitchDegrees);
             // The round-15 floating-body camera (walls/ceilings stop the rig) is OFF:
             // detaching under any WMO geometry — indoors, gate arches, city overhangs —
             // hit an invisible "fake ceiling" (owner, 2026-08-11 evening). The rig is a
@@ -2979,6 +2980,12 @@ public sealed partial class GameLoop
     private Vector3 CommandViewCameraTarget(float dt, float yawDelta)
     {
         if (_controller is null) return _window.Camera.Target;
+        // World Builder fly camera, right-drag: the orbit places the rig itself; no glide, or the pivot would wobble.
+        if (WbUpdateFlyOrbit() is Vector3 orbitRig)
+        {
+            _cvSmoothedTarget = orbitRig;
+            return orbitRig;
+        }
         Vector3 rig = _controller.Position;
 
         if (Settings.Controls.CommandViewLockOnPrimary &&

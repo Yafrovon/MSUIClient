@@ -52,6 +52,10 @@ public sealed partial class GameLoop
 
         switch (_ttProbeStage)
         {
+            case >= 30 and < 99:   // P5 (99 = finished): an edit on the board (GameLoop.Tabletop.EditProbe.cs)
+                UpdateTabletopEditProbe(now);
+                return;
+
             case 0:
             {
                 if (_gl is null || _worldLoadStarted || _mpq is null) return;
@@ -277,6 +281,12 @@ public sealed partial class GameLoop
             case 10:   // after the Militia shot: the overview with every visible quest's pieces, then the next zone
             {
                 if (now - _ttProbeAt < 1.0) return;
+                if (TabletopEditProbe && !_ttEditProbeDone && _ttProbeZones[_ttProbeZone].Area == 40 && _qaBoard is not null)
+                {
+                    QaClearSelection();
+                    _ttProbeStage = 30; _ttProbeAt = now;
+                    return;
+                }
                 if (_qaSelQuest is not null)
                 {
                     QaClearSelection();
@@ -434,6 +444,9 @@ public sealed partial class GameLoop
             _ttNear?.Failure ?? _ttNear?.Status ?? "no near layer");
         TabletopProbeCheck($"zone {area} {framing}: real buildings and props on the table",
             _ttNear is { Buildings: > 0, Props: > 0 }, $"{_ttNear?.Buildings} buildings, {_ttNear?.Props} props");
+        // 2026-11-16: buildings were culled by the game's Building distance (<= 1250 yd) from the table's 1-3 km camera.
+        TabletopProbeCheck($"zone {area} {framing}: buildings are DRAWN from this height, not only loaded",
+            _ttNear is { BuildingsDrawn: > 0 }, $"{_ttNear?.BuildingsDrawn} building groups drawn of {_ttNear?.Buildings} buildings; camera {_ttRadius:0} yd out");
         Console.WriteLine($"[tabletop-probe] info zone {area} {framing}: {_ttCensusStatus}; creatures drawn last frame {_ttNear?.CreaturesDrawn}");
     }
 

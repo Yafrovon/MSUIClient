@@ -36,7 +36,10 @@ public sealed partial class GameLoop
             ImGui.TextWrapped("Connect your Web App on the login screen to save world edits.");
             return;
         }
-        ImGui.SetNextItemWidth(MathF.Max(160f, ImGui.GetContentRegionAvail().X - 105f * CreatorUiScale));
+        // The pack list takes what "Packs..." leaves; too narrow for both and the button wraps under it, never off the edge.
+        float packsW = CreatorButtonWidth("Packs...");
+        ImGui.SetNextItemWidth(MathF.Max(160f * CreatorUiScale,
+            ImGui.GetContentRegionAvail().X - packsW - ImGui.GetStyle().ItemSpacing.X));
         var packs = _wbState?.Packs;
         string selected = packs?.FirstOrDefault(p => p.Id == _wbPackId)?.Name ?? "Choose a content pack";
         if (ImGui.BeginCombo("##wb-active-pack", selected))
@@ -51,7 +54,7 @@ public sealed partial class GameLoop
                 }
             ImGui.EndCombo();
         }
-        ImGui.SameLine();
+        CreatorSameLineIfFits(packsW);
         if (CreatorButton("Packs...")) WbOpenPage("packs");
         DrawWbViewControls();
 

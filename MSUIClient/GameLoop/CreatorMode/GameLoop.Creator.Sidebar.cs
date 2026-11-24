@@ -51,12 +51,15 @@ public sealed partial class GameLoop
     private float CreatorSidebarTop => MathF.Max(_creatorBarBottom, 40f) + 6f * CreatorPixelScale;
     private float CreatorSidebarMargin => 10f * CreatorPixelScale;
 
+    private float CreatorSidebarMinWidth => 300f * CreatorUiScale;
+
+    /// <summary>Widest the sidebar may be dragged: three quarters of the screen, so the world stays usable.</summary>
+    private float CreatorSidebarMaxWidth => MathF.Max(320f * CreatorUiScale, ImGui.GetIO().DisplaySize.X * 0.75f);
+
     private float CreatorSidebarWidth(string panelId, float defaultW)
     {
-        float cs = CreatorUiScale;
-        float w = (Settings.Creator.SidebarWidths.TryGetValue(panelId, out float saved) ? saved : defaultW) * cs;
-        float maxW = MathF.Max(320f * cs, ImGui.GetIO().DisplaySize.X * 0.6f);
-        return Math.Clamp(w, 300f * cs, maxW);
+        float w = (Settings.Creator.SidebarWidths.TryGetValue(panelId, out float saved) ? saved : defaultW) * CreatorUiScale;
+        return Math.Clamp(w, CreatorSidebarMinWidth, CreatorSidebarMaxWidth);
     }
 
     /// <summary>The Atlas style: Quest Atlas colours, hairline frames, soft radii and tighter rows than the vanilla skin.</summary>
@@ -278,10 +281,12 @@ public sealed partial class GameLoop
         }
 
         float width = CreatorSidebarWidth(panelId, defaultW);
-        if (panelId == "World" && _wbUiPanelSize is { } scripted) { width = MathF.Min(scripted.X, display.X * 0.6f); _wbUiPanelSize = null; }
+        if (panelId == "World" && _wbUiPanelSize is { } scripted) { width = MathF.Min(scripted.X, CreatorSidebarMaxWidth); _wbUiPanelSize = null; }
         else if (_creatorSidebarPanel == panelId && _creatorSidebarResizing) width = _creatorSidebarLiveWidth;
         _creatorSidebarPanel = panelId;
         _creatorSidebarLiveWidth = width;
+        _creatorSidebarDefaultWidth = defaultW;
+        _creatorSidebarOverflowX = 0f;
 
         _activePanelTune = panelId;
         _creatorSidebarDrawing = true;
@@ -305,44 +310,88 @@ public sealed partial class GameLoop
     }
 
     private float _creatorSidebarLiveWidth;
+    private float _creatorSidebarDefaultWidth;   // the open panel's own default width (unscaled)
+    private float _creatorSidebarOverflowX;      // how far the content runs past the visible width this frame (px)
+    private Vector2 _creatorSidebarMin, _creatorSidebarSize;
 
-    /// <summary>The right-edge grip: drag to resize, remembered per panel on release.</summary>
+    /// <summary>
+    /// The sidebar's drawer handle, just outside its right edge, in its own little window so it never sits on the
+    /// content's scrollbar and a click on it never reaches the world. Drag to resize (remembered per panel on release).
+    /// Double-click: widen exactly enough to show everything (the horizontal scrollbar goes away); when nothing is
+    /// cut off, back to the panel's default width.
+    /// </summary>
     private void DrawCreatorSidebarResizeGrip()
     {
         if (_creatorSidebarPanel is not { } panelId) return;
         float ps = CreatorPixelScale;
-        Vector2 min = ImGui.GetWindowPos(), size = ImGui.GetWindowSize();
-        float grip = 6f * ps;
-        var pos = new Vector2(min.X + size.X - grip, min.Y + 12f * ps);
-        Vector2 keep = ImGui.GetCursorPos();
-        ImGui.SetCursorScreenPos(pos);
-        // The window clips its items inside its padding; the grip sits on the very edge, so widen the clip for it.
-        ImGui.PushClipRect(min, min + size, false);
-        ImGui.InvisibleButton("##creator-sidebar-grip", new Vector2(grip, size.Y - 24f * ps));
-        ObserveWorldBuilderUiItem("Sidebar edge");
-        bool hovered = ImGui.IsItemHovered(), active = ImGui.IsItemActive();
-        ImGui.PopClipRect();
-        ImGui.SetCursorPos(keep);
-        if (hovered || active)
+        Vector2 min = _creatorSidebarMin, size = _creatorSidebarSize;
+        float hitW = 10f * ps;
+        var origin = new Vector2(min.X + size.X, min.Y);
+        ImGui.SetNextWindowPos(origin, ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new Vector2(hitW, size.Y), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+        const ImGuiWindowFlags flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings |
+                                       ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoNav;
+        if (ImGui.Begin("##creator-sidebar-grip-window", flags))
         {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEW);
+            ImGui.SetCursorScreenPos(origin);
+            ImGui.InvisibleButton("##creator-sidebar-grip", new Vector2(hitW, size.Y));
+            ObserveWorldBuilderUiItem("Sidebar edge");
+            bool hovered = ImGui.IsItemHovered(), active = ImGui.IsItemActive();
+            var io = ImGui.GetIO();
+
+            // The handle: a small rounded tab on the edge, mid-height, always faintly visible so it can be found.
             var dl = ImGui.GetWindowDrawList();
-            float x = min.X + size.X - 1f;
-            dl.AddLine(new Vector2(x, min.Y + 14f * ps), new Vector2(x, min.Y + size.Y - 14f * ps), AtlasU(AtlasGold, active ? 0.9f : 0.5f), 2f * ps);
+            float tabW = 8f * ps, tabH = 46f * ps;
+            var tabMin = new Vector2(origin.X, min.Y + (size.Y - tabH) * 0.5f);
+            var tabMax = tabMin + new Vector2(tabW, tabH);
+            bool lit = hovered || active;
+            dl.AddRectFilled(tabMin, tabMax, AtlasU(new Vector4(28 / 255f, 23 / 255f, 18 / 255f, AtlasPanelAlpha)), 4f * ps,
+                ImDrawFlags.RoundCornersRight);
+            dl.AddRect(tabMin, tabMax, AtlasU(lit ? AtlasGold : AtlasInk, lit ? 0.6f : 0.18f), 4f * ps, ImDrawFlags.RoundCornersRight, 1f);
+            uint ridge = AtlasU(lit ? AtlasGold : AtlasInkDim, lit ? 0.95f : 0.6f);
+            for (int k = -1; k <= 1; k += 2)
+            {
+                float x = tabMin.X + tabW * 0.5f + k * 1.4f * ps;
+                dl.AddLine(new Vector2(x, tabMin.Y + 12f * ps), new Vector2(x, tabMax.Y - 12f * ps), ridge, MathF.Max(1f, 1.2f * ps));
+            }
+            if (lit)
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEW);
+                float x = origin.X + 1f;
+                dl.AddLine(new Vector2(x, min.Y + 14f * ps), new Vector2(x, min.Y + size.Y - 14f * ps),
+                    AtlasU(AtlasGold, active ? 0.9f : 0.5f), 2f * ps);
+            }
+
+            if (hovered && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+            {
+                float fit = _creatorSidebarOverflowX > 0.5f
+                    ? _creatorSidebarLiveWidth + _creatorSidebarOverflowX + 6f * ps
+                    : _creatorSidebarDefaultWidth * CreatorUiScale;
+                _creatorSidebarLiveWidth = Math.Clamp(fit, CreatorSidebarMinWidth, CreatorSidebarMaxWidth);
+                Settings.Creator.SidebarWidths[panelId] = _creatorSidebarLiveWidth / CreatorUiScale;
+                SettingsFile?.Save();
+            }
+            else if (active)
+            {
+                _creatorSidebarResizing = true;
+                _creatorSidebarLiveWidth = Math.Clamp(_creatorSidebarLiveWidth + io.MouseDelta.X,
+                    CreatorSidebarMinWidth, CreatorSidebarMaxWidth);
+            }
+            else if (_creatorSidebarResizing)
+            {
+                _creatorSidebarResizing = false;
+                Settings.Creator.SidebarWidths[panelId] = _creatorSidebarLiveWidth / CreatorUiScale;
+                SettingsFile?.Save();
+            }
+            if (hovered && !active)
+                ImGui.SetTooltip(_creatorSidebarOverflowX > 0.5f
+                    ? "Drag to resize the sidebar. Double-click to widen it until nothing is cut off."
+                    : "Drag to resize the sidebar. Double-click to go back to the default width.");
         }
-        if (active)
-        {
-            _creatorSidebarResizing = true;
-            float maxW = MathF.Max(320f * CreatorUiScale, ImGui.GetIO().DisplaySize.X * 0.6f);
-            _creatorSidebarLiveWidth = Math.Clamp(_creatorSidebarLiveWidth + ImGui.GetIO().MouseDelta.X, 300f * CreatorUiScale, maxW);
-        }
-        else if (_creatorSidebarResizing)
-        {
-            _creatorSidebarResizing = false;
-            Settings.Creator.SidebarWidths[panelId] = _creatorSidebarLiveWidth / CreatorUiScale;
-            SettingsFile?.Save();
-        }
-        if (hovered && !active) ImGui.SetTooltip("Drag to make the sidebar wider or narrower");
+        ImGui.End();
+        ImGui.PopStyleVar(2);
     }
 
     /// <summary>The folded sidebar: a small glass tab on the left edge; click to unfold.</summary>
