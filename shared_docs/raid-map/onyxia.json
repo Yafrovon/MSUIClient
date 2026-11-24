@@ -1,0 +1,4778 @@
+{
+ "anchors": [
+  {
+   "id": "A-Entrance",
+   "name": "Entrance",
+   "pos": [
+    30.9,
+    -54.1,
+    -5.0
+   ],
+   "source": "areatrigger_teleport 2848 (Onyxia's Lair - Entrance)"
+  },
+  {
+   "boss": "B-Onyxia",
+   "id": "A-Onyxia",
+   "name": "Onyxia",
+   "pos": [
+    -4.9,
+    -217.2,
+    -86.7
+   ],
+   "source": "spawn guid 47572"
+  }
+ ],
+ "corePositions": [
+  {
+   "code": "float const lx = -8.860f, ly = -212.752f, lz = -87.482f;",
+   "file": "game/SuperUiContent/SuiBots/AiBotAICombat.cpp",
+   "line": 4698,
+   "x": -8.86,
+   "y": -212.752,
+   "z": -87.482
+  }
+ ],
+ "counts": {
+  "bosses": 1,
+  "corePositions": 1,
+  "elitePacks": 1,
+  "gameobjectsDrawn": 223,
+  "lonePatrols": 4,
+  "objects": 6,
+  "packs": 1,
+  "playbookSpots": 0,
+  "registryRows": 12,
+  "routes": 4,
+  "scriptPositions": 17,
+  "spawns": 6,
+  "wanderers": 0
+ },
+ "eggClusters": [
+  {
+   "centre": [
+    -79.0,
+    -255.5,
+    -93.2
+   ],
+   "count": 51,
+   "goType": 6,
+   "id": "E39403",
+   "radius": 50.6,
+   "whelpSpawn": [
+    -30.127,
+    -254.463,
+    -89.44
+   ],
+   "xRange": [
+    -113.0,
+    -31.0
+   ],
+   "yRange": [
+    -276.8,
+    -218.3
+   ]
+  },
+  {
+   "centre": [
+    -80.4,
+    -174.9,
+    -93.2
+   ],
+   "count": 68,
+   "goType": 6,
+   "id": "E39402",
+   "radius": 53.3,
+   "whelpSpawn": [
+    -30.817,
+    -177.106,
+    -89.258
+   ],
+   "xRange": [
+    -115.0,
+    -29.4
+   ],
+   "yRange": [
+    -213.3,
+    -149.9
+   ]
+  }
+ ],
+ "eggRule": "nearest script whelp spawn point (boss_onyxia.cpp:111, boss_onyxia.cpp:112)",
+ "entries": [
+  {
+   "ai": "",
+   "alwaysRun": false,
+   "callForHelp": 5.0,
+   "count": 1,
+   "detection": 20.0,
+   "entry": 10184,
+   "eventAI": [],
+   "learned": [
+    "cone 45 yd"
+   ],
+   "name": "Onyxia",
+   "rank": 3,
+   "reach": 28.0,
+   "respawn": [
+    [
+     604800,
+     604800
+    ]
+   ],
+   "script": "boss_onyxia",
+   "speedRun": 1.28571,
+   "speedWalk": 1.0,
+   "tactics": [
+    "no-bubble-under-boss",
+    "airborne-melee-spread",
+    "heal-walk-avoids-arcs",
+    "no-turn-after-landing",
+    "wall-away-from-raid",
+    "save-taunt-for-landing",
+    "tanks-stage-for-landing",
+    "onyxia-threat-discipline"
+   ]
+  },
+  {
+   "ai": "",
+   "alwaysRun": false,
+   "callForHelp": 5.0,
+   "count": 5,
+   "detection": 20.0,
+   "entry": 12129,
+   "eventAI": [],
+   "learned": [
+    "pulse 20 yd",
+    "burst rhythm 16.3 s"
+   ],
+   "name": "Onyxian Warder",
+   "rank": 1,
+   "reach": 28.0,
+   "respawn": [
+    [
+     1201,
+     1201
+    ],
+    [
+     6300,
+     6300
+    ]
+   ],
+   "script": "",
+   "speedRun": 1.14286,
+   "speedWalk": 0.888888,
+   "tactics": []
+  }
+ ],
+ "entrySwaps": {},
+ "fights": {
+  "attached": 285,
+  "available": true,
+  "byOutcome": {
+   "win": 202,
+   "wipe": 83
+  },
+  "entryMismatch": 0,
+  "latest": "2026-11-18 18:43:16",
+  "records": 285,
+  "unattached": 0
+ },
+ "gameobjectCounts": {
+  "Doodad_OnyziasLairFallingRocks01": 1,
+  "Doodad_OnyziasLairFallingRocks02": 1,
+  "Doodad_OnyziasLairFallingRocks03": 1,
+  "Doodad_OnyziasLairFallingRocks04": 1,
+  "Doodad_OnyziasLairFallingRocks05": 1,
+  "Doodad_OnyziasLairFallingRocks06": 1,
+  "Doodad_OnyziasLairFallingRocks07": 1,
+  "Doodad_OnyziasLairFallingRocks08": 1,
+  "Doodad_OnyziasLairFallingRocks09": 1,
+  "Doodad_OnyziasLairFallingRocks10": 1,
+  "Doodad_OnyziasLairFallingRocks11": 1,
+  "Doodad_OnyziasLairFallingRocks12": 1,
+  "Doodad_OnyziasLairFallingRocks13": 1,
+  "Doodad_OnyziasLairFallingRocks14": 1,
+  "Doodad_OnyziasLairFallingRocks15": 1,
+  "Doodad_OnyziasLairFallingRocks16": 1,
+  "Doodad_OnyziasLairFallingRocks17": 1,
+  "Doodad_OnyziasLairFallingRocks18": 1,
+  "Doodad_OnyziasLairFallingRocks19": 1,
+  "Doodad_OnyziasLairFallingRocks20": 1,
+  "Doodad_OnyziasLairFallingRocks21": 1,
+  "Doodad_OnyziasLairFallingRocks22": 1,
+  "Doodad_OnyziasLairFallingRocks23": 1,
+  "Doodad_OnyziasLairFallingRocks24": 1,
+  "Doodad_OnyziasLairFallingRocks25": 1,
+  "Doodad_OnyziasLairFallingRocks26": 1,
+  "Doodad_OnyziasLairLavaTrap51": 1,
+  "Doodad_OnyziasLairLavaTrap52": 1,
+  "Doodad_OnyziasLairLavaTrap53": 1,
+  "Doodad_OnyziasLairLavaTrap54": 1,
+  "Doodad_OnyziasLairLavaTrap55": 1,
+  "Doodad_OnyziasLairLavaTrap56": 1,
+  "Doodad_OnyziasLairLavaTrap57": 1,
+  "Doodad_OnyziasLairLavaTrap58": 1,
+  "Doodad_OnyziasLairLavaTrap59": 1,
+  "Doodad_OnyziasLairLavaTrap60": 1,
+  "Doodad_OnyziasLairLavaTrap61": 1,
+  "Doodad_OnyziasLairLavaTrap62": 1,
+  "Doodad_OnyziasLairLavaTrap63": 1,
+  "Doodad_OnyziasLairLavaTrap64": 1,
+  "Doodad_OnyziasLairLavaTrap65": 1,
+  "Doodad_OnyziasLairLavaTrap66": 1,
+  "Doodad_OnyziasLairLavaTrap67": 1,
+  "Doodad_OnyziasLairLavaTrap68": 1,
+  "Doodad_OnyziasLairLavaTrap69": 1,
+  "Doodad_OnyziasLairLavaTrap70": 1,
+  "Doodad_OnyziasLairLavaTrap71": 1,
+  "Doodad_OnyziasLairLavaTrap72": 1,
+  "Doodad_OnyziasLairLavaTrap73": 1,
+  "Doodad_OnyziasLairLavaTrap74": 1,
+  "Doodad_OnyziasLairLavaTrap75": 1,
+  "Doodad_OnyziasLairLavaTrap76": 1,
+  "Doodad_OnyziasLairLavaTrap77": 1,
+  "Doodad_OnyziasLairLavaTrap78": 1,
+  "Doodad_OnyziasLairLavaTrap79": 1,
+  "Doodad_OnyziasLairLavaTrap80": 1,
+  "Doodad_OnyziasLairLavaTrap81": 1,
+  "Doodad_OnyziasLairLavaTrap82": 1,
+  "Doodad_OnyziasLairLavaTrap83": 1,
+  "Doodad_OnyziasLairLavaTrapMirror20": 1,
+  "Doodad_OnyziasLairLavaTrapMirror21": 1,
+  "Doodad_OnyziasLairLavaTrapMirror22": 1,
+  "Doodad_OnyziasLairLavaTrapMirror23": 1,
+  "Doodad_OnyziasLairLavaTrapMirror24": 1,
+  "Doodad_OnyziasLairLavaTrapMirror25": 1,
+  "Doodad_OnyziasLairLavaTrapMirror26": 1,
+  "Doodad_OnyziasLairLavaTrapMirror27": 1,
+  "Doodad_OnyziasLairLavaTrapMirror28": 1,
+  "Doodad_OnyziasLairLavaTrapMirror29": 1,
+  "Doodad_OnyziasLairLavaTrapMirror30": 1,
+  "Doodad_OnyziasLairLavaTrapMirror31": 1,
+  "Doodad_OnyziasLairLavaTrapMirror32": 1,
+  "Doodad_OnyziasLairLavaTrapMirror33": 1,
+  "Doodad_OnyziasLairLavaTrapMirror34": 1,
+  "Doodad_OnyziasLairLavaTrapMirror35": 1,
+  "Doodad_OnyziasLairLavaTrapMirror36": 1,
+  "Doodad_OnyziasLairLavaTrapMirror37": 1,
+  "Doodad_OnyziasLairLavaTrapMirror38": 1,
+  "Lava Fissure": 52,
+  "Onyxia Egg": 119
+ },
+ "gameobjects": [
+  {
+   "entry": 176511,
+   "guid": 39402,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -95.6,
+    -189.9,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39403,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -106.8,
+    -227.1,
+    -94.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39404,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -113.0,
+    -239.3,
+    -92.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39405,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -99.0,
+    -232.9,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39406,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -106.7,
+    -235.0,
+    -94.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39407,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -112.8,
+    -232.2,
+    -92.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39408,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -111.7,
+    -241.2,
+    -92.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39409,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -99.5,
+    -231.5,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39410,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -111.6,
+    -243.4,
+    -92.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39411,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -99.1,
+    -235.4,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39412,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -111.4,
+    -246.1,
+    -92.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39413,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -108.5,
+    -243.1,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39414,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -103.3,
+    -249.6,
+    -93.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39415,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -106.3,
+    -253.5,
+    -92.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39416,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -103.5,
+    -254.8,
+    -92.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39417,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -107.2,
+    -221.8,
+    -95.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39418,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -104.5,
+    -218.3,
+    -96.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39419,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -96.3,
+    -191.5,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39420,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -109.3,
+    -192.9,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39421,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -99.0,
+    -193.0,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39422,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -103.5,
+    -199.9,
+    -93.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39423,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -111.5,
+    -199.3,
+    -92.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39424,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -114.9,
+    -197.4,
+    -92.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39425,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -113.5,
+    -198.3,
+    -92.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39426,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -111.0,
+    -201.0,
+    -92.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39427,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -104.6,
+    -211.2,
+    -96.2
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39428,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -113.0,
+    -208.1,
+    -93.2
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39429,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -107.7,
+    -206.5,
+    -94.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39430,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -110.5,
+    -210.6,
+    -95.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39431,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -106.7,
+    -213.3,
+    -96.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39432,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -110.2,
+    -220.2,
+    -94.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39433,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -98.8,
+    -247.0,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39434,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -107.8,
+    -253.6,
+    -92.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39435,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -96.0,
+    -256.3,
+    -92.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39436,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -63.4,
+    -270.1,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39437,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -54.1,
+    -265.4,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39438,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -61.5,
+    -273.8,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39439,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -44.6,
+    -262.8,
+    -91.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39440,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -50.3,
+    -263.7,
+    -93.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39441,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -38.7,
+    -274.1,
+    -91.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39442,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -45.5,
+    -274.0,
+    -92.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39443,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -50.1,
+    -276.1,
+    -92.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39444,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -42.1,
+    -275.0,
+    -91.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39445,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -40.7,
+    -271.1,
+    -91.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39446,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -45.7,
+    -276.8,
+    -92.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39447,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -44.1,
+    -267.1,
+    -92.2
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39448,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -35.5,
+    -267.2,
+    -91.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39449,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -31.0,
+    -271.5,
+    -90.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39450,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -59.5,
+    -274.6,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39451,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -52.5,
+    -263.2,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39452,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -88.7,
+    -248.1,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39453,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -87.6,
+    -249.8,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39454,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -86.0,
+    -247.1,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39455,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -86.2,
+    -253.4,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39456,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -87.4,
+    -262.4,
+    -93.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39457,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -91.7,
+    -267.4,
+    -92.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39458,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -87.9,
+    -269.2,
+    -92.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39459,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -90.3,
+    -268.1,
+    -92.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39460,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -80.2,
+    -267.3,
+    -93.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39461,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -74.6,
+    -262.8,
+    -94.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39462,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -67.8,
+    -260.0,
+    -94.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39463,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -64.9,
+    -264.9,
+    -94.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39464,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -66.9,
+    -262.5,
+    -94.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39465,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -54.8,
+    -262.6,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39466,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -35.7,
+    -274.8,
+    -91.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39467,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -98.3,
+    -191.2,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39468,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -47.5,
+    -152.7,
+    -92.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39469,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -29.8,
+    -158.3,
+    -90.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39470,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -51.3,
+    -165.3,
+    -93.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39471,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -59.7,
+    -155.8,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39472,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -54.7,
+    -158.8,
+    -94.2
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39473,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -53.8,
+    -150.0,
+    -92.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39474,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -115.0,
+    -181.7,
+    -92.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39475,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -59.2,
+    -166.1,
+    -94.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39476,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -43.4,
+    -165.8,
+    -91.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39477,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -85.7,
+    -161.3,
+    -92.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39478,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -68.2,
+    -161.5,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39479,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -74.6,
+    -166.8,
+    -94.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39480,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -71.0,
+    -162.1,
+    -93.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39481,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -79.7,
+    -165.8,
+    -94.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39482,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -37.9,
+    -153.1,
+    -91.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39483,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -50.4,
+    -165.6,
+    -93.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39484,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -45.8,
+    -151.8,
+    -92.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39485,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -53.4,
+    -157.9,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39486,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -50.1,
+    -157.1,
+    -93.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39487,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -29.4,
+    -162.4,
+    -89.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39488,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -67.2,
+    -160.2,
+    -93.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39489,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -65.3,
+    -157.4,
+    -93.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39490,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -37.5,
+    -159.2,
+    -91.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39491,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -44.8,
+    -159.4,
+    -92.6
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39492,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -49.6,
+    -150.5,
+    -92.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39493,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -52.0,
+    -149.9,
+    -92.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39494,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -47.7,
+    -165.9,
+    -91.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39495,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -37.5,
+    -169.3,
+    -90.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39496,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -39.6,
+    -153.2,
+    -91.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39497,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -45.8,
+    -165.0,
+    -91.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39498,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -87.1,
+    -164.3,
+    -93.2
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39499,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -70.2,
+    -171.6,
+    -94.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39500,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -106.5,
+    -181.4,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39501,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -111.5,
+    -182.8,
+    -92.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39502,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -113.5,
+    -181.2,
+    -92.5
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39503,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -101.6,
+    -178.3,
+    -93.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39504,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -109.7,
+    -176.4,
+    -92.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39505,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -95.2,
+    -182.4,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39506,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -104.1,
+    -179.0,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39507,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -93.2,
+    -180.8,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39508,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -90.7,
+    -181.8,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39509,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -88.0,
+    -181.0,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39510,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -94.0,
+    -181.7,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39511,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -103.3,
+    -185.9,
+    -94.1
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39512,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -91.3,
+    -180.0,
+    -93.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39513,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -100.3,
+    -179.6,
+    -94.0
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39514,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -83.5,
+    -171.2,
+    -94.2
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39515,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -86.6,
+    -162.2,
+    -92.9
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39516,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -114.2,
+    -189.9,
+    -92.4
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39517,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -94.1,
+    -166.5,
+    -93.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39518,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -106.5,
+    -179.0,
+    -93.3
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39519,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -92.7,
+    -173.8,
+    -93.8
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176511,
+   "guid": 39520,
+   "kind": "egg",
+   "name": "Onyxia Egg",
+   "pos": [
+    -85.7,
+    -166.6,
+    -93.7
+   ],
+   "respawn": 30,
+   "type": 6
+  },
+  {
+   "entry": 176513,
+   "guid": 39521,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    24.2,
+    -235.5,
+    -85.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176514,
+   "guid": 39522,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    14.4,
+    -233.5,
+    -86.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176515,
+   "guid": 39523,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    17.4,
+    -245.0,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176809,
+   "guid": 39524,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    16.8,
+    -225.1,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176810,
+   "guid": 39525,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -28.1,
+    -190.7,
+    -89.7
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176811,
+   "guid": 39526,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -26.4,
+    -199.6,
+    -88.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176812,
+   "guid": 39527,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    8.2,
+    -253.6,
+    -86.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176813,
+   "guid": 39528,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    7.1,
+    -244.0,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176814,
+   "guid": 39529,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -4.0,
+    -249.0,
+    -85.9
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176815,
+   "guid": 39530,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -0.6,
+    -239.8,
+    -87.4
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176816,
+   "guid": 39531,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -15.4,
+    -232.5,
+    -89.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176817,
+   "guid": 39532,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -12.9,
+    -245.3,
+    -88.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176818,
+   "guid": 39533,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -21.0,
+    -254.7,
+    -87.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176819,
+   "guid": 39534,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    3.2,
+    -230.4,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176820,
+   "guid": 39535,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -37.4,
+    -244.9,
+    -89.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176821,
+   "guid": 39536,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -26.1,
+    -229.6,
+    -88.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176822,
+   "guid": 39537,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -28.1,
+    -238.2,
+    -89.7
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176823,
+   "guid": 39538,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    29.2,
+    -206.8,
+    -84.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176824,
+   "guid": 39539,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    31.2,
+    -219.0,
+    -83.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176825,
+   "guid": 39540,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    13.2,
+    -214.4,
+    -86.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176826,
+   "guid": 39541,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -37.4,
+    -184.5,
+    -89.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176827,
+   "guid": 39542,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -1.7,
+    -217.1,
+    -85.7
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176828,
+   "guid": 39543,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -9.8,
+    -212.0,
+    -88.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176829,
+   "guid": 39544,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -19.4,
+    -219.9,
+    -88.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176830,
+   "guid": 39545,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -19.7,
+    -209.6,
+    -88.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176831,
+   "guid": 39546,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    24.1,
+    -193.9,
+    -85.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176832,
+   "guid": 39547,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    14.3,
+    -195.4,
+    -86.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176833,
+   "guid": 39548,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    17.0,
+    -204.3,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176834,
+   "guid": 39549,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    17.6,
+    -184.0,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176835,
+   "guid": 39550,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    3.0,
+    -198.7,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176836,
+   "guid": 39551,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -0.4,
+    -189.3,
+    -87.4
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176837,
+   "guid": 39552,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    7.0,
+    -185.4,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176838,
+   "guid": 39553,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    8.0,
+    -175.8,
+    -86.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176839,
+   "guid": 39554,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -3.7,
+    -180.0,
+    -85.9
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176840,
+   "guid": 39555,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -12.9,
+    -183.5,
+    -88.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176841,
+   "guid": 39556,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -21.1,
+    -174.7,
+    -87.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176842,
+   "guid": 39557,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -15.7,
+    -196.5,
+    -89.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176908,
+   "guid": 39571,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -48.0,
+    -193.9,
+    -86.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176909,
+   "guid": 39572,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -55.0,
+    -199.1,
+    -85.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176910,
+   "guid": 39573,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -64.2,
+    -196.1,
+    -85.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176911,
+   "guid": 39574,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -54.8,
+    -187.0,
+    -85.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176912,
+   "guid": 39575,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -62.9,
+    -213.2,
+    -85.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176913,
+   "guid": 39576,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -51.7,
+    -214.4,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176914,
+   "guid": 39577,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -45.1,
+    -220.2,
+    -86.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176915,
+   "guid": 39578,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -39.1,
+    -212.1,
+    -87.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176916,
+   "guid": 39579,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -78.6,
+    -210.4,
+    -83.4
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176917,
+   "guid": 39580,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -72.9,
+    -201.9,
+    -83.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176918,
+   "guid": 39581,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -75.1,
+    -224.7,
+    -83.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176919,
+   "guid": 39582,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -54.7,
+    -229.8,
+    -85.9
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176920,
+   "guid": 39583,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -48.1,
+    -234.9,
+    -86.3
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176921,
+   "guid": 39584,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -55.1,
+    -241.8,
+    -85.3
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 176922,
+   "guid": 39585,
+   "kind": "fissure",
+   "name": "Lava Fissure",
+   "pos": [
+    -63.9,
+    -232.9,
+    -85.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177984,
+   "guid": 39586,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap51",
+   "pos": [
+    16.8,
+    -225.1,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177985,
+   "guid": 39587,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror20",
+   "pos": [
+    -28.1,
+    -190.7,
+    -89.7
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177986,
+   "guid": 39588,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror21",
+   "pos": [
+    -26.4,
+    -199.6,
+    -88.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177987,
+   "guid": 39589,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap52",
+   "pos": [
+    24.2,
+    -235.5,
+    -85.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177988,
+   "guid": 39590,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap53",
+   "pos": [
+    14.4,
+    -233.5,
+    -86.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177989,
+   "guid": 39591,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap54",
+   "pos": [
+    17.4,
+    -245.0,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177990,
+   "guid": 39592,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap55",
+   "pos": [
+    8.2,
+    -253.6,
+    -86.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177991,
+   "guid": 39593,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap56",
+   "pos": [
+    7.1,
+    -244.0,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177992,
+   "guid": 39594,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap57",
+   "pos": [
+    -4.0,
+    -249.0,
+    -85.9
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177993,
+   "guid": 39595,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap58",
+   "pos": [
+    -0.6,
+    -239.8,
+    -87.4
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177994,
+   "guid": 39596,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap59",
+   "pos": [
+    -15.4,
+    -232.5,
+    -89.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177995,
+   "guid": 39597,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap60",
+   "pos": [
+    -12.9,
+    -245.3,
+    -88.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177996,
+   "guid": 39598,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap61",
+   "pos": [
+    -21.0,
+    -254.7,
+    -87.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177997,
+   "guid": 39599,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap62",
+   "pos": [
+    3.2,
+    -230.4,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177998,
+   "guid": 39600,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap63",
+   "pos": [
+    -37.4,
+    -244.9,
+    -89.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 177999,
+   "guid": 39601,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap64",
+   "pos": [
+    -26.1,
+    -229.6,
+    -88.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178000,
+   "guid": 39602,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap65",
+   "pos": [
+    -28.1,
+    -238.2,
+    -89.7
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178001,
+   "guid": 39603,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap66",
+   "pos": [
+    29.2,
+    -206.8,
+    -84.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178002,
+   "guid": 39604,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap67",
+   "pos": [
+    31.2,
+    -219.0,
+    -83.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178003,
+   "guid": 39605,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap68",
+   "pos": [
+    13.2,
+    -214.4,
+    -86.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178004,
+   "guid": 39606,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror22",
+   "pos": [
+    -37.4,
+    -184.5,
+    -89.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178005,
+   "guid": 39607,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap69",
+   "pos": [
+    -1.7,
+    -217.1,
+    -85.7
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178006,
+   "guid": 39608,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap70",
+   "pos": [
+    -9.8,
+    -212.0,
+    -88.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178007,
+   "guid": 39609,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap71",
+   "pos": [
+    -19.4,
+    -219.9,
+    -88.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178008,
+   "guid": 39610,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap72",
+   "pos": [
+    -19.7,
+    -209.6,
+    -88.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178009,
+   "guid": 39611,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror23",
+   "pos": [
+    24.1,
+    -193.9,
+    -85.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178010,
+   "guid": 39612,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror24",
+   "pos": [
+    14.3,
+    -195.4,
+    -86.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178011,
+   "guid": 39613,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror25",
+   "pos": [
+    17.0,
+    -204.3,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178012,
+   "guid": 39614,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror26",
+   "pos": [
+    17.6,
+    -184.0,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178013,
+   "guid": 39615,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror27",
+   "pos": [
+    3.0,
+    -198.7,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178014,
+   "guid": 39616,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror28",
+   "pos": [
+    -0.4,
+    -189.3,
+    -87.4
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178015,
+   "guid": 39617,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror29",
+   "pos": [
+    7.0,
+    -185.4,
+    -87.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178016,
+   "guid": 39618,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror30",
+   "pos": [
+    8.0,
+    -175.8,
+    -86.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178017,
+   "guid": 39619,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror31",
+   "pos": [
+    -3.7,
+    -180.0,
+    -85.9
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178018,
+   "guid": 39620,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror32",
+   "pos": [
+    -12.9,
+    -183.5,
+    -88.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178019,
+   "guid": 39621,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror33",
+   "pos": [
+    -21.1,
+    -174.7,
+    -87.8
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178020,
+   "guid": 39622,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror34",
+   "pos": [
+    -15.7,
+    -196.5,
+    -89.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178034,
+   "guid": 39636,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap73",
+   "pos": [
+    -48.0,
+    -193.9,
+    -86.0
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178035,
+   "guid": 39637,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap74",
+   "pos": [
+    -55.0,
+    -199.1,
+    -85.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178036,
+   "guid": 39638,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap75",
+   "pos": [
+    -64.2,
+    -196.1,
+    -85.1
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178037,
+   "guid": 39639,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap76",
+   "pos": [
+    -54.8,
+    -187.0,
+    -85.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178038,
+   "guid": 39640,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap77",
+   "pos": [
+    -62.9,
+    -213.2,
+    -85.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178039,
+   "guid": 39641,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap78",
+   "pos": [
+    -51.7,
+    -214.4,
+    -86.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178040,
+   "guid": 39642,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap79",
+   "pos": [
+    -45.1,
+    -220.2,
+    -86.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178041,
+   "guid": 39643,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap80",
+   "pos": [
+    -39.1,
+    -212.1,
+    -87.2
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178042,
+   "guid": 39644,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap81",
+   "pos": [
+    -78.6,
+    -210.4,
+    -83.4
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178043,
+   "guid": 39645,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap82",
+   "pos": [
+    -72.9,
+    -201.9,
+    -83.6
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178044,
+   "guid": 39646,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrap83",
+   "pos": [
+    -75.1,
+    -224.7,
+    -83.5
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178045,
+   "guid": 39647,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror35",
+   "pos": [
+    -54.7,
+    -229.8,
+    -85.9
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178046,
+   "guid": 39648,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror36",
+   "pos": [
+    -48.1,
+    -234.9,
+    -86.3
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178047,
+   "guid": 39649,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror37",
+   "pos": [
+    -55.1,
+    -241.8,
+    -85.3
+   ],
+   "respawn": 180,
+   "type": 6
+  },
+  {
+   "entry": 178048,
+   "guid": 39650,
+   "kind": "lavatrap",
+   "name": "Doodad_OnyziasLairLavaTrapMirror38",
+   "pos": [
+    -63.9,
+    -232.9,
+    -85.1
+   ],
+   "respawn": 180,
+   "type": 6
+  }
+ ],
+ "generator": "tools/raidmap/regen.sh (tools/raidmap/raid_map.py)",
+ "hazards": [
+  {
+   "ids": [
+    "R52048",
+    "P52053"
+   ],
+   "score": 88.0,
+   "text": "fight records: P52053 (Onyxian Warder) joined 16 of 40 fights on R52048 (Onyxian Warder); 0 of those were wipes, 13 times it struck first (unprovoked)",
+   "type": "fight-joiner"
+  },
+  {
+   "ids": [
+    "R52050"
+   ],
+   "score": 32.5,
+   "text": "R52050 (Onyxian Warder) respawns every 20 min",
+   "type": "fast-respawn"
+  },
+  {
+   "ids": [
+    "R52052"
+   ],
+   "score": 32.5,
+   "text": "R52052 (Onyxian Warder) respawns every 20 min",
+   "type": "fast-respawn"
+  },
+  {
+   "ids": [
+    "P52053"
+   ],
+   "score": 32.5,
+   "text": "P52053 (Onyxian Warder) respawns every 20 min",
+   "type": "fast-respawn"
+  },
+  {
+   "ids": [
+    "R52048"
+   ],
+   "score": 30.5,
+   "text": "R52048 (Onyxian Warder) respawns every 1.8 h",
+   "type": "fast-respawn"
+  },
+  {
+   "ids": [
+    "R52049"
+   ],
+   "score": 30.5,
+   "text": "R52049 (Onyxian Warder) respawns every 1.8 h",
+   "type": "fast-respawn"
+  }
+ ],
+ "key": "onyxia",
+ "map": 249,
+ "name": "Onyxia's Lair",
+ "objects": {
+  "B-Onyxia": {
+   "area": "A-Onyxia",
+   "centre": [
+    -4.9,
+    -217.2,
+    -86.7
+   ],
+   "composition": "Onyxia",
+   "elites": 1,
+   "entries": [
+    10184
+   ],
+   "fights": {
+    "deaths": 3395,
+    "fights": 101,
+    "joinedBy": {},
+    "joinedByUnprovoked": {},
+    "joinedByWipe": {},
+    "joinedInto": {},
+    "joinedOthers": 0,
+    "joinedOthersUnprovoked": 0,
+    "last": {
+     "deaths": 40,
+     "outcome": "wipe",
+     "secs": 194,
+     "t": "2026-11-18 18:43:16"
+    },
+    "other": 0,
+    "recentFights": 101,
+    "recentWin": 18,
+    "recentWipe": 83,
+    "summoned": {
+     "Cat": 75,
+     "Imp": 64,
+     "Onyxian Whelp": 9835
+    },
+    "win": 18,
+    "wipe": 83
+   },
+   "groupFlags": [],
+   "groupLeaders": [],
+   "id": "B-Onyxia",
+   "kind": "boss",
+   "learned": {
+    "Onyxia": [
+     "cone 45 yd"
+    ]
+   },
+   "linkedAcross": null,
+   "members": [
+    {
+     "alt": [],
+     "entry": 10184,
+     "guid": 47572,
+     "mt": 0,
+     "name": "Onyxia",
+     "pos": [
+      -4.9,
+      -217.2,
+      -86.7
+     ],
+     "rank": 3,
+     "respawn": [
+      604800,
+      604800
+     ],
+     "wander": 0.0
+    }
+   ],
+   "name": "Onyxia",
+   "neighbours": [],
+   "passedBy": [],
+   "patrolling": false,
+   "pools": [],
+   "radius": 0.0,
+   "reach": 28.0,
+   "respawn": [
+    [
+     604800,
+     604800
+    ]
+   ],
+   "routes": [],
+   "tactics": [
+    "no-bubble-under-boss",
+    "airborne-melee-spread",
+    "heal-walk-avoids-arcs",
+    "no-turn-after-landing",
+    "wall-away-from-raid",
+    "save-taunt-for-landing",
+    "tanks-stage-for-landing",
+    "onyxia-threat-discipline"
+   ]
+  },
+  "P52053": {
+   "area": "A-Onyxia",
+   "centre": [
+    -199.1,
+    -209.8,
+    -68.9
+   ],
+   "composition": "Onyxian Warder",
+   "elites": 1,
+   "entries": [
+    12129
+   ],
+   "fights": {
+    "deaths": 0,
+    "fights": 24,
+    "joinedBy": {},
+    "joinedByUnprovoked": {},
+    "joinedByWipe": {},
+    "joinedInto": {
+     "R52048": 16
+    },
+    "joinedOthers": 16,
+    "joinedOthersUnprovoked": 13,
+    "last": {
+     "deaths": 0,
+     "outcome": "win",
+     "secs": 11,
+     "t": "2026-11-18 18:38:26"
+    },
+    "other": 0,
+    "recentFights": 24,
+    "recentWin": 24,
+    "recentWipe": 0,
+    "summoned": {},
+    "win": 24,
+    "wipe": 0
+   },
+   "groupFlags": [],
+   "groupLeaders": [],
+   "id": "P52053",
+   "kind": "elite",
+   "learned": {
+    "Onyxian Warder": [
+     "pulse 20 yd",
+     "burst rhythm 16.3 s"
+    ]
+   },
+   "linkedAcross": null,
+   "members": [
+    {
+     "alt": [],
+     "entry": 12129,
+     "guid": 52053,
+     "mt": 0,
+     "name": "Onyxian Warder",
+     "pos": [
+      -199.1,
+      -209.8,
+      -68.9
+     ],
+     "rank": 1,
+     "respawn": [
+      1201,
+      1201
+     ],
+     "wander": 0.0
+    }
+   ],
+   "name": "Onyxian Warder",
+   "neighbours": [],
+   "passedBy": [
+    {
+     "dist": 35.3,
+     "insideReach": false,
+     "owner": "R52048",
+     "route": "R52048"
+    }
+   ],
+   "patrolling": false,
+   "pools": [],
+   "radius": 0.0,
+   "reach": 28.0,
+   "respawn": [
+    [
+     1201,
+     1201
+    ]
+   ],
+   "routes": [],
+   "tactics": []
+  },
+  "R52048": {
+   "area": "A-Onyxia",
+   "centre": [
+    -170.3,
+    -195.7,
+    -66.4
+   ],
+   "composition": "Onyxian Warder",
+   "elites": 1,
+   "entries": [
+    12129
+   ],
+   "fights": {
+    "deaths": 0,
+    "fights": 40,
+    "joinedBy": {
+     "P52053": 16
+    },
+    "joinedByUnprovoked": {
+     "P52053": 13
+    },
+    "joinedByWipe": {},
+    "joinedInto": {},
+    "joinedOthers": 0,
+    "joinedOthersUnprovoked": 0,
+    "last": {
+     "deaths": 0,
+     "outcome": "win",
+     "secs": 21,
+     "t": "2026-11-18 18:37:38"
+    },
+    "other": 0,
+    "recentFights": 40,
+    "recentWin": 40,
+    "recentWipe": 0,
+    "summoned": {},
+    "win": 40,
+    "wipe": 0
+   },
+   "groupFlags": [],
+   "groupLeaders": [],
+   "id": "R52048",
+   "kind": "patrol",
+   "learned": {
+    "Onyxian Warder": [
+     "pulse 20 yd",
+     "burst rhythm 16.3 s"
+    ]
+   },
+   "linkedAcross": null,
+   "members": [
+    {
+     "alt": [],
+     "entry": 12129,
+     "guid": 52048,
+     "mt": 2,
+     "name": "Onyxian Warder",
+     "pos": [
+      -170.3,
+      -195.7,
+      -66.4
+     ],
+     "rank": 1,
+     "respawn": [
+      6300,
+      6300
+     ],
+     "wander": 0.0
+    }
+   ],
+   "name": "Onyxian Warder",
+   "passedBy": [],
+   "patrolling": true,
+   "pools": [],
+   "radius": 0.0,
+   "reach": 28.0,
+   "respawn": [
+    [
+     6300,
+     6300
+    ]
+   ],
+   "routes": [
+    "R52048"
+   ],
+   "tactics": []
+  },
+  "R52049": {
+   "area": "A-Entrance",
+   "centre": [
+    -49.9,
+    -98.1,
+    -38.6
+   ],
+   "composition": "Onyxian Warder",
+   "elites": 1,
+   "entries": [
+    12129
+   ],
+   "fights": {
+    "deaths": 0,
+    "fights": 40,
+    "joinedBy": {},
+    "joinedByUnprovoked": {},
+    "joinedByWipe": {},
+    "joinedInto": {},
+    "joinedOthers": 0,
+    "joinedOthersUnprovoked": 0,
+    "last": {
+     "deaths": 0,
+     "outcome": "win",
+     "secs": 13,
+     "t": "2026-11-18 18:36:00"
+    },
+    "other": 0,
+    "recentFights": 40,
+    "recentWin": 40,
+    "recentWipe": 0,
+    "summoned": {},
+    "win": 40,
+    "wipe": 0
+   },
+   "groupFlags": [],
+   "groupLeaders": [],
+   "id": "R52049",
+   "kind": "patrol",
+   "learned": {
+    "Onyxian Warder": [
+     "pulse 20 yd",
+     "burst rhythm 16.3 s"
+    ]
+   },
+   "linkedAcross": null,
+   "members": [
+    {
+     "alt": [],
+     "entry": 12129,
+     "guid": 52049,
+     "mt": 2,
+     "name": "Onyxian Warder",
+     "pos": [
+      -49.9,
+      -98.1,
+      -38.6
+     ],
+     "rank": 1,
+     "respawn": [
+      6300,
+      6300
+     ],
+     "wander": 0.0
+    }
+   ],
+   "name": "Onyxian Warder",
+   "passedBy": [],
+   "patrolling": true,
+   "pools": [],
+   "radius": 0.0,
+   "reach": 28.0,
+   "respawn": [
+    [
+     6300,
+     6300
+    ]
+   ],
+   "routes": [
+    "R52049"
+   ],
+   "tactics": []
+  },
+  "R52050": {
+   "area": "A-Entrance",
+   "centre": [
+    49.8,
+    -114.6,
+    -24.3
+   ],
+   "composition": "Onyxian Warder",
+   "elites": 1,
+   "entries": [
+    12129
+   ],
+   "fights": {
+    "deaths": 0,
+    "fights": 40,
+    "joinedBy": {},
+    "joinedByUnprovoked": {},
+    "joinedByWipe": {},
+    "joinedInto": {},
+    "joinedOthers": 0,
+    "joinedOthersUnprovoked": 0,
+    "last": {
+     "deaths": 0,
+     "outcome": "win",
+     "secs": 14,
+     "t": "2026-11-18 18:34:38"
+    },
+    "other": 0,
+    "recentFights": 40,
+    "recentWin": 40,
+    "recentWipe": 0,
+    "summoned": {},
+    "win": 40,
+    "wipe": 0
+   },
+   "groupFlags": [],
+   "groupLeaders": [],
+   "id": "R52050",
+   "kind": "patrol",
+   "learned": {
+    "Onyxian Warder": [
+     "pulse 20 yd",
+     "burst rhythm 16.3 s"
+    ]
+   },
+   "linkedAcross": null,
+   "members": [
+    {
+     "alt": [],
+     "entry": 12129,
+     "guid": 52050,
+     "mt": 2,
+     "name": "Onyxian Warder",
+     "pos": [
+      49.8,
+      -114.6,
+      -24.3
+     ],
+     "rank": 1,
+     "respawn": [
+      1201,
+      1201
+     ],
+     "wander": 0.0
+    }
+   ],
+   "name": "Onyxian Warder",
+   "passedBy": [],
+   "patrolling": true,
+   "pools": [],
+   "radius": 0.0,
+   "reach": 28.0,
+   "respawn": [
+    [
+     1201,
+     1201
+    ]
+   ],
+   "routes": [
+    "R52050"
+   ],
+   "tactics": []
+  },
+  "R52052": {
+   "area": "A-Onyxia",
+   "centre": [
+    -131.2,
+    -137.5,
+    -52.5
+   ],
+   "composition": "Onyxian Warder",
+   "elites": 1,
+   "entries": [
+    12129
+   ],
+   "fights": {
+    "deaths": 0,
+    "fights": 40,
+    "joinedBy": {},
+    "joinedByUnprovoked": {},
+    "joinedByWipe": {},
+    "joinedInto": {},
+    "joinedOthers": 0,
+    "joinedOthersUnprovoked": 0,
+    "last": {
+     "deaths": 0,
+     "outcome": "win",
+     "secs": 21,
+     "t": "2026-11-18 18:36:48"
+    },
+    "other": 0,
+    "recentFights": 40,
+    "recentWin": 40,
+    "recentWipe": 0,
+    "summoned": {},
+    "win": 40,
+    "wipe": 0
+   },
+   "groupFlags": [],
+   "groupLeaders": [],
+   "id": "R52052",
+   "kind": "patrol",
+   "learned": {
+    "Onyxian Warder": [
+     "pulse 20 yd",
+     "burst rhythm 16.3 s"
+    ]
+   },
+   "linkedAcross": null,
+   "members": [
+    {
+     "alt": [],
+     "entry": 12129,
+     "guid": 52052,
+     "mt": 2,
+     "name": "Onyxian Warder",
+     "pos": [
+      -131.2,
+      -137.5,
+      -52.5
+     ],
+     "rank": 1,
+     "respawn": [
+      1201,
+      1201
+     ],
+     "wander": 0.0
+    }
+   ],
+   "name": "Onyxian Warder",
+   "passedBy": [],
+   "patrolling": true,
+   "pools": [],
+   "radius": 0.0,
+   "reach": 28.0,
+   "respawn": [
+    [
+     1201,
+     1201
+    ]
+   ],
+   "routes": [
+    "R52052"
+   ],
+   "tactics": []
+  }
+ },
+ "playbook": [],
+ "registry": [
+  {
+   "entries": [
+    10184
+   ],
+   "id": "NoBubbleUnderBoss",
+   "key": "no-bubble-under-boss",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-15 R3W2 Onyxia: the paladin tank's Divine Shield at +16 s sent her into the raid",
+   "what": "a paladin tank held by the boss never Divine Shields (Lay on Hands instead)"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "AirborneMeleeSpread",
+   "key": "airborne-melee-spread",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-15 R3W2 Onyxia phase 2: seven rogues on one whelp, one Engulfing Flames, 15 dead",
+   "what": "while the boss is airborne, at most two melee per small add"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "HealWalkAvoidsArcs",
+   "key": "heal-walk-avoids-arcs",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-15 R3W2 Onyxia phase 3: healers crossed her front, one Flame Breath killed 8",
+   "what": "a healer's closing walk never crosses a breather's other arc"
+  },
+  {
+   "entries": [],
+   "id": "PrePullFearWard",
+   "key": "pre-pull-fear-ward",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-15 R3W0 Onyxia: two phase-3 wipes began with a feared, unwarded tank",
+   "what": "priests Fear Ward every tank before the pull"
+  },
+  {
+   "entries": [],
+   "id": "FearWardEveryTank",
+   "key": "fear-ward-every-tank",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-15 R3W0 Onyxia: the first ward came 35 s after she landed",
+   "what": "with the boss tank and backup warded, the other tanks get one too"
+  },
+  {
+   "entries": [],
+   "id": "CouncilNo2HForTank",
+   "key": "council-no-2h-for-tank",
+   "maps": [
+    249,
+    409
+   ],
+   "origin": "2026-11-15 R3W0/R3W1: Earthshaker handed to a tank at every council, never worn",
+   "what": "loot council never hands a tank a two-handed weapon"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "NoTurnAfterLanding",
+   "key": "no-turn-after-landing",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-16 R3W8/R3W9 Onyxia: every phase-3 wall turn swept her Flame Breath across the raid (hits up to 59 deg off her facing on members already moving out); W9 att. 1 33 %, att. 2 wipe",
+   "what": "once she has landed (below 40 %) her tank holds her where she faces: no wall turning"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "WallAwayFromRaid",
+   "key": "wall-away-from-raid",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-16 R3W7 Onyxia 33 %: her head was turned to the nearest wall, 28 yd west, where the healers and ranged stood - one Flame Breath at +311 s killed 3, the next 3 more",
+   "what": "the cone boss's wall is the one with the fewest members between her head and it"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "SaveTauntForLanding",
+   "key": "save-taunt-for-landing",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-16 R3W6 Onyxia 39 %: tanks taunted her in the air (no effect), Taunt was on cooldown when she landed, a hunter held her and one Flame Breath killed 6",
+   "what": "tanks never taunt the boss while she is airborne: the taunt is kept for her landing"
+  },
+  {
+   "entries": [],
+   "id": "CouncilWearsChoice",
+   "key": "council-wears-choice",
+   "maps": [
+    249,
+    409
+   ],
+   "origin": "2026-11-16 R3W5: Staff of Dominance + Earthshaker 'in bags' on an Arms warrior at every council (both scored -100000, worn sword+shield -200000); Helm of Wrath, Belt/Sabatons of Might, Eskhandar's Collar lost to 'Sylwhisper has no bag room'",
+   "what": "loot council skips pieces the member's scoring rejects and puts the chosen piece on itself"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "TanksStageForLanding",
+   "key": "tanks-stage-for-landing",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-15 R3W3 Onyxia: she landed 66-88 yd from every tank, a warlock held her, one Flame Breath killed 6",
+   "what": "the boss's two top tanks wait at its landing spot before it lands"
+  },
+  {
+   "entries": [
+    10184
+   ],
+   "id": "OnyxiaThreatDiscipline",
+   "key": "onyxia-threat-discipline",
+   "maps": [
+    249
+   ],
+   "origin": "2026-11-14 Onyxia dev rounds (taunt-immune boss, threat wipes, landing); generic until 11-15, held MC bosses and trash back",
+   "what": "the 11-14 threat rules: tanks-first windows, backup tank, 75/80 % caps, healer holds"
+  }
+ ],
+ "registryMapWide": [
+  "pre-pull-fear-ward",
+  "fear-ward-every-tank",
+  "council-no-2h-for-tank",
+  "council-wears-choice"
+ ],
+ "routes": {
+  "R52048": {
+   "area": "A-Onyxia",
+   "areas": [
+    "A-Onyxia"
+   ],
+   "entry": 12129,
+   "fightsOwner": "R52048",
+   "guid": 52048,
+   "id": "R52048",
+   "length": 98.3,
+   "loopSecs": 44.2,
+   "name": "Onyxian Warder",
+   "owner": "R52048",
+   "passesNear": [
+    {
+     "at": [
+      -199.1,
+      -209.8,
+      -68.9
+     ],
+     "dist": 35.3,
+     "id": "P52053",
+     "insideReach": false,
+     "kind": "elite",
+     "member": 52053,
+     "memberName": "Onyxian Warder",
+     "reach": 28.0,
+     "segment": 4
+    }
+   ],
+   "points": [
+    {
+     "pos": [
+      -163.8,
+      -204.6,
+      -66.3
+     ],
+     "pt": 1,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -155.2,
+      -212.4,
+      -66.6
+     ],
+     "pt": 2,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -141.7,
+      -213.4,
+      -68.9
+     ],
+     "pt": 3,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -155.0,
+      -212.5,
+      -66.6
+     ],
+     "pt": 4,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -164.3,
+      -204.3,
+      -66.3
+     ],
+     "pt": 5,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -166.7,
+      -190.9,
+      -66.2
+     ],
+     "pt": 6,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -168.7,
+      -181.4,
+      -65.5
+     ],
+     "pt": 7,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -166.8,
+      -190.5,
+      -66.3
+     ],
+     "pt": 8,
+     "wait": 0
+    }
+   ],
+   "reach": 28.0,
+   "respawn": [
+    6300,
+    6300
+   ],
+   "runs": false,
+   "shape": "back-and-forth along a 49 yd line (way out and way back within 10 yd)",
+   "source": "creature_movement (guid)",
+   "spawn": [
+    -170.3,
+    -195.7,
+    -66.4
+   ],
+   "speed": 2.2,
+   "tactics": [],
+   "templatePathIgnored": false,
+   "waitSecs": 0.0
+  },
+  "R52049": {
+   "area": "A-Entrance",
+   "areas": [
+    "A-Entrance",
+    "A-Onyxia"
+   ],
+   "entry": 12129,
+   "fightsOwner": "R52049",
+   "guid": 52049,
+   "id": "R52049",
+   "length": 110.5,
+   "loopSecs": 49.7,
+   "name": "Onyxian Warder",
+   "owner": "R52049",
+   "passesNear": [],
+   "points": [
+    {
+     "pos": [
+      -52.1,
+      -98.2,
+      -38.7
+     ],
+     "pt": 1,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -74.8,
+      -98.3,
+      -35.0
+     ],
+     "pt": 2,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -86.2,
+      -100.0,
+      -36.6
+     ],
+     "pt": 3,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -96.6,
+      -108.6,
+      -39.2
+     ],
+     "pt": 4,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -101.9,
+      -112.7,
+      -41.5
+     ],
+     "pt": 5,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -96.9,
+      -108.6,
+      -39.3
+     ],
+     "pt": 6,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -85.8,
+      -100.3,
+      -36.5
+     ],
+     "pt": 7,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -74.6,
+      -98.5,
+      -35.0
+     ],
+     "pt": 8,
+     "wait": 0
+    }
+   ],
+   "reach": 28.0,
+   "respawn": [
+    6300,
+    6300
+   ],
+   "runs": false,
+   "shape": "back-and-forth along a 55 yd line (way out and way back within 10 yd)",
+   "source": "creature_movement (guid)",
+   "spawn": [
+    -49.9,
+    -98.1,
+    -38.6
+   ],
+   "speed": 2.2,
+   "tactics": [],
+   "templatePathIgnored": false,
+   "waitSecs": 0.0
+  },
+  "R52050": {
+   "area": "A-Entrance",
+   "areas": [
+    "A-Entrance"
+   ],
+   "entry": 12129,
+   "fightsOwner": "R52050",
+   "guid": 52050,
+   "id": "R52050",
+   "length": 80.5,
+   "loopSecs": 36.2,
+   "name": "Onyxian Warder",
+   "owner": "R52050",
+   "passesNear": [],
+   "points": [
+    {
+     "pos": [
+      52.3,
+      -105.3,
+      -24.8
+     ],
+     "pt": 1,
+     "wait": 0
+    },
+    {
+     "pos": [
+      52.4,
+      -97.1,
+      -25.1
+     ],
+     "pt": 2,
+     "wait": 0
+    },
+    {
+     "pos": [
+      50.3,
+      -90.0,
+      -25.8
+     ],
+     "pt": 3,
+     "wait": 0
+    },
+    {
+     "pos": [
+      46.2,
+      -77.3,
+      -26.6
+     ],
+     "pt": 4,
+     "wait": 0
+    },
+    {
+     "pos": [
+      50.6,
+      -90.4,
+      -25.7
+     ],
+     "pt": 5,
+     "wait": 0
+    },
+    {
+     "pos": [
+      52.6,
+      -97.5,
+      -25.1
+     ],
+     "pt": 6,
+     "wait": 0
+    },
+    {
+     "pos": [
+      52.5,
+      -105.6,
+      -24.8
+     ],
+     "pt": 7,
+     "wait": 0
+    },
+    {
+     "pos": [
+      46.5,
+      -114.8,
+      -24.7
+     ],
+     "pt": 8,
+     "wait": 0
+    }
+   ],
+   "reach": 28.0,
+   "respawn": [
+    1201,
+    1201
+   ],
+   "runs": false,
+   "shape": "back-and-forth along a 40 yd line (way out and way back within 10 yd)",
+   "source": "creature_movement (guid)",
+   "spawn": [
+    49.8,
+    -114.6,
+    -24.3
+   ],
+   "speed": 2.2,
+   "tactics": [],
+   "templatePathIgnored": false,
+   "waitSecs": 0.0
+  },
+  "R52052": {
+   "area": "A-Onyxia",
+   "areas": [
+    "A-Onyxia"
+   ],
+   "entry": 12129,
+   "fightsOwner": "R52052",
+   "guid": 52052,
+   "id": "R52052",
+   "length": 158.9,
+   "loopSecs": 71.5,
+   "name": "Onyxian Warder",
+   "owner": "R52052",
+   "passesNear": [],
+   "points": [
+    {
+     "pos": [
+      -135.8,
+      -142.1,
+      -53.4
+     ],
+     "pt": 1,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -150.0,
+      -151.3,
+      -53.5
+     ],
+     "pt": 2,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -159.6,
+      -158.2,
+      -57.5
+     ],
+     "pt": 3,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -164.1,
+      -163.1,
+      -59.3
+     ],
+     "pt": 4,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -169.9,
+      -174.0,
+      -63.5
+     ],
+     "pt": 5,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -164.3,
+      -163.3,
+      -59.4
+     ],
+     "pt": 6,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -159.7,
+      -157.8,
+      -57.4
+     ],
+     "pt": 7,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -149.4,
+      -150.9,
+      -53.5
+     ],
+     "pt": 8,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -135.6,
+      -142.1,
+      -53.3
+     ],
+     "pt": 9,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -125.9,
+      -133.6,
+      -51.4
+     ],
+     "pt": 10,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -113.4,
+      -122.5,
+      -49.0
+     ],
+     "pt": 11,
+     "wait": 0
+    },
+    {
+     "pos": [
+      -125.6,
+      -133.5,
+      -51.4
+     ],
+     "pt": 12,
+     "wait": 0
+    }
+   ],
+   "reach": 28.0,
+   "respawn": [
+    1201,
+    1201
+   ],
+   "runs": false,
+   "shape": "back-and-forth along a 79 yd line (way out and way back within 10 yd)",
+   "source": "creature_movement (guid)",
+   "spawn": [
+    -131.2,
+    -137.5,
+    -52.5
+   ],
+   "speed": 2.2,
+   "tactics": [],
+   "templatePathIgnored": false,
+   "waitSecs": 0.0
+  }
+ },
+ "rules": {
+  "eliteReach": 28.0,
+  "nearMargin": 10.0,
+  "neighbour": 40.0,
+  "proxLink": 12.0,
+  "recentDays": 7,
+  "splitLink": 30.0,
+  "wideReach": 34.0,
+  "wideReachEntries": []
+ },
+ "scriptBosses": {},
+ "scripts": {
+  "constants": [
+   {
+    "file": "boss_onyxia.cpp",
+    "line": 84,
+    "name": "ONYXIA_AGGRO_RANGE",
+    "value": 58.0
+   },
+   {
+    "file": "boss_onyxia.cpp",
+    "line": 86,
+    "name": "ONYXIA_NORMAL_SPEED",
+    "value": 1.28571
+   },
+   {
+    "file": "boss_onyxia.cpp",
+    "line": 87,
+    "name": "ONYXIA_BREATH_SPEED",
+    "value": 3.0
+   }
+  ],
+  "dir": "scripts/kalimdor/dustwallow_marsh/onyxias_lair",
+  "enum": {
+   "GO_LAVATRAP_1": 177984,
+   "GO_LAVATRAP_2": 177985,
+   "GO_WHELP_SPAWNER": 176510,
+   "NPC_ONYXIAN_WARDER": 12129,
+   "NPC_ONYXIAN_WHELP": 11262
+  },
+  "flight": [
+   {
+    "area": "A-Onyxia",
+    "breath": "NE -> SW",
+    "comment": "north-east",
+    "file": "boss_onyxia.cpp",
+    "id": 0,
+    "line": 99,
+    "spell": "SPELL_BREATH_NE_TO_SW",
+    "to": 4,
+    "x": 10.2191,
+    "y": -247.912,
+    "z": -65.896,
+    "zGround": -85.84668
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "EAST -> WEST",
+    "comment": "east",
+    "file": "boss_onyxia.cpp",
+    "id": 1,
+    "line": 100,
+    "spell": "SPELL_BREATH_EAST_TO_WEST",
+    "to": 5,
+    "x": -31.4963,
+    "y": -250.123,
+    "z": -65.1278,
+    "zGround": -89.127853
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "SE -> NW",
+    "comment": "south-east",
+    "file": "boss_onyxia.cpp",
+    "id": 2,
+    "line": 101,
+    "spell": "SPELL_BREATH_SE_TO_NW",
+    "to": 6,
+    "x": -63.5156,
+    "y": -240.096,
+    "z": -65.477,
+    "zGround": -85.066696
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "SOUTH -> NORTH",
+    "comment": "south",
+    "file": "boss_onyxia.cpp",
+    "id": 3,
+    "line": 102,
+    "spell": "SPELL_BREATH_SOUTH_TO_NORTH",
+    "to": 7,
+    "x": -65.8444,
+    "y": -213.809,
+    "z": -65.2985,
+    "zGround": -84.298462
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "SW -> NE",
+    "comment": "south-west",
+    "file": "boss_onyxia.cpp",
+    "id": 4,
+    "line": 103,
+    "spell": "SPELL_BREATH_SW_TO_NE",
+    "to": 0,
+    "x": -58.2509,
+    "y": -189.02,
+    "z": -65.79,
+    "zGround": -85.292267
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "WEST -> EAST",
+    "comment": "west",
+    "file": "boss_onyxia.cpp",
+    "id": 5,
+    "line": 104,
+    "spell": "SPELL_BREATH_WEST_TO_EAST",
+    "to": 1,
+    "x": -33.5561,
+    "y": -182.682,
+    "z": -65.9457,
+    "zGround": -88.945686
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "NW -> SE",
+    "comment": "north-west",
+    "file": "boss_onyxia.cpp",
+    "id": 6,
+    "line": 105,
+    "spell": "SPELL_BREATH_NW_TO_SE",
+    "to": 2,
+    "x": 6.8951,
+    "y": -180.246,
+    "z": -65.896,
+    "zGround": -85.634293
+   },
+   {
+    "area": "A-Onyxia",
+    "breath": "NORTH -> SOUTH",
+    "comment": "north",
+    "file": "boss_onyxia.cpp",
+    "id": 7,
+    "line": 106,
+    "spell": "SPELL_BREATH_NORTH_TO_SOUTH",
+    "to": 3,
+    "x": 22.8763,
+    "y": -217.152,
+    "z": -65.0548,
+    "zGround": -85.054054
+   }
+  ],
+  "positions": [
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "north-east",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_NE_TO_SW",
+    "line": 99,
+    "x": 10.2191,
+    "y": -247.912,
+    "z": -65.896
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "east",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_EAST_TO_WEST",
+    "line": 100,
+    "x": -31.4963,
+    "y": -250.123,
+    "z": -65.1278
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "south-east",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_SE_TO_NW",
+    "line": 101,
+    "x": -63.5156,
+    "y": -240.096,
+    "z": -65.477
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "south",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_SOUTH_TO_NORTH",
+    "line": 102,
+    "x": -65.8444,
+    "y": -213.809,
+    "z": -65.2985
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "south-west",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_SW_TO_NE",
+    "line": 103,
+    "x": -58.2509,
+    "y": -189.02,
+    "z": -65.79
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "west",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_WEST_TO_EAST",
+    "line": 104,
+    "x": -33.5561,
+    "y": -182.682,
+    "z": -65.9457
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "north-west",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_NW_TO_SE",
+    "line": 105,
+    "x": 6.8951,
+    "y": -180.246,
+    "z": -65.896
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "aMoveData",
+    "comment": "north",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "SPELL_BREATH_NORTH_TO_SOUTH",
+    "line": 106,
+    "x": 22.8763,
+    "y": -217.152,
+    "z": -65.0548
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "afSpawnLocations",
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "afSpawnLocations",
+    "line": 111,
+    "x": -30.127,
+    "y": -254.463,
+    "z": -89.44
+   },
+   {
+    "area": "A-Onyxia",
+    "array": "afSpawnLocations",
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": null,
+    "label": "afSpawnLocations",
+    "line": 112,
+    "x": -30.817,
+    "y": -177.106,
+    "z": -89.258
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "SummonPlayerIfOutOfReach",
+    "label": "NearTeleportTo",
+    "line": 278,
+    "x": -12.866907,
+    "y": -216.626007,
+    "z": -88.057808
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "SummonPlayerIfOutOfReach",
+    "label": "NearTeleportTo",
+    "line": 283,
+    "x": -12.866907,
+    "y": -216.626007,
+    "z": -88.057808
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "PhaseTransition",
+    "label": "MovePoint",
+    "line": 586,
+    "x": -57.750641,
+    "y": -215.610077,
+    "z": -85.094727
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "PhaseTransition",
+    "label": "MovePoint",
+    "line": 595,
+    "x": -57.204933,
+    "y": -215.592148,
+    "z": -85.156929
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "South",
+    "file": "boss_onyxia.cpp",
+    "func": "PhaseTransition",
+    "label": "MovePoint",
+    "line": 622,
+    "x": -59.895,
+    "y": -214.876,
+    "z": -84.855
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "North",
+    "file": "boss_onyxia.cpp",
+    "func": "PhaseTransition",
+    "label": "MovePoint",
+    "line": 624,
+    "x": -8.86,
+    "y": -212.752,
+    "z": -88.542
+   },
+   {
+    "area": "A-Onyxia",
+    "array": null,
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "PhaseTransition",
+    "label": "MovePoint",
+    "line": 632,
+    "x": -8.86,
+    "y": -212.752,
+    "z": -87.482
+   }
+  ],
+  "thresholds": [
+   {
+    "axis": "x",
+    "code": "if (m_creature->GetPositionX() < -95.0f)",
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "LeashIfOutOfCombatArea",
+    "line": 258,
+    "op": "<",
+    "value": -95.0
+   },
+   {
+    "axis": "x",
+    "code": "if (pVictim->GetPositionX() < -105.0f)",
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "SummonPlayerIfOutOfReach",
+    "line": 277,
+    "op": "<",
+    "value": -105.0
+   },
+   {
+    "axis": "x",
+    "code": "if (m_creature->GetPositionX() < -40.0f)",
+    "comment": "",
+    "file": "boss_onyxia.cpp",
+    "func": "PhaseTransition",
+    "line": 621,
+    "op": "<",
+    "value": -40.0
+   }
+  ]
+ },
+ "sources": {
+  "fightLinesUnparsed": 0,
+  "fightsFile": "/home/wowvmangos/vmangos/run/etc/sui-autopilot-fights.jsonl",
+  "host": "the VMaNGOS box",
+  "learnedFiles": {
+   "burst": true,
+   "cone": true,
+   "multipliers": true,
+   "pulse": true,
+   "rebounders": true,
+   "rhythm": true,
+   "risers": true
+  },
+  "playbook": "/home/wowvmangos/vmangos/run/etc/sui-raid-playbook.json.dist",
+  "scope": "/home/wowvmangos/vmangos/src/game/SuperUiContent/SuiBots/SuiTacticScope.h"
+ },
+ "unusedTemplatePaths": [],
+ "wanderers": []
+}

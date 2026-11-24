@@ -69,6 +69,15 @@ touching the code:
   World Content Pack: decisions, architecture, phases and the as-built log.
 - `shared_docs/EQUIPMENT_CAPTURE.md` — deterministic weapon/armor capture with the production character renderer, body/view/pose matrix, asset hashes and offline-vs-live acceptance limits (added 2026-09-28).
 - `shared_docs/QUEST_TABLETOP.md` — the Quest Tabletop (spec 2026-10-14, built P1-P4): Creator Mode's raised-relief quest view, the client port of the web Quest Atlas: visual law, the `/QuestAtlas/Zone` data contract, the far/near rendering split, overlay semantics, the living board (live SuperUI bots) and §12 the LIVE table (opened from the Command View: the real world, spells included, on the table), phases, acceptance and the as-built log.
+- `shared_docs/RAID_TACTIC_SCOPE_LAW.md` — binding (owner 2026-11-15): every raid tactic in the bot AI/autopilot is scoped to its raid and its boss/pack
+  in `SuiBots/SuiTacticScope.h` and gated by `SuiTactic::On`; no generic raid logic. Enforced by `bash tools/raid-tactic-scope-check.sh` (Core, over ssh).
+- `shared_docs/RAID_MAP.md` — GENERATED (never hand-edit; `bash tools/raidmap/regen.sh`): Molten Core and Onyxia's Lair as
+  a map — every pack with a stable id (`P<lowest spawn guid>`), patrol routes and what they pass near, bosses and their
+  adds, Onyxia's script positions, playbook camps/lures and the tactic rows attached to each; SVGs in `shared_docs/raid-map/`
+  (added 2026-11-18, owner: "establish the full raid as a map - such that we know what happens where, the patrols").
+- `shared_docs/RAID_TACTIC_LEDGER.md` — binding anti-ping-pong ledger (owner 2026-11-18): per raid area, every tactic
+  tried, kept or reverted with its evidence and result over N pulls. Read the area's entry before changing behaviour
+  for it; re-trying a reverted change needs new evidence cited against the old entry.
 - `CODE_STRUCTURE_LAW.md` (repo root) — where a `.cs` file goes and how it is named.
 
 `interface-wire-check --shared-docs-only` fails when a file in `shared_docs/` is not
@@ -106,6 +115,11 @@ history) and the server handoff `docs/current/POSSESSION_ROUTING_HANDOFF.md`.
 7. Pair-deploy: new opcodes/capability bits change both sides in one round.
 8. Probe first, don't theorize: `~/vmangos/run/bin/Server.log` (grep `[SUI]`,
    `released bot`, `catch-up teleport`) and the client `msui-console.log`.
+9. Raid tactics are contained (owner 2026-11-15): a fix for one raid's pack or boss is registered in
+   `SuiTacticScope.h` with that raid and those creatures and keeps the old behaviour everywhere else;
+   `tools/raid-tactic-scope-check.sh` stays green. See `shared_docs/RAID_TACTIC_SCOPE_LAW.md`.
+10. No raid ping-pong (owner 2026-11-18): file every raid wipe against a `RAID_MAP.md` id, read that area's
+   `RAID_TACTIC_LEDGER.md` entry before changing behaviour there, and log each change and its result over N pulls.
 
 ## Find code with the locator -- if not on Yafrovon's Computer, IGNORE THIS SECTION
 
